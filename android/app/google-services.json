@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "612318579336",
+    "project_id": "mmcare-db",
+    "storage_bucket": "mmcare-db.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:612318579336:android:d25e3d5e9490ec873b2d3d",
+        "android_client_info": {
+          "package_name": "com.mncare.app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAh2IxqITgS3SA-xL5XDpgrFcy_lU-kKOI"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

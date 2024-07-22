@@ -1,15 +1,16 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 
-import 'screens/calendar_screen.dart';
-import 'screens/community_screen.dart';
-import 'screens/home_screen.dart';
-import 'screens/pet_doctor_screen.dart';
-import 'screens/tracking_screen.dart';
-import 'widgets/bottom_bar.dart';
-import 'widgets/slide_menu.dart';
-import 'widgets/top_app_bar.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'package:mncare/screens/auth_screen.dart';
+import 'package:mncare/screens/main_screen.dart';
+import 'firebase_options.dart';
 
-void main() {
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await Firebase.initializeApp(
+    options: DefaultFirebaseOptions.currentPlatform,
+  );
   runApp(const MyApp());
 }
 
@@ -20,58 +21,27 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       title: 'Pet Care App',
-      theme: ThemeData(
-        primarySwatch: Colors.orange,
-        scaffoldBackgroundColor: Colors.grey[50],
+      theme: ThemeData().copyWith(
+        colorScheme: ColorScheme.fromSeed(
+          seedColor: const Color.fromARGB(255, 228, 137, 1),
+        ),
       ),
-      home: const MainScreen(),
-    );
-  }
-}
+      //home: const MainScreen(),
+      home: StreamBuilder(
+        stream: FirebaseAuth.instance.authStateChanges(),
+        builder: (ctx, snapshot) {
+          //FireBase가 토큰을 로딩하지 않았거나 토큰이 아직 있는지 확인하지 않았다면 로딩화면을 보여준다.
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            //로딩중인 화면
+          }
+          //로그인 하고 메인 스크린
+          if (snapshot.hasData) {
+            return const MainScreen();
+          }
 
-class MainScreen extends StatefulWidget {
-  const MainScreen({super.key});
-
-  @override
-  _MainScreenState createState() => _MainScreenState();
-}
-
-class _MainScreenState extends State<MainScreen> {
-  int _selectedIndex = 2; // 홈 화면을 기본으로 설정
-  final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
-
-  final List<Widget> _screens = [
-    const TrackingScreen(),
-    const CalendarScreen(),
-    const HomeScreen(),
-    const PetDoctorScreen(),
-    const CommunityScreen(),
-  ];
-
-  void _onItemTapped(int index) {
-    setState(() {
-      _selectedIndex = index;
-    });
-  }
-
-  void _openEndDrawer() {
-    _scaffoldKey.currentState?.openEndDrawer();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      key: _scaffoldKey,
-      appBar: TopAppBar(
-        selectedIndex: _selectedIndex,
-        onMenuPressed: _openEndDrawer,
+          return const AuthScreen();
+        },
       ),
-      body: _screens[_selectedIndex],
-      bottomNavigationBar: BottomBar(
-        selectedIndex: _selectedIndex,
-        onItemTapped: _onItemTapped,
-      ),
-      endDrawer: const SlideMenu(),
     );
   }
 }
