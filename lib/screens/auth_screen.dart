@@ -1,11 +1,12 @@
-import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter/material.dart';
 
 final _firebase = FirebaseAuth.instance;
 
 class AuthScreen extends StatefulWidget {
   const AuthScreen({super.key});
 
+  @override
   State<StatefulWidget> createState() {
     return _AuthScreenState();
   }
@@ -49,7 +50,7 @@ class _AuthScreenState extends State<AuthScreen> {
         SnackBar(
           content: Text(error.message ?? 'Authentication failed.'),
         ),
-      ); 
+      );
     }
 
     //print(_enteredEmail);
@@ -73,7 +74,7 @@ class _AuthScreenState extends State<AuthScreen> {
               //     left: 20,
               //     right: 20,
               //   ),
-              //   width: 200, 
+              //   width: 200,
               //   child: Image.asset('assets/images/chat.png'),
               // ),
               Card(
@@ -112,6 +113,7 @@ class _AuthScreenState extends State<AuthScreen> {
                               if (value == null || value.trim().length < 6) {
                                 return 'Password must be at lwast 6 characters long';
                               }
+                              return null;
                             },
                             onSaved: (value) {
                               _enteredPassword = value!;
