@@ -71,7 +71,7 @@ class _MainScreenState extends State<MainScreen> {
         selectedIndex: _selectedIndex,
         onItemTapped: _onItemTapped,
       ),
-      endDrawer: SlideMenu(),
+      endDrawer: const SlideMenu(),
     );
   }
 }
