@@ -1,4 +1,4 @@
-package com.example.mncare
+package com.mncare.app
 
 import io.flutter.embedding.android.FlutterActivity
 

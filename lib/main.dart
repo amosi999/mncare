@@ -9,6 +9,9 @@ import 'widgets/bottom_bar.dart';
 import 'widgets/slide_menu.dart';
 import 'widgets/top_app_bar.dart';
 
+import 'package:firebase_core/firebase_core.dart';
+import 'firebase_options.dart';
+
 void main() {
   runApp(const MyApp());
 }

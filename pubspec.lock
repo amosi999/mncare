@@ -130,7 +130,7 @@ packages:
     source: hosted
     version: "0.9.3+1"
   firebase_core:
-    dependency: transitive
+    dependency: "direct main"
     description:
       name: firebase_core
       sha256: "5159984ce9b70727473eb388394650677c02c925aaa6c9439905e1f30966a4d5"

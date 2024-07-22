@@ -1,0 +1,1 @@
+{"flutter":{"platforms":{"android":{"default":{"projectId":"mmcare-db","appId":"1:612318579336:android:d25e3d5e9490ec873b2d3d","fileOutput":"android/app/google-services.json"}},"dart":{"lib/firebase_options.dart":{"projectId":"mmcare-db","configurations":{"android":"1:612318579336:android:d25e3d5e9490ec873b2d3d","ios":"1:612318579336:ios:ec271df4c89302653b2d3d"}}}}}}
