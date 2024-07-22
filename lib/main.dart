@@ -1,9 +1,9 @@
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:flutter/material.dart';
-
 import 'package:firebase_core/firebase_core.dart';
+import 'package:flutter/material.dart';
 import 'package:mncare/screens/auth_screen.dart';
 import 'package:mncare/screens/main_screen.dart';
+
 import 'firebase_options.dart';
 
 void main() async {
@@ -23,7 +23,7 @@ class MyApp extends StatelessWidget {
       title: 'Pet Care App',
       theme: ThemeData().copyWith(
         colorScheme: ColorScheme.fromSeed(
-          seedColor: const Color.fromARGB(255, 228, 137, 1),
+          seedColor: const Color.fromARGB(255, 235, 91, 0),
         ),
       ),
       //home: const MainScreen(),
