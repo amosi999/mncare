@@ -2,6 +2,8 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:flutter/material.dart';
 import 'package:mncare/screens/input_info_screen.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+
 
 final FirebaseAuth _firebaseAuth = FirebaseAuth.instance;
 final GoogleSignIn _googleSignIn = GoogleSignIn();
@@ -45,14 +47,21 @@ class _AuthScreenState extends State<AuthScreen> {
         final userCredentials = await _firebaseAuth.signInWithEmailAndPassword(
             email: _enteredEmail, password: _enteredPassword);
       } else {
-        final userCredentials =
-            await _firebaseAuth.createUserWithEmailAndPassword(
-                email: _enteredEmail, password: _enteredPassword);
-        // Save the username to the user's profile
-        await userCredentials.user?.updateDisplayName(_entereduserName); // 이걸로 닉네임을 저장한다.
-        Navigator.of(context).push(
-          MaterialPageRoute(builder: (ctx) => const InputInfoScreen()),
-        );
+        final userCredentials = await _firebaseAuth.createUserWithEmailAndPassword(
+            email: _enteredEmail, password: _enteredPassword);
+            Navigator.of(context).push(
+              MaterialPageRoute(
+                builder: (ctx) => const InputInfoScreen()
+            ),
+            );
+            await FirebaseFirestore.instance    //유저 정보 저장
+            .collection('users')
+            .doc(userCredentials.user!.uid)
+            .set({
+          'username': _entereduserName,
+          'email': _enteredEmail,
+          'petId': '',
+        });
       }
     } on FirebaseAuthException catch (error) {
       ScaffoldMessenger.of(context).clearSnackBars();

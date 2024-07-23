@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-import 'package:firebase_core/firebase_core.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:mncare/screens/auth_screen.dart';
@@ -53,18 +52,30 @@ class _InputInfoScreenState extends State<InputInfoScreen> {
     try {
       User? currentUser = FirebaseAuth.instance.currentUser;
       if (currentUser != null) {
+        
         await FirebaseFirestore.instance
-            .collection('pets')
-            .doc(currentUser.uid)
-            .set({
-          'petName': _enteredPetName,
-          'petType': _selectedPetType == 1 ? 'Dog' : 'Cat',
-          'gender': _selectedPetGender == 1 ? 'Male' : 'Female',
-          'species': _enteredSpecies,
-          'weight': double.parse(_petWeightController.text),
-          'birthDate': _selectedDate?.toIso8601String(),
-          'etc': _enteredEtc,
-        });
+          .collection('pets')
+          .doc(currentUser.uid)
+          .set({
+            'UserId': currentUser.uid,
+            'petName': _enteredPetName,
+            'petType': _selectedPetType == 1 ? 'Dog' : 'Cat',
+            'gender': _selectedPetGender == 1 ? 'Male' : 'Female',
+            'species': _enteredSpecies,
+            'weight': double.parse(_petWeightController.text),
+            'birthDate': _selectedDate?.toIso8601String(),
+            'etc': _enteredEtc,
+          });
+
+      
+
+        await FirebaseFirestore.instance
+          .collection('users')
+          .doc(currentUser.uid)
+          .update({
+            'petId': currentUser.uid,
+          });
+
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Pet information saved successfully!')),
         );
