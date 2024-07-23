@@ -20,10 +20,12 @@ class _AuthScreenState extends State<AuthScreen> {
   var _isLogin = true;
   var _enteredEmail = '';
   var _enteredPassword = '';
+  var _entereduserName = '';
 
   Future<UserCredential> _signInWithGoogle() async {
     final GoogleSignInAccount? googleUser = await _googleSignIn.signIn();
-    final GoogleSignInAuthentication googleAuth = await googleUser!.authentication;
+    final GoogleSignInAuthentication googleAuth =
+        await googleUser!.authentication;
     final credential = GoogleAuthProvider.credential(
       accessToken: googleAuth.accessToken,
       idToken: googleAuth.idToken,
@@ -43,13 +45,14 @@ class _AuthScreenState extends State<AuthScreen> {
         final userCredentials = await _firebaseAuth.signInWithEmailAndPassword(
             email: _enteredEmail, password: _enteredPassword);
       } else {
-        final userCredentials = await _firebaseAuth.createUserWithEmailAndPassword(
-            email: _enteredEmail, password: _enteredPassword);
-            Navigator.of(context).push(
-              MaterialPageRoute(
-                builder: (ctx) => const InputInfoScreen()
-            ),
-            );
+        final userCredentials =
+            await _firebaseAuth.createUserWithEmailAndPassword(
+                email: _enteredEmail, password: _enteredPassword);
+        // Save the username to the user's profile
+        await userCredentials.user?.updateDisplayName(_entereduserName); // 이걸로 닉네임을 저장한다.
+        Navigator.of(context).push(
+          MaterialPageRoute(builder: (ctx) => const InputInfoScreen()),
+        );
       }
     } on FirebaseAuthException catch (error) {
       ScaffoldMessenger.of(context).clearSnackBars();
@@ -81,12 +84,15 @@ class _AuthScreenState extends State<AuthScreen> {
                         mainAxisSize: MainAxisSize.min,
                         children: [
                           TextFormField(
-                            decoration: const InputDecoration(labelText: 'Email Address'),
+                            decoration: const InputDecoration(
+                                labelText: 'Email Address'),
                             keyboardType: TextInputType.emailAddress,
                             autocorrect: false,
                             textCapitalization: TextCapitalization.none,
                             validator: (value) {
-                              if (value == null || value.trim().isEmpty || !value.contains('@')) {
+                              if (value == null ||
+                                  value.trim().isEmpty ||
+                                  !value.contains('@')) {
                                 return 'Please enter a valid email address.';
                               }
                               return null;
@@ -96,7 +102,8 @@ class _AuthScreenState extends State<AuthScreen> {
                             },
                           ),
                           TextFormField(
-                            decoration: const InputDecoration(labelText: 'Password'),
+                            decoration:
+                                const InputDecoration(labelText: 'Password'),
                             obscureText: true,
                             validator: (value) {
                               if (value == null || value.trim().length < 6) {
@@ -108,11 +115,27 @@ class _AuthScreenState extends State<AuthScreen> {
                               _enteredPassword = value!;
                             },
                           ),
+                          if (!_isLogin)
+                            TextFormField(
+                              decoration:
+                                  const InputDecoration(labelText: 'Nickname'),
+                              validator: (value) {
+                                if (value == null || value.trim().isEmpty) {
+                                  return 'Please enter a nickname.';
+                                }
+                                return null;
+                              },
+                              onSaved: (value) {
+                                _entereduserName = value!;
+                              },
+                            ),
                           const SizedBox(height: 12),
                           ElevatedButton(
                             onPressed: _submit,
                             style: ElevatedButton.styleFrom(
-                              backgroundColor: Theme.of(context).colorScheme.primaryContainer,
+                              backgroundColor: Theme.of(context)
+                                  .colorScheme
+                                  .primaryContainer,
                             ),
                             child: Text(_isLogin ? 'Login' : 'Signup'),
                           ),
@@ -122,7 +145,9 @@ class _AuthScreenState extends State<AuthScreen> {
                                 _isLogin = !_isLogin;
                               });
                             },
-                            child: Text(_isLogin ? 'Create an account' : 'I already have an account.'),
+                            child: Text(_isLogin
+                                ? 'Create an account'
+                                : 'I already have an account.'),
                           ),
                           const SizedBox(height: 12),
                           ElevatedButton(
