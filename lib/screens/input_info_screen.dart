@@ -3,6 +3,8 @@ import 'package:intl/intl.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:mncare/screens/auth_screen.dart';
+import 'package:mncare/screens/main_screen.dart';
 
 final formatter = DateFormat.yMd();
 
@@ -42,7 +44,7 @@ class _InputInfoScreenState extends State<InputInfoScreen> {
 
   void _submit() async {
     final isValid = _form.currentState!.validate();
-    
+
     if (!isValid) {
       return;
     }
@@ -52,17 +54,17 @@ class _InputInfoScreenState extends State<InputInfoScreen> {
       User? currentUser = FirebaseAuth.instance.currentUser;
       if (currentUser != null) {
         await FirebaseFirestore.instance
-          .collection('pets')
-          .doc(currentUser.uid)
-          .set({
-            'petName': _enteredPetName,
-            'petType': _selectedPetType == 1 ? 'Dog' : 'Cat',
-            'gender': _selectedPetGender == 1 ? 'Male' : 'Female',
-            'species': _enteredSpecies,
-            'weight': double.parse(_petWeightController.text),
-            'birthDate': _selectedDate?.toIso8601String(),
-            'etc': _enteredEtc,
-          });
+            .collection('pets')
+            .doc(currentUser.uid)
+            .set({
+          'petName': _enteredPetName,
+          'petType': _selectedPetType == 1 ? 'Dog' : 'Cat',
+          'gender': _selectedPetGender == 1 ? 'Male' : 'Female',
+          'species': _enteredSpecies,
+          'weight': double.parse(_petWeightController.text),
+          'birthDate': _selectedDate?.toIso8601String(),
+          'etc': _enteredEtc,
+        });
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Pet information saved successfully!')),
         );
@@ -74,7 +76,9 @@ class _InputInfoScreenState extends State<InputInfoScreen> {
         SnackBar(content: Text('Failed to save pet information: $error')),
       );
     }
-  
+    Navigator.of(context).pushReplacement(
+      MaterialPageRoute(builder: (context) => const MainScreen()),
+    );
   }
 
   @override
@@ -106,7 +110,7 @@ class _InputInfoScreenState extends State<InputInfoScreen> {
                       groupValue: _selectedPetType,
                       onChanged: (int? value) {
                         setState(() {
-                          _selectedPetType= value!;
+                          _selectedPetType = value!;
                         });
                       },
                     ),
@@ -118,7 +122,7 @@ class _InputInfoScreenState extends State<InputInfoScreen> {
                       groupValue: _selectedPetType,
                       onChanged: (int? value) {
                         setState(() {
-                          _selectedPetType= value!;
+                          _selectedPetType = value!;
                         });
                       },
                     ),
@@ -183,37 +187,37 @@ class _InputInfoScreenState extends State<InputInfoScreen> {
               ),
               const SizedBox(height: 16),
               Row(
-            children: [
-              Expanded(
-                child: TextField(
-                  controller: _petWeightController,
-                  keyboardType: TextInputType.number,
-                  decoration: const InputDecoration(
-                    suffixText: 'Kg',
-                    label: Text('Weight'),
+                children: [
+                  Expanded(
+                    child: TextField(
+                      controller: _petWeightController,
+                      keyboardType: TextInputType.number,
+                      decoration: const InputDecoration(
+                        suffixText: 'kg',
+                        label: Text('Weight'),
+                      ),
+                    ),
                   ),
-                ),
+                  const SizedBox(
+                    width: 16,
+                  ),
+                  Expanded(
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.end,
+                      crossAxisAlignment: CrossAxisAlignment.center,
+                      children: [
+                        Text(_selectedDate == null
+                            ? 'select pet birthday'
+                            : formatter.format(_selectedDate!)), // ! = no null
+                        IconButton(
+                            onPressed: _presentDatePicker,
+                            icon: const Icon(Icons.calendar_month)),
+                      ],
+                    ),
+                  ),
+                ],
               ),
-              const SizedBox(
-                width: 16,
-              ),
-              Expanded(
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.end,
-                  crossAxisAlignment: CrossAxisAlignment.center,
-                  children: [
-                    Text(_selectedDate == null
-                        ? 'select pet birthday'
-                        : formatter.format(_selectedDate!)), // ! = no null
-                    IconButton(
-                        onPressed: _presentDatePicker,
-                        icon: const Icon(Icons.calendar_month)),
-                  ],
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 16),
+              const SizedBox(height: 16),
               TextFormField(
                 key: const ValueKey('petEtc'),
                 decoration: const InputDecoration(labelText: 'etc'),

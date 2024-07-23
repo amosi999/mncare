@@ -4,7 +4,6 @@ import 'package:flutter/material.dart';
 import 'package:mncare/screens/auth_screen.dart';
 import 'package:mncare/screens/main_screen.dart';
 
-
 import 'firebase_options.dart';
 
 void main() async {
@@ -40,6 +39,7 @@ class MyApp extends StatelessWidget {
             return const MainScreen();
           }
 
+          //return const InputInfoScreen();
           return const AuthScreen();
         },
       ),
