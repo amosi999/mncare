@@ -1,6 +1,7 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:flutter/material.dart';
+import 'package:mncare/screens/input_info_screen.dart';
 
 final FirebaseAuth _firebaseAuth = FirebaseAuth.instance;
 final GoogleSignIn _googleSignIn = GoogleSignIn();
@@ -44,6 +45,11 @@ class _AuthScreenState extends State<AuthScreen> {
       } else {
         final userCredentials = await _firebaseAuth.createUserWithEmailAndPassword(
             email: _enteredEmail, password: _enteredPassword);
+            Navigator.of(context).push(
+              MaterialPageRoute(
+                builder: (ctx) => const InputInfoScreen()
+            ),
+            );
       }
     } on FirebaseAuthException catch (error) {
       ScaffoldMessenger.of(context).clearSnackBars();

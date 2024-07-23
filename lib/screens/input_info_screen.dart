@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 final formatter = DateFormat.yMd();
 
@@ -37,7 +40,7 @@ class _InputInfoScreenState extends State<InputInfoScreen> {
     });
   }
 
-  void _submit() {
+  void _submit() async {
     final isValid = _form.currentState!.validate();
     
     if (!isValid) {
@@ -45,6 +48,32 @@ class _InputInfoScreenState extends State<InputInfoScreen> {
     }
     _form.currentState!.save();
 
+    try {
+      User? currentUser = FirebaseAuth.instance.currentUser;
+      if (currentUser != null) {
+        await FirebaseFirestore.instance
+          .collection('pets')
+          .doc(currentUser.uid)
+          .set({
+            'petName': _enteredPetName,
+            'petType': _selectedPetType == 1 ? 'Dog' : 'Cat',
+            'gender': _selectedPetGender == 1 ? 'Male' : 'Female',
+            'species': _enteredSpecies,
+            'weight': double.parse(_petWeightController.text),
+            'birthDate': _selectedDate?.toIso8601String(),
+            'etc': _enteredEtc,
+          });
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Pet information saved successfully!')),
+        );
+      } else {
+        throw Exception('No user logged in');
+      }
+    } catch (error) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Failed to save pet information: $error')),
+      );
+    }
   
   }
 
@@ -54,8 +83,15 @@ class _InputInfoScreenState extends State<InputInfoScreen> {
       appBar: AppBar(
         title: const Text('반려동물 정보 입력'),
         centerTitle: true,
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.save),
+            onPressed: _submit,
+          ),
+        ],
       ),
-      body: Padding(
+      body: SingleChildScrollView(
+        scrollDirection: Axis.vertical,
         padding: const EdgeInsets.all(16),
         child: Form(
           key: _form,
@@ -167,7 +203,7 @@ class _InputInfoScreenState extends State<InputInfoScreen> {
                   crossAxisAlignment: CrossAxisAlignment.center,
                   children: [
                     Text(_selectedDate == null
-                        ? 'No date chosen'
+                        ? 'select pet birthday'
                         : formatter.format(_selectedDate!)), // ! = no null
                     IconButton(
                         onPressed: _presentDatePicker,
