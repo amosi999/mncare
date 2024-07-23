@@ -1,7 +1,9 @@
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:google_sign_in/google_sign_in.dart';
 import 'package:flutter/material.dart';
 
-final _firebase = FirebaseAuth.instance;
+final FirebaseAuth _firebaseAuth = FirebaseAuth.instance;
+final GoogleSignIn _googleSignIn = GoogleSignIn();
 
 class AuthScreen extends StatefulWidget {
   const AuthScreen({super.key});
@@ -14,37 +16,36 @@ class AuthScreen extends StatefulWidget {
 
 class _AuthScreenState extends State<AuthScreen> {
   final _form = GlobalKey<FormState>(); //전역키
-
   var _isLogin = true;
   var _enteredEmail = '';
   var _enteredPassword = '';
 
-  void _submit() async {
-    //valid확인하고 제출 //formKey를 따라서 접근할 수 있는 거임.
-    final isValid = _form.currentState!.validate(); //validate호출 //null이 아닌걸 !
+  Future<UserCredential> _signInWithGoogle() async {
+    final GoogleSignInAccount? googleUser = await _googleSignIn.signIn();
+    final GoogleSignInAuthentication googleAuth = await googleUser!.authentication;
+    final credential = GoogleAuthProvider.credential(
+      accessToken: googleAuth.accessToken,
+      idToken: googleAuth.idToken,
+    );
+    return await _firebaseAuth.signInWithCredential(credential);
+  }
 
+  void _submit() async {
+    final isValid = _form.currentState!.validate();
     if (!isValid) {
       return;
     }
     _form.currentState!.save();
 
     try {
-      //핵심 로그인 로직
       if (_isLogin) {
-        //log uesrs in
-        final userCredentials = await _firebase.signInWithEmailAndPassword(
+        final userCredentials = await _firebaseAuth.signInWithEmailAndPassword(
             email: _enteredEmail, password: _enteredPassword);
       } else {
-        print('loginX');
-        final userCredentials = await _firebase.createUserWithEmailAndPassword(
+        final userCredentials = await _firebaseAuth.createUserWithEmailAndPassword(
             email: _enteredEmail, password: _enteredPassword);
-        print(userCredentials);
       }
     } on FirebaseAuthException catch (error) {
-      if (error.code == 'email-already-in-use') {
-        //...
-      }
-
       ScaffoldMessenger.of(context).clearSnackBars();
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -52,9 +53,6 @@ class _AuthScreenState extends State<AuthScreen> {
         ),
       );
     }
-
-    //print(_enteredEmail);
-    //print(_enteredPassword);
   }
 
   @override
@@ -66,17 +64,6 @@ class _AuthScreenState extends State<AuthScreen> {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              // Container(
-              //   margin: const EdgeInsets.only(
-              //     // 각방향으로 마진
-              //     top: 30,
-              //     bottom: 20,
-              //     left: 20,
-              //     right: 20,
-              //   ),
-              //   width: 200,
-              //   child: Image.asset('assets/images/chat.png'),
-              // ),
               Card(
                 margin: const EdgeInsets.all(20),
                 child: SingleChildScrollView(
@@ -85,20 +72,17 @@ class _AuthScreenState extends State<AuthScreen> {
                     child: Form(
                       key: _form,
                       child: Column(
-                        mainAxisSize: MainAxisSize.min, //공간을 최재한 차지하게
+                        mainAxisSize: MainAxisSize.min,
                         children: [
                           TextFormField(
-                            decoration: const InputDecoration(
-                                labelText: 'Email Address'),
+                            decoration: const InputDecoration(labelText: 'Email Address'),
                             keyboardType: TextInputType.emailAddress,
                             autocorrect: false,
                             textCapitalization: TextCapitalization.none,
                             validator: (value) {
-                              if (value == null ||
-                                  value.trim().isEmpty ||
-                                  !value.contains('@')) {
+                              if (value == null || value.trim().isEmpty || !value.contains('@')) {
                                 return 'Please enter a valid email address.';
-                              } //조건이 맞지 않으면 유효하지 않은 값임.
+                              }
                               return null;
                             },
                             onSaved: (value) {
@@ -106,12 +90,11 @@ class _AuthScreenState extends State<AuthScreen> {
                             },
                           ),
                           TextFormField(
-                            decoration:
-                                const InputDecoration(labelText: 'Password'),
-                            obscureText: true, //***처럼 */
+                            decoration: const InputDecoration(labelText: 'Password'),
+                            obscureText: true,
                             validator: (value) {
                               if (value == null || value.trim().length < 6) {
-                                return 'Password must be at lwast 6 characters long';
+                                return 'Password must be at least 6 characters long';
                               }
                               return null;
                             },
@@ -123,25 +106,26 @@ class _AuthScreenState extends State<AuthScreen> {
                           ElevatedButton(
                             onPressed: _submit,
                             style: ElevatedButton.styleFrom(
-                              backgroundColor: Theme.of(context)
-                                  .colorScheme
-                                  .primaryContainer,
+                              backgroundColor: Theme.of(context).colorScheme.primaryContainer,
                             ),
                             child: Text(_isLogin ? 'Login' : 'Signup'),
                           ),
                           TextButton(
                             onPressed: () {
                               setState(() {
-                                _isLogin = !_isLogin; //로그인 상태 true로 만들기
+                                _isLogin = !_isLogin;
                               });
                             },
-                            child: Text(_isLogin
-                                ? 'Create an account'
-                                : 'I already have an account.'),
+                            child: Text(_isLogin ? 'Create an account' : 'I already have an account.'),
+                          ),
+                          const SizedBox(height: 12),
+                          ElevatedButton(
+                            onPressed: _signInWithGoogle,
+                            child: const Text('Sign in with Google'),
                           ),
                         ],
                       ),
-                    ), //여기 양식 위젯 사용
+                    ),
                   ),
                 ),
               )
