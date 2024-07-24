@@ -8,27 +8,25 @@ import 'schedule_type_manager.dart';
 class CalendarScreenController extends ChangeNotifier {
   final CalendarController controller;
   final List<Appointment> _appointments = [];
+  late String _headerText;
 
-  CalendarScreenController(this.controller);
+  CalendarScreenController(this.controller) {
+    _updateHeaderText();
+  }
 
-  String getHeaderText() {
-    DateTime? displayDate = controller.displayDate ?? DateTime.now();
-    return DateFormat('MMMM yyyy').format(displayDate);
+  String get headerText => _headerText;
+
+  void _updateHeaderText() {
+    DateTime displayDate = controller.displayDate ?? DateTime.now();
+    _headerText = DateFormat('MMMM yyyy').format(displayDate);
   }
 
   void updateHeaderText() {
-    // Implement this method if needed
+    _updateHeaderText();
+    notifyListeners();
   }
 
-  void previousMonth() {
-    controller.backward!();
-  }
-
-  void nextMonth() {
-    controller.forward!();
-  }
-
-  Future<void> showDatePickerDialog(BuildContext context) async {
+  Future<bool> showDatePickerDialog(BuildContext context) async {
     final DateTime? picked = await showDatePicker(
       context: context,
       initialDate: controller.displayDate ?? DateTime.now(),
@@ -37,6 +35,25 @@ class CalendarScreenController extends ChangeNotifier {
     );
     if (picked != null && picked != controller.displayDate) {
       controller.displayDate = picked;
+      updateHeaderText();
+      return true;
+    }
+    return false;
+  }
+
+  void previousMonth() {
+    controller.backward!();
+    updateHeaderText();
+  }
+
+  void nextMonth() {
+    controller.forward!();
+    updateHeaderText();
+  }
+
+  void onViewChanged(ViewChangedDetails details) {
+    if (details.visibleDates.isNotEmpty) {
+      updateHeaderText();
     }
   }
 

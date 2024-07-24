@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/scheduler.dart';
 import 'package:syncfusion_flutter_calendar/calendar.dart';
 
 import 'appointment_dialog.dart';
+import 'appointment_list_dialog.dart';
 import 'calendar_controller.dart';
-import 'calendar_utils.dart';
+import 'calendar_view.dart' as custom_view;
 import 'schedule_info.dart';
 
 class CalendarScreen extends StatefulWidget {
@@ -16,21 +18,35 @@ class CalendarScreen extends StatefulWidget {
 class _CalendarScreenState extends State<CalendarScreen> {
   late CalendarController _controller;
   late CalendarScreenController _calendarScreenController;
+  bool _needsUpdate = false;
 
   @override
   void initState() {
     super.initState();
     _controller = CalendarController();
     _calendarScreenController = CalendarScreenController(_controller);
-    _calendarScreenController.addListener(() {
-      setState(() {});
-    });
+    _calendarScreenController.addListener(_scheduleUpdate);
   }
 
   @override
   void dispose() {
+    _calendarScreenController.removeListener(_scheduleUpdate);
     _calendarScreenController.dispose();
+    _controller.dispose();
     super.dispose();
+  }
+
+  void _scheduleUpdate() {
+    if (!_needsUpdate) {
+      _needsUpdate = true;
+      SchedulerBinding.instance.addPostFrameCallback((_) {
+        if (mounted && _needsUpdate) {
+          setState(() {
+            _needsUpdate = false;
+          });
+        }
+      });
+    }
   }
 
   void _onCalendarTapped(CalendarTapDetails details) {
@@ -38,67 +54,21 @@ class _CalendarScreenState extends State<CalendarScreen> {
       showDialog(
         context: context,
         builder: (BuildContext context) {
-          return _buildAppointmentsDialog(details.date!);
+          return AppointmentListDialog(
+            date: details.date!,
+            appointments:
+                _calendarScreenController.getAppointmentsForDate(details.date!),
+            onEdit: _editAppointment,
+            onDelete: _deleteAppointment,
+          );
         },
       );
     }
   }
 
-  Widget _buildAppointmentsDialog(DateTime date) {
-    List<Appointment> appointments =
-        _calendarScreenController.getAppointmentsForDate(date);
-    return AlertDialog(
-      title: Text('${date.year}년 ${date.month}월 ${date.day}일 일정'),
-      content: appointments.isEmpty
-          ? const Text('이 날짜에 일정이 없습니다.')
-          : SizedBox(
-              width: double.maxFinite,
-              child: ListView.builder(
-                shrinkWrap: true,
-                itemCount: appointments.length,
-                itemBuilder: (context, index) {
-                  final appointment = appointments[index];
-                  return ListTile(
-                    title: Text(appointment.subject),
-                    subtitle: Text(appointment.isAllDay
-                        ? '하루 종일'
-                        : '${appointment.startTime.hour}:${appointment.startTime.minute.toString().padLeft(2, '0')} - ${appointment.endTime.hour}:${appointment.endTime.minute.toString().padLeft(2, '0')}'),
-                    trailing: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        IconButton(
-                          icon: const Icon(Icons.edit),
-                          onPressed: () {
-                            Navigator.of(context).pop();
-                            _editAppointment(appointment);
-                          },
-                        ),
-                        IconButton(
-                          icon: const Icon(Icons.delete),
-                          onPressed: () {
-                            _deleteAppointment(appointment);
-                            Navigator.of(context).pop();
-                          },
-                        ),
-                      ],
-                    ),
-                  );
-                },
-              ),
-            ),
-      actions: <Widget>[
-        TextButton(
-          child: const Text('닫기'),
-          onPressed: () => Navigator.of(context).pop(),
-        ),
-      ],
-    );
-  }
-
   void _editAppointment(Appointment appointment) {
-    // Convert Appointment to ScheduleInfo
     ScheduleInfo scheduleInfo = ScheduleInfo(
-      owner: ScheduleOwner.all, // You might need to adjust this
+      owner: ScheduleOwner.all,
       type:
           _calendarScreenController.getScheduleTypeFromColor(appointment.color),
       title: appointment.subject,
@@ -112,17 +82,27 @@ class _CalendarScreenState extends State<CalendarScreen> {
     showAppointmentDialog(
       context,
       (updatedSchedule) {
-        _calendarScreenController.updateScheduleInCalendar(
-            appointment, updatedSchedule);
-        setState(() {});
+        try {
+          _calendarScreenController.updateScheduleInCalendar(
+              appointment, updatedSchedule);
+        } catch (e) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('일정 업데이트 중 오류가 발생했습니다: $e')),
+          );
+        }
       },
       initialSchedule: scheduleInfo,
     );
   }
 
   void _deleteAppointment(Appointment appointment) {
-    _calendarScreenController.deleteScheduleFromCalendar(appointment);
-    setState(() {});
+    try {
+      _calendarScreenController.deleteScheduleFromCalendar(appointment);
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('일정 삭제 중 오류가 발생했습니다: $e')),
+      );
+    }
   }
 
   @override
@@ -131,37 +111,38 @@ class _CalendarScreenState extends State<CalendarScreen> {
       appBar: AppBar(
         backgroundColor: const Color.fromARGB(255, 255, 178, 0),
         title: GestureDetector(
-          onTap: () => _calendarScreenController.showDatePickerDialog(context),
-          child: Text(_calendarScreenController.getHeaderText()),
+          onTap: () async {
+            bool updated =
+                await _calendarScreenController.showDatePickerDialog(context);
+            if (updated) _scheduleUpdate();
+          },
+          child: Text(_calendarScreenController.headerText),
         ),
         centerTitle: true,
         leading: IconButton(
           icon: const Icon(Icons.chevron_left),
-          onPressed: _calendarScreenController.previousMonth,
+          onPressed: () {
+            _calendarScreenController.previousMonth();
+            _scheduleUpdate();
+          },
         ),
         actions: [
           IconButton(
             icon: const Icon(Icons.chevron_right),
-            onPressed: _calendarScreenController.nextMonth,
+            onPressed: () {
+              _calendarScreenController.nextMonth();
+              _scheduleUpdate();
+            },
           ),
         ],
       ),
-      body: SfCalendar(
-        view: CalendarView.month,
+      body: custom_view.CalendarView(
         controller: _controller,
-        dataSource: _calendarScreenController.getCalendarDataSource(),
-        monthViewSettings: getMonthViewSettings(),
-        headerHeight: 0,
-        viewHeaderHeight: 40,
-        viewHeaderStyle: getViewHeaderStyle(),
-        todayHighlightColor: const Color.fromARGB(255, 235, 91, 0),
-        cellBorderColor: Colors.grey[300],
+        calendarScreenController: _calendarScreenController,
         onViewChanged: (ViewChangedDetails details) {
-          if (details.visibleDates.isNotEmpty) {
-            _calendarScreenController.updateHeaderText();
-          }
+          _calendarScreenController.onViewChanged(details);
+          _scheduleUpdate();
         },
-        selectionDecoration: getSelectionDecoration(),
         onTap: _onCalendarTapped,
       ),
       floatingActionButton: SizedBox(

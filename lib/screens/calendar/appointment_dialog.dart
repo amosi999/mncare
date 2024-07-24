@@ -6,9 +6,10 @@ import 'schedule_type_manager.dart';
 
 void showAppointmentDialog(
   BuildContext context,
-  Function(ScheduleInfo) onAddSchedule, {
+  Function(ScheduleInfo) onSaveSchedule, {
   ScheduleInfo? initialSchedule,
 }) {
+  final bool isEditing = initialSchedule != null;
   ScheduleOwner? owner = initialSchedule?.owner;
   ScheduleTypeInfo? type = initialSchedule?.type;
   String title = initialSchedule?.title ?? '';
@@ -24,7 +25,7 @@ void showAppointmentDialog(
       return StatefulBuilder(
         builder: (context, setState) {
           return AlertDialog(
-            title: const Text('새 일정 추가'),
+            title: Text(isEditing ? '일정 수정' : '새 일정 추가'),
             content: SingleChildScrollView(
               child: Column(
                 mainAxisSize: MainAxisSize.min,
@@ -63,6 +64,7 @@ void showAppointmentDialog(
                   ),
                   TextFormField(
                     decoration: const InputDecoration(labelText: '제목'),
+                    initialValue: title,
                     onChanged: (value) => title = value,
                   ),
                   InkWell(
@@ -119,6 +121,7 @@ void showAppointmentDialog(
                   ],
                   TextFormField(
                     decoration: const InputDecoration(labelText: '내용 (선택사항)'),
+                    initialValue: description,
                     onChanged: (value) => description = value,
                   ),
                 ],
@@ -130,10 +133,10 @@ void showAppointmentDialog(
                 onPressed: () => Navigator.of(context).pop(),
               ),
               TextButton(
-                child: const Text('추가'),
+                child: Text(isEditing ? '수정' : '추가'),
                 onPressed: () {
                   if (owner != null && type != null && title.isNotEmpty) {
-                    ScheduleInfo newSchedule = ScheduleInfo(
+                    ScheduleInfo schedule = ScheduleInfo(
                       owner: owner!,
                       type: type!,
                       title: title,
@@ -143,7 +146,7 @@ void showAppointmentDialog(
                       endTime: endTime,
                       description: description,
                     );
-                    onAddSchedule(newSchedule);
+                    onSaveSchedule(schedule);
                     Navigator.of(context).pop();
                   } else {
                     ScaffoldMessenger.of(context).showSnackBar(
