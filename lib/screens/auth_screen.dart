@@ -4,7 +4,6 @@ import 'package:flutter/material.dart';
 import 'package:mncare/screens/input_info_screen.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
-
 final FirebaseAuth _firebaseAuth = FirebaseAuth.instance;
 final GoogleSignIn _googleSignIn = GoogleSignIn();
 
@@ -25,14 +24,61 @@ class _AuthScreenState extends State<AuthScreen> {
   var _entereduserName = '';
 
   Future<UserCredential> _signInWithGoogle() async {
-    final GoogleSignInAccount? googleUser = await _googleSignIn.signIn();
-    final GoogleSignInAuthentication googleAuth =
-        await googleUser!.authentication;
-    final credential = GoogleAuthProvider.credential(
-      accessToken: googleAuth.accessToken,
-      idToken: googleAuth.idToken,
-    );
-    return await _firebaseAuth.signInWithCredential(credential);
+    try {
+      final GoogleSignInAccount? googleUser = await _googleSignIn.signIn();
+      if (googleUser == null) {
+        return Future.error('Google Sign-In aborted by user.');
+      }
+
+      final GoogleSignInAuthentication googleAuth =
+          await googleUser.authentication;
+      final credential = GoogleAuthProvider.credential(
+        accessToken: googleAuth.accessToken,
+        idToken: googleAuth.idToken,
+      );
+
+      final userCredentials =
+          await _firebaseAuth.signInWithCredential(credential);
+      final user = userCredentials.user;
+
+      if (user != null) {
+        final userDoc = await FirebaseFirestore.instance
+            .collection('users')
+            .doc(user.uid)
+            .get();
+
+        if (!userDoc.exists) {
+          await FirebaseFirestore.instance
+              .collection('users')
+              .doc(user.uid)
+              .set({
+            'username': user.displayName ?? 'Unknown',
+            'email': user.email ?? 'Unknown',
+            'petId': '',
+          });
+
+          if (mounted) {
+            Navigator.of(context).pushReplacement(
+              MaterialPageRoute(
+                builder: (ctx) => const InputInfoScreen(),
+              ),
+            );
+          }
+        }
+      }
+
+      return userCredentials;
+    } catch (error) {
+      print('Google Sign-In failed: $error');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Google Sign-In failed. Please try again later.'),
+          ),
+        );
+      }
+      return Future.error('Google Sign-In failed');
+    }
   }
 
   void _submit() async {
@@ -47,14 +93,13 @@ class _AuthScreenState extends State<AuthScreen> {
         final userCredentials = await _firebaseAuth.signInWithEmailAndPassword(
             email: _enteredEmail, password: _enteredPassword);
       } else {
-        final userCredentials = await _firebaseAuth.createUserWithEmailAndPassword(
-            email: _enteredEmail, password: _enteredPassword);
-            Navigator.of(context).push(
-              MaterialPageRoute(
-                builder: (ctx) => const InputInfoScreen()
-            ),
-            );
-            await FirebaseFirestore.instance    //유저 정보 저장
+        final userCredentials =
+            await _firebaseAuth.createUserWithEmailAndPassword(
+                email: _enteredEmail, password: _enteredPassword);
+        Navigator.of(context).push(
+          MaterialPageRoute(builder: (ctx) => const InputInfoScreen()),
+        );
+        await FirebaseFirestore.instance //유저 정보 저장
             .collection('users')
             .doc(userCredentials.user!.uid)
             .set({
@@ -159,10 +204,21 @@ class _AuthScreenState extends State<AuthScreen> {
                                 : 'I already have an account.'),
                           ),
                           const SizedBox(height: 12),
-                          ElevatedButton(
-                            onPressed: _signInWithGoogle,
-                            child: const Text('Sign in with Google'),
-                          ),
+                          if (_isLogin)
+                            Opacity(
+                              opacity: 0.3,
+                              child: Container(
+                                height: 1.0,
+                                width: 500.0,
+                                color: Color.fromARGB(255, 235, 91, 0),
+                              ),
+                            ),
+                          const SizedBox(height: 12),
+                          if (_isLogin)
+                            ElevatedButton(
+                              onPressed: _signInWithGoogle,
+                              child: const Text('Sign in with Google'),
+                            ),
                         ],
                       ),
                     ),
