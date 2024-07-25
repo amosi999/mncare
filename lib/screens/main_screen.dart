@@ -47,9 +47,12 @@ class _MainScreenState extends State<MainScreen> {
       appBar: TopAppBar(
         selectedIndex: _selectedIndex,
         onMenuPressed: _openEndDrawer,
+        currentCategory: _calendarScreenController.selectedCategory, // 새로 추가
         onCategorySelected: (category) {
           if (_selectedIndex == 1) {
-            _calendarScreenController.setSelectedCategory(category);
+            setState(() {
+              _calendarScreenController.setSelectedCategory(category);
+            });
           }
         },
       ),

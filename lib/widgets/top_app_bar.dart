@@ -7,13 +7,15 @@ import '../screens/calendar/schedule_type_dialog.dart';
 class TopAppBar extends StatelessWidget implements PreferredSizeWidget {
   final int selectedIndex;
   final VoidCallback onMenuPressed;
-  final Function(ScheduleOwner)? onCategorySelected; // nullable로 변경
+  final Function(ScheduleOwner) onCategorySelected;
+  final ScheduleOwner currentCategory; // 새로 추가
 
   const TopAppBar({
     super.key,
     required this.selectedIndex,
     required this.onMenuPressed,
-    this.onCategorySelected, // optional로 변경
+    required this.onCategorySelected,
+    required this.currentCategory, // 새로 추가
   });
 
   @override
@@ -39,10 +41,10 @@ class TopAppBar extends StatelessWidget implements PreferredSizeWidget {
 
   Widget _buildDropdownMenu() {
     return DropdownButton<ScheduleOwner>(
-      value: ScheduleOwner.all,
+      value: currentCategory, // 현재 선택된 카테고리 사용
       onChanged: (ScheduleOwner? newValue) {
         if (newValue != null) {
-          onCategorySelected!(newValue);
+          onCategorySelected(newValue);
         }
       },
       items: ScheduleOwner.values
