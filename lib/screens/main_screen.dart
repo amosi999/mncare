@@ -25,12 +25,23 @@ class _MainScreenState extends State<MainScreen> {
       CalendarScreenController(CalendarController());
 
   @override
+  void initState() {
+    super.initState();
+    _calendarScreenController.addListener(() {
+      if (mounted) setState(() {});
+    });
+  }
+
+  @override
   void dispose() {
     _calendarScreenController.dispose();
     super.dispose();
   }
 
   void _onItemTapped(int index) {
+    if (index == 1) {
+      _calendarScreenController.resetToToday();
+    }
     setState(() {
       _selectedIndex = index;
     });
@@ -47,7 +58,7 @@ class _MainScreenState extends State<MainScreen> {
       appBar: TopAppBar(
         selectedIndex: _selectedIndex,
         onMenuPressed: _openEndDrawer,
-        currentCategory: _calendarScreenController.selectedCategory, // 새로 추가
+        currentCategory: _calendarScreenController.selectedCategory,
         onCategorySelected: (category) {
           if (_selectedIndex == 1) {
             setState(() {

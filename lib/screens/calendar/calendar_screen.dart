@@ -17,13 +17,20 @@ class CalendarScreen extends StatefulWidget {
   _CalendarScreenState createState() => _CalendarScreenState();
 }
 
-class _CalendarScreenState extends State<CalendarScreen> {
+class _CalendarScreenState extends State<CalendarScreen>
+    with AutomaticKeepAliveClientMixin<CalendarScreen> {
   bool _needsUpdate = false;
+
+  @override
+  bool get wantKeepAlive => true;
 
   @override
   void initState() {
     super.initState();
     widget.controller.addListener(_scheduleUpdate);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      widget.controller.resetToToday();
+    });
   }
 
   @override

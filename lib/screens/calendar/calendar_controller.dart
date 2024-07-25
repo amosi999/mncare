@@ -28,6 +28,11 @@ class CalendarScreenController extends ChangeNotifier {
     notifyListeners();
   }
 
+  void resetToToday() {
+    controller.displayDate = DateTime.now();
+    updateHeaderText();
+  }
+
   Future<bool> showDatePickerDialog(BuildContext context) async {
     final DateTime? picked = await showDatePicker(
       context: context,
