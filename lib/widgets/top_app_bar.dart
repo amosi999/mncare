@@ -1,26 +1,30 @@
 import 'package:flutter/material.dart';
 
 import '../constants/app_constants.dart';
+import '../screens/calendar/schedule_info.dart';
 import '../screens/calendar/schedule_type_dialog.dart';
 
 class TopAppBar extends StatelessWidget implements PreferredSizeWidget {
   final int selectedIndex;
   final VoidCallback onMenuPressed;
+  final Function(ScheduleOwner)? onCategorySelected; // nullable로 변경
 
   const TopAppBar({
     super.key,
     required this.selectedIndex,
     required this.onMenuPressed,
+    this.onCategorySelected, // optional로 변경
   });
 
   @override
   Widget build(BuildContext context) {
     return AppBar(
-      title: Text(AppConstants.appBarTitles[selectedIndex]),
+      title: selectedIndex == 1
+          ? _buildDropdownMenu()
+          : Text(AppConstants.appBarTitles[selectedIndex]),
       backgroundColor: Colors.grey[50],
       actions: [
-        // 캘린더 화면에서만 일정 종류 관리 버튼을 표시합니다
-        if (selectedIndex == 1) // 캘린더 탭의 인덱스가 1이라고 가정합니다
+        if (selectedIndex == 1)
           IconButton(
             icon: const Icon(Icons.category),
             onPressed: () => showScheduleTypeDialog(context),
@@ -30,6 +34,24 @@ class TopAppBar extends StatelessWidget implements PreferredSizeWidget {
           onPressed: onMenuPressed,
         ),
       ],
+    );
+  }
+
+  Widget _buildDropdownMenu() {
+    return DropdownButton<ScheduleOwner>(
+      value: ScheduleOwner.all,
+      onChanged: (ScheduleOwner? newValue) {
+        if (newValue != null) {
+          onCategorySelected!(newValue);
+        }
+      },
+      items: ScheduleOwner.values
+          .map<DropdownMenuItem<ScheduleOwner>>((ScheduleOwner value) {
+        return DropdownMenuItem<ScheduleOwner>(
+          value: value,
+          child: Text(scheduleOwnerToString(value)),
+        );
+      }).toList(),
     );
   }
 

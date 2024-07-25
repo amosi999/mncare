@@ -9,30 +9,26 @@ import 'calendar_view.dart' as custom_view;
 import 'schedule_info.dart';
 
 class CalendarScreen extends StatefulWidget {
-  const CalendarScreen({super.key});
+  final CalendarScreenController controller;
+
+  const CalendarScreen({super.key, required this.controller});
 
   @override
   _CalendarScreenState createState() => _CalendarScreenState();
 }
 
 class _CalendarScreenState extends State<CalendarScreen> {
-  late CalendarController _controller;
-  late CalendarScreenController _calendarScreenController;
   bool _needsUpdate = false;
 
   @override
   void initState() {
     super.initState();
-    _controller = CalendarController();
-    _calendarScreenController = CalendarScreenController(_controller);
-    _calendarScreenController.addListener(_scheduleUpdate);
+    widget.controller.addListener(_scheduleUpdate);
   }
 
   @override
   void dispose() {
-    _calendarScreenController.removeListener(_scheduleUpdate);
-    _calendarScreenController.dispose();
-    _controller.dispose();
+    widget.controller.removeListener(_scheduleUpdate);
     super.dispose();
   }
 
@@ -57,7 +53,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
           return AppointmentListDialog(
             date: details.date!,
             appointments:
-                _calendarScreenController.getAppointmentsForDate(details.date!),
+                widget.controller.getAppointmentsForDate(details.date!),
             onEdit: _editAppointment,
             onDelete: _deleteAppointment,
           );
@@ -69,8 +65,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
   void _editAppointment(Appointment appointment) {
     ScheduleInfo scheduleInfo = ScheduleInfo(
       owner: ScheduleOwner.all,
-      type:
-          _calendarScreenController.getScheduleTypeFromColor(appointment.color),
+      type: widget.controller.getScheduleTypeFromColor(appointment.color),
       title: appointment.subject,
       date: appointment.startTime,
       isAllDay: appointment.isAllDay,
@@ -83,8 +78,8 @@ class _CalendarScreenState extends State<CalendarScreen> {
       context,
       (updatedSchedule) {
         try {
-          _calendarScreenController.updateScheduleInCalendar(
-              appointment, updatedSchedule);
+          widget.controller
+              .updateScheduleInCalendar(appointment, updatedSchedule);
         } catch (e) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(content: Text('일정 업데이트 중 오류가 발생했습니다: $e')),
@@ -97,7 +92,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
 
   void _deleteAppointment(Appointment appointment) {
     try {
-      _calendarScreenController.deleteScheduleFromCalendar(appointment);
+      widget.controller.deleteScheduleFromCalendar(appointment);
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('일정 삭제 중 오류가 발생했습니다: $e')),
@@ -113,16 +108,16 @@ class _CalendarScreenState extends State<CalendarScreen> {
         title: GestureDetector(
           onTap: () async {
             bool updated =
-                await _calendarScreenController.showDatePickerDialog(context);
+                await widget.controller.showDatePickerDialog(context);
             if (updated) _scheduleUpdate();
           },
-          child: Text(_calendarScreenController.headerText),
+          child: Text(widget.controller.headerText),
         ),
         centerTitle: true,
         leading: IconButton(
           icon: const Icon(Icons.chevron_left),
           onPressed: () {
-            _calendarScreenController.previousMonth();
+            widget.controller.previousMonth();
             _scheduleUpdate();
           },
         ),
@@ -130,17 +125,17 @@ class _CalendarScreenState extends State<CalendarScreen> {
           IconButton(
             icon: const Icon(Icons.chevron_right),
             onPressed: () {
-              _calendarScreenController.nextMonth();
+              widget.controller.nextMonth();
               _scheduleUpdate();
             },
           ),
         ],
       ),
       body: custom_view.CalendarView(
-        controller: _controller,
-        calendarScreenController: _calendarScreenController,
+        controller: widget.controller.controller,
+        calendarScreenController: widget.controller,
         onViewChanged: (ViewChangedDetails details) {
-          _calendarScreenController.onViewChanged(details);
+          widget.controller.onViewChanged(details);
           _scheduleUpdate();
         },
         onTap: _onCalendarTapped,
@@ -150,7 +145,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
         height: 44,
         child: FloatingActionButton(
           onPressed: () => showAppointmentDialog(
-              context, _calendarScreenController.addScheduleToCalendar),
+              context, widget.controller.addScheduleToCalendar),
           backgroundColor: const Color.fromARGB(255, 235, 91, 0),
           shape: const CircleBorder(),
           elevation: 1,

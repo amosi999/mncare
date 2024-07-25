@@ -9,12 +9,14 @@ class CalendarScreenController extends ChangeNotifier {
   final CalendarController controller;
   final List<Appointment> _appointments = [];
   late String _headerText;
+  ScheduleOwner _selectedCategory = ScheduleOwner.all;
 
   CalendarScreenController(this.controller) {
     _updateHeaderText();
   }
 
   String get headerText => _headerText;
+  ScheduleOwner get selectedCategory => _selectedCategory;
 
   void _updateHeaderText() {
     DateTime displayDate = controller.displayDate ?? DateTime.now();
@@ -61,6 +63,27 @@ class CalendarScreenController extends ChangeNotifier {
     return MeetingDataSource(_appointments);
   }
 
+  void setSelectedCategory(ScheduleOwner category) {
+    if (_selectedCategory != category) {
+      _selectedCategory = category;
+      notifyListeners();
+    }
+  }
+
+  List<Appointment> getFilteredAppointments() {
+    if (_selectedCategory == ScheduleOwner.all) {
+      return _appointments;
+    }
+    return _appointments.where((appointment) {
+      String ownerString = appointment.notes?.split('\n').last ?? '';
+      return ownerString == _selectedCategory.toString();
+    }).toList();
+  }
+
+  MeetingDataSource getFilteredCalendarDataSource() {
+    return MeetingDataSource(getFilteredAppointments());
+  }
+
   void addScheduleToCalendar(ScheduleInfo schedule) {
     _appointments.add(Appointment(
       startTime: schedule.isAllDay
@@ -85,7 +108,7 @@ class CalendarScreenController extends ChangeNotifier {
       subject: schedule.title,
       color: schedule.type.color,
       isAllDay: schedule.isAllDay,
-      notes: schedule.description,
+      notes: "${schedule.description ?? ''}\n${schedule.owner}",
     ));
     notifyListeners();
   }
