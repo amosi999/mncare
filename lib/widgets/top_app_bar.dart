@@ -8,14 +8,14 @@ class TopAppBar extends StatelessWidget implements PreferredSizeWidget {
   final int selectedIndex;
   final VoidCallback onMenuPressed;
   final Function(ScheduleOwner) onCategorySelected;
-  final ScheduleOwner currentCategory; // 새로 추가
+  final ScheduleOwner currentCategory;
 
   const TopAppBar({
     super.key,
     required this.selectedIndex,
     required this.onMenuPressed,
     required this.onCategorySelected,
-    required this.currentCategory, // 새로 추가
+    required this.currentCategory,
   });
 
   @override
@@ -28,7 +28,7 @@ class TopAppBar extends StatelessWidget implements PreferredSizeWidget {
       actions: [
         if (selectedIndex == 1)
           IconButton(
-            icon: const Icon(Icons.category),
+            icon: const Icon(Icons.loyalty),
             onPressed: () => showScheduleTypeDialog(context),
           ),
         IconButton(
@@ -41,7 +41,7 @@ class TopAppBar extends StatelessWidget implements PreferredSizeWidget {
 
   Widget _buildDropdownMenu() {
     return DropdownButton<ScheduleOwner>(
-      value: currentCategory, // 현재 선택된 카테고리 사용
+      value: currentCategory,
       onChanged: (ScheduleOwner? newValue) {
         if (newValue != null) {
           onCategorySelected(newValue);

@@ -156,6 +156,7 @@ void showAppointmentDialog(
                 },
               ),
             ],
+            backgroundColor: const Color.fromARGB(255, 247, 247, 247),
           );
         },
       );

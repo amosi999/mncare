@@ -8,12 +8,12 @@ class AppointmentListDialog extends StatelessWidget {
   final Function(Appointment) onDelete;
 
   const AppointmentListDialog({
-    Key? key,
+    super.key,
     required this.date,
     required this.appointments,
     required this.onEdit,
     required this.onDelete,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -62,6 +62,7 @@ class AppointmentListDialog extends StatelessWidget {
           onPressed: () => Navigator.of(context).pop(),
         ),
       ],
+      backgroundColor: const Color.fromARGB(255, 247, 247, 247),
     );
   }
 }

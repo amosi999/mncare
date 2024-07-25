@@ -113,6 +113,7 @@ class _CalendarScreenState extends State<CalendarScreen>
       appBar: AppBar(
         backgroundColor: const Color.fromARGB(255, 255, 178, 0),
         title: GestureDetector(
+          
           onTap: () async {
             bool updated =
                 await widget.controller.showDatePickerDialog(context);
