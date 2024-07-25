@@ -27,13 +27,20 @@ class _MainScreenState extends State<MainScreen> {
   @override
   void initState() {
     super.initState();
-    _calendarScreenController.addListener(() {
-      if (mounted) setState(() {});
-    });
+    _calendarScreenController.addListener(_updateState);
+  }
+
+  void _updateState() {
+    if (mounted) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        setState(() {});
+      });
+    }
   }
 
   @override
   void dispose() {
+    _calendarScreenController.removeListener(_updateState);
     _calendarScreenController.dispose();
     super.dispose();
   }
@@ -61,9 +68,7 @@ class _MainScreenState extends State<MainScreen> {
         currentCategory: _calendarScreenController.selectedCategory,
         onCategorySelected: (category) {
           if (_selectedIndex == 1) {
-            setState(() {
-              _calendarScreenController.setSelectedCategory(category);
-            });
+            _calendarScreenController.setSelectedCategory(category);
           }
         },
       ),
