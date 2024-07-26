@@ -10,7 +10,7 @@ void showAppointmentDialog(
   ScheduleInfo? initialSchedule,
 }) {
   final bool isEditing = initialSchedule != null;
-  ScheduleOwner? owner = initialSchedule?.owner;
+  ScheduleOwner owner = initialSchedule?.owner ?? ScheduleOwner.all;
   ScheduleTypeInfo? type = initialSchedule?.type;
   String title = initialSchedule?.title ?? '';
   DateTime date = initialSchedule?.date ?? DateTime.now();
@@ -33,16 +33,12 @@ void showAppointmentDialog(
                   DropdownButtonFormField<ScheduleOwner>(
                     value: owner,
                     onChanged: (ScheduleOwner? value) {
-                      setState(() => owner = value);
+                      setState(() => owner = value!);
                     },
-                    items: ScheduleOwner.values.map((ScheduleOwner owner) {
+                    items: ScheduleOwner.values.map((ScheduleOwner ownerValue) {
                       return DropdownMenuItem<ScheduleOwner>(
-                        value: owner,
-                        child: Text(owner == ScheduleOwner.all
-                            ? '전체'
-                            : owner == ScheduleOwner.meru
-                                ? '머루'
-                                : '다래'),
+                        value: ownerValue,
+                        child: Text(scheduleOwnerToString(ownerValue)),
                       );
                     }).toList(),
                     decoration: const InputDecoration(labelText: '누구의 일정'),
@@ -135,9 +131,9 @@ void showAppointmentDialog(
               TextButton(
                 child: Text(isEditing ? '수정' : '추가'),
                 onPressed: () {
-                  if (owner != null && type != null && title.isNotEmpty) {
+                  if (type != null && title.isNotEmpty) {
                     ScheduleInfo schedule = ScheduleInfo(
-                      owner: owner!,
+                      owner: owner,
                       type: type!,
                       title: title,
                       date: date,

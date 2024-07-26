@@ -89,6 +89,27 @@ class CalendarScreenController extends ChangeNotifier {
     return MeetingDataSource(getFilteredAppointments());
   }
 
+  ScheduleInfo appointmentToScheduleInfo(Appointment appointment) {
+    ScheduleOwner owner = ScheduleOwner.all;
+    String ownerString = appointment.notes?.split('\n').last ?? '';
+    if (ownerString == ScheduleOwner.meru.toString()) {
+      owner = ScheduleOwner.meru;
+    } else if (ownerString == ScheduleOwner.darae.toString()) {
+      owner = ScheduleOwner.darae;
+    }
+
+    return ScheduleInfo(
+      owner: owner,
+      type: getScheduleTypeFromColor(appointment.color),
+      title: appointment.subject,
+      date: appointment.startTime,
+      isAllDay: appointment.isAllDay,
+      startTime: TimeOfDay.fromDateTime(appointment.startTime),
+      endTime: TimeOfDay.fromDateTime(appointment.endTime),
+      description: appointment.notes?.split('\n').first,
+    );
+  }
+
   void addScheduleToCalendar(ScheduleInfo schedule) {
     _appointments.add(Appointment(
       startTime: schedule.isAllDay
@@ -155,7 +176,7 @@ class CalendarScreenController extends ChangeNotifier {
         subject: updatedSchedule.title,
         color: updatedSchedule.type.color,
         isAllDay: updatedSchedule.isAllDay,
-        notes: updatedSchedule.description,
+        notes: "${updatedSchedule.description ?? ''}\n${updatedSchedule.owner}",
       );
       notifyListeners();
     }

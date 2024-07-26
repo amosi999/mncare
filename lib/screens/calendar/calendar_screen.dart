@@ -70,16 +70,8 @@ class _CalendarScreenState extends State<CalendarScreen>
   }
 
   void _editAppointment(Appointment appointment) {
-    ScheduleInfo scheduleInfo = ScheduleInfo(
-      owner: ScheduleOwner.all,
-      type: widget.controller.getScheduleTypeFromColor(appointment.color),
-      title: appointment.subject,
-      date: appointment.startTime,
-      isAllDay: appointment.isAllDay,
-      startTime: TimeOfDay.fromDateTime(appointment.startTime),
-      endTime: TimeOfDay.fromDateTime(appointment.endTime),
-      description: appointment.notes,
-    );
+    ScheduleInfo scheduleInfo =
+        widget.controller.appointmentToScheduleInfo(appointment);
 
     showAppointmentDialog(
       context,
@@ -109,6 +101,7 @@ class _CalendarScreenState extends State<CalendarScreen>
 
   @override
   Widget build(BuildContext context) {
+    super.build(context);
     return Scaffold(
       appBar: AppBar(
         backgroundColor: const Color.fromARGB(255, 255, 178, 0),

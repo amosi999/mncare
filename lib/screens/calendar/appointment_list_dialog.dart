@@ -1,5 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:mncare/screens/calendar/schedule_info.dart';
+import 'package:mncare/screens/calendar/schedule_type_manager.dart';
 import 'package:syncfusion_flutter_calendar/calendar.dart';
+
+import 'appointment_detail_dialog.dart';
 
 class AppointmentListDialog extends StatelessWidget {
   final DateTime date;
@@ -15,6 +19,30 @@ class AppointmentListDialog extends StatelessWidget {
     required this.onDelete,
   });
 
+  ScheduleInfo _appointmentToScheduleInfo(Appointment appointment) {
+    ScheduleOwner owner = ScheduleOwner.all;
+    String ownerString = appointment.notes?.split('\n').last ?? '';
+    if (ownerString == ScheduleOwner.meru.toString()) {
+      owner = ScheduleOwner.meru;
+    } else if (ownerString == ScheduleOwner.darae.toString()) {
+      owner = ScheduleOwner.darae;
+    }
+
+    return ScheduleInfo(
+      owner: owner,
+      type: ScheduleTypeManager().types.firstWhere(
+            (type) => type.color == appointment.color,
+            orElse: () => ScheduleTypeManager().types.first,
+          ),
+      title: appointment.subject,
+      date: appointment.startTime,
+      isAllDay: appointment.isAllDay,
+      startTime: TimeOfDay.fromDateTime(appointment.startTime),
+      endTime: TimeOfDay.fromDateTime(appointment.endTime),
+      description: appointment.notes?.split('\n').first,
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
@@ -28,29 +56,55 @@ class AppointmentListDialog extends StatelessWidget {
                 itemCount: appointments.length,
                 itemBuilder: (context, index) {
                   final appointment = appointments[index];
-                  return ListTile(
-                    title: Text(appointment.subject),
-                    subtitle: Text(appointment.isAllDay
-                        ? '하루 종일'
-                        : '${appointment.startTime.hour}:${appointment.startTime.minute.toString().padLeft(2, '0')} - ${appointment.endTime.hour}:${appointment.endTime.minute.toString().padLeft(2, '0')}'),
-                    trailing: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        IconButton(
-                          icon: const Icon(Icons.edit),
-                          onPressed: () {
-                            Navigator.of(context).pop();
-                            onEdit(appointment);
-                          },
+                  final schedule = _appointmentToScheduleInfo(appointment);
+                  return InkWell(
+                    onTap: () {
+                      showDialog(
+                        context: context,
+                        builder: (BuildContext context) {
+                          return AppointmentDetailDialog(schedule: schedule);
+                        },
+                      );
+                    },
+                    child: ListTile(
+                      title: RichText(
+                        text: TextSpan(
+                          style: DefaultTextStyle.of(context).style,
+                          children: [
+                            TextSpan(
+                              text:
+                                  '[${scheduleOwnerToString(schedule.owner)}/${schedule.type.name}] ',
+                              style: TextStyle(
+                                fontWeight: FontWeight.bold,
+                                color: schedule.type.color,
+                              ),
+                            ),
+                            TextSpan(text: schedule.title),
+                          ],
                         ),
-                        IconButton(
-                          icon: const Icon(Icons.delete),
-                          onPressed: () {
-                            onDelete(appointment);
-                            Navigator.of(context).pop();
-                          },
-                        ),
-                      ],
+                      ),
+                      subtitle: Text(schedule.isAllDay
+                          ? '하루 종일'
+                          : '${schedule.startTime?.format(context)} - ${schedule.endTime?.format(context)}'),
+                      trailing: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          IconButton(
+                            icon: const Icon(Icons.edit),
+                            onPressed: () {
+                              Navigator.of(context).pop();
+                              onEdit(appointment);
+                            },
+                          ),
+                          IconButton(
+                            icon: const Icon(Icons.delete),
+                            onPressed: () {
+                              onDelete(appointment);
+                              Navigator.of(context).pop();
+                            },
+                          ),
+                        ],
+                      ),
                     ),
                   );
                 },
