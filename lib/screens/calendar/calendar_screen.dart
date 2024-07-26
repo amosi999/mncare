@@ -113,7 +113,6 @@ class _CalendarScreenState extends State<CalendarScreen>
       appBar: AppBar(
         backgroundColor: const Color.fromARGB(255, 255, 178, 0),
         title: GestureDetector(
-          
           onTap: () async {
             bool updated =
                 await widget.controller.showDatePickerDialog(context);
@@ -149,8 +148,8 @@ class _CalendarScreenState extends State<CalendarScreen>
         onTap: _onCalendarTapped,
       ),
       floatingActionButton: SizedBox(
-        width: 44,
-        height: 44,
+        width: 48,
+        height: 48,
         child: FloatingActionButton(
           onPressed: () => showAppointmentDialog(
               context, widget.controller.addScheduleToCalendar),
