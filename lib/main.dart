@@ -39,6 +39,7 @@ class MyApp extends StatelessWidget {
             return const MainScreen();
           }
 
+          //return const InputInfoScreen();
           return const AuthScreen();
         },
       ),

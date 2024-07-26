@@ -1,3 +1,4 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 
 class SlideMenu extends StatelessWidget {
@@ -40,6 +41,13 @@ class SlideMenu extends StatelessWidget {
             title: const Text('정보'),
             onTap: () {
               // 정보 페이지로 이동하는 로직
+            },
+          ),
+          ListTile(
+            leading: const Icon(Icons.logout),
+            title: const Text('로그아웃'),
+            onTap: () {
+              FirebaseAuth.instance.signOut();
             },
           ),
         ],
