@@ -57,6 +57,7 @@ void showScheduleTypeDialog(BuildContext context) {
                 onPressed: () => Navigator.of(context).pop(),
               ),
             ],
+            backgroundColor: const Color.fromARGB(255, 247, 247, 247),
           );
         },
       );
@@ -107,6 +108,7 @@ void _editType(BuildContext context, int index, StateSetter setState) {
             },
           ),
         ],
+        backgroundColor: const Color.fromARGB(255, 247, 247, 247),
       );
     },
   );
@@ -155,6 +157,7 @@ void _addNewType(BuildContext context, StateSetter setState) {
             },
           ),
         ],
+        backgroundColor: const Color.fromARGB(255, 247, 247, 247),
       );
     },
   );

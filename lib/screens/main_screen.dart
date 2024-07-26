@@ -1,13 +1,15 @@
 import 'package:flutter/material.dart';
+import 'package:syncfusion_flutter_calendar/calendar.dart';
 import 'package:mncare/screens/pet_doctor/pet_doctor_list.dart';
 
+import '../widgets/bottom_bar.dart';
+import '../widgets/slide_menu.dart';
+import '../widgets/top_app_bar.dart';
+import 'calendar/calendar_controller.dart';
 import 'calendar/calendar_screen.dart';
 import 'community_screen.dart';
 import 'home_screen.dart';
 import 'tracking_screen.dart';
-import '../widgets/bottom_bar.dart';
-import '../widgets/slide_menu.dart';
-import '../widgets/top_app_bar.dart';
 
 class MainScreen extends StatefulWidget {
   const MainScreen({super.key});
@@ -17,9 +19,32 @@ class MainScreen extends StatefulWidget {
 }
 
 class _MainScreenState extends State<MainScreen> {
-  int _selectedIndex = 2; // 홈 화면을 기본으로 설정
+  int _selectedIndex = 2;
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
+  final CalendarScreenController _calendarScreenController =
+      CalendarScreenController(CalendarController());
 
+  @override
+  void initState() {
+    super.initState();
+    _calendarScreenController.addListener(_updateState);
+  }
+
+  void _updateState() {
+    if (mounted) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        setState(() {});
+      });
+    }
+  }
+
+  @override
+  void dispose() {
+    _calendarScreenController.removeListener(_updateState);
+    _calendarScreenController.dispose();
+    super.dispose();
+  }
+  
   final List<Widget> _screens = [
     const TrackingScreen(),
     const CalendarScreen(),
@@ -29,6 +54,9 @@ class _MainScreenState extends State<MainScreen> {
   ];
 
   void _onItemTapped(int index) {
+    if (index == 1) {
+      _calendarScreenController.resetToToday();
+    }
     setState(() {
       _selectedIndex = index;
     });
@@ -45,13 +73,28 @@ class _MainScreenState extends State<MainScreen> {
       appBar: TopAppBar(
         selectedIndex: _selectedIndex,
         onMenuPressed: _openEndDrawer,
+        currentCategory: _calendarScreenController.selectedCategory,
+        onCategorySelected: (category) {
+          if (_selectedIndex == 1) {
+            _calendarScreenController.setSelectedCategory(category);
+          }
+        },
       ),
-      body: _screens[_selectedIndex],
+      body: IndexedStack(
+        index: _selectedIndex,
+        children: [
+          const TrackingScreen(),
+          CalendarScreen(controller: _calendarScreenController),
+          const HomeScreen(),
+          const PetDoctorScreen(),
+          const CommunityScreen(),
+        ],
+      ),
       bottomNavigationBar: BottomBar(
         selectedIndex: _selectedIndex,
         onItemTapped: _onItemTapped,
       ),
-      endDrawer: SlideMenu(),
+      endDrawer: const SlideMenu(),
     );
   }
 }
