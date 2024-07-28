@@ -4,7 +4,16 @@ import 'package:image_picker/image_picker.dart';
 import 'dart:io';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_storage/firebase_storage.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:path/path.dart' as path;
+
+class Pet {
+  final String id;
+  final String name;
+
+  Pet({required this.id, required this.name});
+}
 
 class PetDoctorScreen extends StatefulWidget {
   const PetDoctorScreen({super.key});
@@ -20,16 +29,44 @@ class _PetDoctorScreenState extends State<PetDoctorScreen> {
   bool _isCameraView = true;
   final ImagePicker _picker = ImagePicker();
   bool _isUploading = false;
+  List<Pet> _pets = [];
+  Pet? _selectedPet;
 
   @override
   void initState() {
     super.initState();
     _initializeCamera();
     _initializeFirebase();
+    _fetchPets();
   }
 
   Future<void> _initializeFirebase() async {
     await Firebase.initializeApp();
+  }
+
+  Future<void> _fetchPets() async {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user != null) {
+      try {
+        final querySnapshot = await FirebaseFirestore.instance
+            .collection('pets')
+            .where('UserId', isEqualTo: user.uid)
+            .get();
+
+        setState(() {
+          _pets = querySnapshot.docs.map((doc) => Pet(
+            id: doc.id,
+            name: doc.data()['petName'] ?? 'Unknown Pet'
+          )).toList();
+
+          if (_pets.isNotEmpty) {
+            _selectedPet = _pets.first;
+          }
+        });
+      } catch (e) {
+        print('Error fetching pets: $e');
+      }
+    }
   }
 
   Future<void> _initializeCamera() async {
@@ -37,7 +74,7 @@ class _PetDoctorScreenState extends State<PetDoctorScreen> {
     final firstCamera = cameras.first;
     _controller = CameraController(
       firstCamera,
-      ResolutionPreset.medium,  // 해상도 설정 480p
+      ResolutionPreset.medium,
     );
     _initializeControllerFuture = _controller!.initialize();
     if (mounted) {
@@ -76,7 +113,10 @@ class _PetDoctorScreenState extends State<PetDoctorScreen> {
   }
 
   Future<void> _submit() async {
-    if (_image == null) {
+    if (_image == null || _selectedPet == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('이미지나 선택된 펫이 없습니다.')),
+      );
       return;
     }
 
@@ -92,18 +132,23 @@ class _PetDoctorScreenState extends State<PetDoctorScreen> {
       
       final downloadUrl = await firebaseStorageRef.getDownloadURL();
       
-      print('File uploaded: $downloadUrl');
+      // Firestore에 데이터 저장
+      await FirebaseFirestore.instance.collection('pet_images').add({
+        'petId': _selectedPet!.id,
+        'petName': _selectedPet!.name,  // 펫 이름 추가
+        'img_url': downloadUrl,
+        'createdDate': FieldValue.serverTimestamp(),
+      });
       
-      // 여기에 업로드 성공 후 추가 작업을 수행할 수 있습니다.
-      // 예: 데이터베이스에 URL 저장, 사용자에게 성공 메시지 표시 등
+      print('File uploaded and data saved: $downloadUrl');
       
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('이미지가 성공적으로 업로드되었습니다!')),
+        const SnackBar(content: Text('이미지가 성공적으로 업로드되고 저장되었습니다!')),
       );
     } catch (e) {
-      print('Error uploading image: $e');
+      print('Error uploading image and saving data: $e');
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('이미지 업로드 중 오류가 발생했습니다.')),
+        const SnackBar(content: Text('이미지 업로드 및 데이터 저장 중 오류가 발생했습니다.')),
       );
     } finally {
       setState(() {
@@ -114,26 +159,40 @@ class _PetDoctorScreenState extends State<PetDoctorScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      home: Scaffold(
-        appBar: AppBar(title: const Text("Camera Test")),
-        body: Column(
-          crossAxisAlignment: CrossAxisAlignment.center,
-          children: [
-            const SizedBox(height: 30, width: double.infinity),
-            _isCameraView ? _buildCameraPreview() : _buildImagePreview(),
-            const SizedBox(height: 20),
-            _buildButtons(),
-            const SizedBox(height: 20),
-            if (_image != null)
-              ElevatedButton(
-                onPressed: _isUploading ? null : _submit,
-                child: _isUploading
-                    ? const CircularProgressIndicator()
-                    : const Text('사진 업로드'),
-              ),
-          ],
-        ),
+    return Scaffold(
+      appBar: AppBar(title: const Text("Pet Doctor")),
+      body: Column(
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          const SizedBox(height: 30, width: double.infinity),
+          if (_pets.isNotEmpty)
+            DropdownButton<Pet>(
+              value: _selectedPet,
+              items: _pets.map((Pet pet) {
+                return DropdownMenuItem<Pet>(
+                  value: pet,
+                  child: Text(pet.name),
+                );
+              }).toList(),
+              onChanged: (Pet? newValue) {
+                setState(() {
+                  _selectedPet = newValue;
+                });
+              },
+            ),
+          const SizedBox(height: 20),
+          _isCameraView ? _buildCameraPreview() : _buildImagePreview(),
+          const SizedBox(height: 20),
+          _buildButtons(),
+          const SizedBox(height: 20),
+          if (_image != null)
+            ElevatedButton(
+              onPressed: _isUploading ? null : _submit,
+              child: _isUploading
+                  ? const CircularProgressIndicator()
+                  : const Text('사진 업로드'),
+            ),
+        ],
       ),
     );
   }
