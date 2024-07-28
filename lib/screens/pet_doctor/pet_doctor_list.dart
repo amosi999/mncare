@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_storage/firebase_storage.dart';
 import 'package:mncare/screens/pet_doctor/pet_doctor_screen.dart';
-import 'package:intl/intl.dart'; 
+import 'package:intl/intl.dart';
 
 class Pet {
   final String id;
@@ -15,19 +16,25 @@ class PetImage {
   final String id;
   final String imageUrl;
   final DateTime createdDate;
+  final String petId;
+  String petName;
 
   PetImage({
     required this.id,
     required this.imageUrl,
     required this.createdDate,
+    required this.petId,
+    required this.petName,
   });
 
-  factory PetImage.fromFirestore(DocumentSnapshot doc) {
+  factory PetImage.fromFirestore(DocumentSnapshot doc, String petId) {
     Map data = doc.data() as Map<String, dynamic>;
     return PetImage(
       id: doc.id,
       imageUrl: data['img_url'] ?? '',
       createdDate: (data['createdDate'] as Timestamp).toDate(),
+      petId: petId,
+      petName: '', // This will be set later
     );
   }
 }
@@ -95,9 +102,22 @@ class _PetDoctorListState extends State<PetDoctorList> {
             .orderBy('createdDate', descending: true)
             .get();
 
-        _petImages.addAll(querySnapshot.docs
-            .map((doc) => PetImage.fromFirestore(doc))
-            .toList());
+        final petImages = querySnapshot.docs
+            .map((doc) => PetImage.fromFirestore(doc, pet.id))
+            .toList();
+
+        // Fetch pet name for each image
+        for (var image in petImages) {
+          final petDoc = await FirebaseFirestore.instance
+              .collection('users')
+              .doc(user.uid)
+              .collection('pets')
+              .doc(image.petId)
+              .get();
+          image.petName = petDoc['petName'] ?? 'Unknown Pet';
+        }
+
+        _petImages.addAll(petImages);
       }
       setState(() {});
     }
@@ -107,26 +127,30 @@ class _PetDoctorListState extends State<PetDoctorList> {
     try {
       final user = FirebaseAuth.instance.currentUser;
       if (user != null) {
-        for (var pet in _pets) {
-          await FirebaseFirestore.instance
-              .collection('users')
-              .doc(user.uid)
-              .collection('pets')
-              .doc(pet.id)
-              .collection('petDoctor')
-              .doc(petImage.id)
-              .delete();
-        }
+        // Delete from Firestore
+        await FirebaseFirestore.instance
+            .collection('users')
+            .doc(user.uid)
+            .collection('pets')
+            .doc(petImage.petId)
+            .collection('petDoctor')
+            .doc(petImage.id)
+            .delete();
+
+        // Delete from Firebase Storage
+        final storageRef = FirebaseStorage.instance.refFromURL(petImage.imageUrl);
+        await storageRef.delete();
 
         setState(() {
           _petImages.remove(petImage);
         });
 
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Image deleted successfully')),
+          const SnackBar(content: Text('Image deleted successfully from Firestore and Storage')),
         );
       }
     } catch (e) {
+      print('Error deleting image: $e');
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Failed to delete image: $e')),
       );
@@ -147,7 +171,7 @@ class _PetDoctorListState extends State<PetDoctorList> {
   Widget build(BuildContext context) {
     List<PetImage> filteredImages = _selectedPet == null
         ? _petImages
-        : _petImages.where((image) => image.id.startsWith(_selectedPet!.id)).toList();
+        : _petImages.where((image) => image.petId == _selectedPet!.id).toList();
 
     return Scaffold(
       body: _isLoading
@@ -156,10 +180,10 @@ class _PetDoctorListState extends State<PetDoctorList> {
               children: [
                 Padding(
                   padding: const EdgeInsets.all(8.0),
-                  child: DropdownButton<Pet>(
+                  child: DropdownButton<Pet?>(
                     value: _selectedPet,
                     items: [
-                      DropdownMenuItem<Pet>(
+                      DropdownMenuItem<Pet?>(
                         value: null,
                         child: Text('전체 보기'),
                       ),
@@ -179,23 +203,26 @@ class _PetDoctorListState extends State<PetDoctorList> {
                   ),
                 ),
                 Expanded(
-                  child: ListView.builder(
-                    itemCount: filteredImages.length,
-                    itemBuilder: (ctx, index) => Dismissible(
-                      key: Key(filteredImages[index].id),
-                      direction: DismissDirection.endToStart,
-                      background: Container(
-                        color: Colors.red,
-                        alignment: Alignment.centerRight,
-                        padding: const EdgeInsets.symmetric(horizontal: 20),
-                        child: const Icon(Icons.delete, color: Colors.white),
-                      ),
-                      onDismissed: (direction) {
-                        _deletePetImage(filteredImages[index]);
-                      },
-                      child: GestureDetector(
-                        onTap: () => _showDetailView(filteredImages[index]),
-                        child: PetImageItem(filteredImages[index]),
+                  child: RefreshIndicator(
+                    onRefresh: _loadData,
+                    child: ListView.builder(
+                      itemCount: filteredImages.length,
+                      itemBuilder: (ctx, index) => Dismissible(
+                        key: Key(filteredImages[index].id),
+                        direction: DismissDirection.endToStart,
+                        background: Container(
+                          color: Colors.red,
+                          alignment: Alignment.centerRight,
+                          padding: const EdgeInsets.symmetric(horizontal: 20),
+                          child: const Icon(Icons.delete, color: Colors.white),
+                        ),
+                        onDismissed: (direction) {
+                          _deletePetImage(filteredImages[index]);
+                        },
+                        child: GestureDetector(
+                          onTap: () => _showDetailView(filteredImages[index]),
+                          child: PetImageItem(filteredImages[index]),
+                        ),
                       ),
                     ),
                   ),
@@ -209,7 +236,7 @@ class _PetDoctorListState extends State<PetDoctorList> {
               builder: (ctx) => const PetDoctorScreen(),
             ),
           );
-          _loadPetImages();
+          _loadData();
         },
         child: const Icon(Icons.add),
       ),
@@ -232,6 +259,8 @@ class PetImageItem extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            Text(petImage.petName, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+            const SizedBox(height: 8),
             Image.network(
               petImage.imageUrl,
               height: 200,
@@ -272,6 +301,8 @@ class PetImageDetailView extends StatelessWidget {
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          Text(petImage.petName, style: const TextStyle(fontWeight: FontWeight.bold)),
+          const SizedBox(height: 8),
           Image.network(
             petImage.imageUrl,
             height: 300,
