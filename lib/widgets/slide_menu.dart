@@ -45,7 +45,7 @@ class SlideMenu extends StatelessWidget {
             },
           ),
           ListTile(
-            leading: const Icon(Icons.info),
+            leading: const Icon(Icons.add),
             title: const Text('펫추가'),
             onTap: () {
               Navigator.of(context).push(
