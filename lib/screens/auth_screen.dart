@@ -53,7 +53,7 @@ class _AuthScreenState extends State<AuthScreen> {
               .doc(user.uid)
               .set({
             'username': user.displayName ?? 'Unknown',
-            'email': user.email ?? 'Unknown',
+            'useremail': user.email ?? 'Unknown',
             'petId': '',
           });
 

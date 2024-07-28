@@ -53,25 +53,28 @@ class _InputInfoScreenState extends State<InputInfoScreen> {
       User? currentUser = FirebaseAuth.instance.currentUser;
       if (currentUser != null) {
         DocumentReference petDocRef =
-            await FirebaseFirestore.instance.collection('pets').add({
-          'UserId': currentUser.uid,
+            await FirebaseFirestore.instance.
+            collection('users')
+            .doc(currentUser.uid).
+            collection('pets').add({
+          'UserId': currentUser.uid, //빼
           'petName': _enteredPetName,
           'petType': _selectedPetType == 1 ? 'Dog' : 'Cat',
-          'gender': _selectedPetGender == 1 ? 'Male' : 'Female',
-          'species': _enteredSpecies,
-          'weight': double.parse(_petWeightController.text),
-          'birthDate': _selectedDate?.toIso8601String(),
+          'petGender': _selectedPetGender == 1 ? 'Male' : 'Female',
+          'petSpecies': _enteredSpecies,
+          'petWeight': double.parse(_petWeightController.text),
+          'petBirthDate': _selectedDate?.toIso8601String(),
           'etc': _enteredEtc,
         });
         //prt 정보다 store에 저장됨.
         String petId = petDocRef.id;
 
-        await FirebaseFirestore.instance
-            .collection('users')
-            .doc(currentUser.uid)
-            .update({
-          'petId': petId,
-        });
+        // await FirebaseFirestore.instance
+        //     .collection('users')
+        //     .doc(currentUser.uid)
+        //     .update({
+        //   'petId': petId,
+        // });
 
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Pet information saved successfully!')),

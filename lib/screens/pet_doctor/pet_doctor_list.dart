@@ -13,15 +13,11 @@ class Pet {
 
 class PetImage {
   final String id;
-  final String petId;
-  final String petName;
   final String imageUrl;
   final DateTime createdDate;
 
   PetImage({
     required this.id,
-    required this.petId,
-    required this.petName,
     required this.imageUrl,
     required this.createdDate,
   });
@@ -30,8 +26,6 @@ class PetImage {
     Map data = doc.data() as Map<String, dynamic>;
     return PetImage(
       id: doc.id,
-      petId: data['petId'] ?? '',
-      petName: data['petName'] ?? 'Unknown Pet',
       imageUrl: data['img_url'] ?? '',
       createdDate: (data['createdDate'] as Timestamp).toDate(),
     );
@@ -49,7 +43,7 @@ class _PetDoctorListState extends State<PetDoctorList> {
   List<PetImage> _petImages = [];
   List<Pet> _pets = [];
   Pet? _selectedPet;
-  bool _isLoading = true; // 로딩 상태 추가
+  bool _isLoading = true;
 
   @override
   void initState() {
@@ -71,8 +65,9 @@ class _PetDoctorListState extends State<PetDoctorList> {
     final user = FirebaseAuth.instance.currentUser;
     if (user != null) {
       final querySnapshot = await FirebaseFirestore.instance
+          .collection('users')
+          .doc(user.uid)
           .collection('pets')
-          .where('UserId', isEqualTo: user.uid)
           .get();
 
       setState(() {
@@ -89,33 +84,48 @@ class _PetDoctorListState extends State<PetDoctorList> {
   Future<void> _loadPetImages() async {
     final user = FirebaseAuth.instance.currentUser;
     if (user != null) {
-      final querySnapshot = await FirebaseFirestore.instance
-          .collection('pet_images')
-          .orderBy('createdDate', descending: true)
-          .get();
+      _petImages.clear();
+      for (var pet in _pets) {
+        final querySnapshot = await FirebaseFirestore.instance
+            .collection('users')
+            .doc(user.uid)
+            .collection('pets')
+            .doc(pet.id)
+            .collection('petDoctor')
+            .orderBy('createdDate', descending: true)
+            .get();
 
-      setState(() {
-        _petImages = querySnapshot.docs
+        _petImages.addAll(querySnapshot.docs
             .map((doc) => PetImage.fromFirestore(doc))
-            .toList();
-      });
+            .toList());
+      }
+      setState(() {});
     }
   }
 
   Future<void> _deletePetImage(PetImage petImage) async {
     try {
-      await FirebaseFirestore.instance
-          .collection('pet_images')
-          .doc(petImage.id)
-          .delete();
+      final user = FirebaseAuth.instance.currentUser;
+      if (user != null) {
+        for (var pet in _pets) {
+          await FirebaseFirestore.instance
+              .collection('users')
+              .doc(user.uid)
+              .collection('pets')
+              .doc(pet.id)
+              .collection('petDoctor')
+              .doc(petImage.id)
+              .delete();
+        }
 
-      setState(() {
-        _petImages.remove(petImage);
-      });
+        setState(() {
+          _petImages.remove(petImage);
+        });
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Image deleted successfully')),
-      );
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Image deleted successfully')),
+        );
+      }
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Failed to delete image: $e')),
@@ -137,11 +147,11 @@ class _PetDoctorListState extends State<PetDoctorList> {
   Widget build(BuildContext context) {
     List<PetImage> filteredImages = _selectedPet == null
         ? _petImages
-        : _petImages.where((image) => image.petId == _selectedPet!.id).toList();
+        : _petImages.where((image) => image.id.startsWith(_selectedPet!.id)).toList();
 
     return Scaffold(
       body: _isLoading
-          ? Center(child: CircularProgressIndicator()) // 로딩 인디케이터 추가
+          ? Center(child: CircularProgressIndicator())
           : Column(
               children: [
                 Padding(
@@ -199,7 +209,7 @@ class _PetDoctorListState extends State<PetDoctorList> {
               builder: (ctx) => const PetDoctorScreen(),
             ),
           );
-          _loadPetImages(); // Reload images after returning from PetDoctorScreen
+          _loadPetImages();
         },
         child: const Icon(Icons.add),
       ),
@@ -239,8 +249,6 @@ class PetImageItem extends StatelessWidget {
               },
             ),
             const SizedBox(height: 8),
-            Text('Pet Name: ${petImage.petName}'),
-            const SizedBox(height: 4),
             Text('Date: ${formatter.format(petImage.createdDate)}'), 
           ],
         ),
@@ -281,8 +289,6 @@ class PetImageDetailView extends StatelessWidget {
             },
           ),
           const SizedBox(height: 16),
-          Text('Pet Name: ${petImage.petName}'),
-          const SizedBox(height: 8),
           Text('Date: ${formatter.format(petImage.createdDate)}'), 
           const SizedBox(height: 16),
           ElevatedButton(
