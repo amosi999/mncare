@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:syncfusion_flutter_calendar/calendar.dart';
-import 'package:mncare/screens/pet_doctor/pet_doctor_list.dart';
 
 import '../widgets/bottom_bar.dart';
 import '../widgets/slide_menu.dart';
@@ -9,6 +8,7 @@ import 'calendar/calendar_controller.dart';
 import 'calendar/calendar_screen.dart';
 import 'community_screen.dart';
 import 'home_screen.dart';
+import 'pet_doctor/pet_doctor_screen.dart';
 import 'tracking_screen.dart';
 
 class MainScreen extends StatefulWidget {
@@ -44,14 +44,6 @@ class _MainScreenState extends State<MainScreen> {
     _calendarScreenController.dispose();
     super.dispose();
   }
-  
-  final List<Widget> _screens = [
-    const TrackingScreen(),
-    const CalendarScreen(),
-    const HomeScreen(),
-    const PetDoctorList(),
-    const CommunityScreen(),
-  ];
 
   void _onItemTapped(int index) {
     if (index == 1) {

@@ -1,8 +1,8 @@
-import 'package:firebase_auth/firebase_auth.dart';
-import 'package:google_sign_in/google_sign_in.dart';
-import 'package:flutter/material.dart';
-import 'package:mncare/screens/input_info_screen.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter/material.dart';
+import 'package:google_sign_in/google_sign_in.dart';
+import 'package:mncare/screens/auth/input_info_screen.dart';
 
 final FirebaseAuth _firebaseAuth = FirebaseAuth.instance;
 final GoogleSignIn _googleSignIn = GoogleSignIn();
@@ -72,7 +72,7 @@ class _AuthScreenState extends State<AuthScreen> {
       print('Google Sign-In failed: $error');
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
+          const SnackBar(
             content: Text('Google Sign-In failed. Please try again later.'),
           ),
         );
@@ -210,7 +210,7 @@ class _AuthScreenState extends State<AuthScreen> {
                               child: Container(
                                 height: 1.0,
                                 width: 500.0,
-                                color: Color.fromARGB(255, 235, 91, 0),
+                                color: const Color.fromARGB(255, 235, 91, 0),
                               ),
                             ),
                           const SizedBox(height: 12),

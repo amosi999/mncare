@@ -1,8 +1,7 @@
-import 'package:flutter/material.dart';
-import 'package:intl/intl.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:mncare/screens/auth_screen.dart';
+import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 import 'package:mncare/screens/main_screen.dart';
 
 final formatter = DateFormat.yMd();
