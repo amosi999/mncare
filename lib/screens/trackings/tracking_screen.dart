@@ -170,6 +170,7 @@ class _TrackingScreenState extends State<TrackingScreen> {
                   Navigator.push(
                     context,
                     MaterialPageRoute(
+                      //test
                       //이부분이 왜 필요한데?
                       builder: (context) => DetailScreen(
                         label: translatedLabel,
