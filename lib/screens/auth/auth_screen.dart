@@ -121,15 +121,50 @@ class _AuthScreenState extends State<AuthScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Theme.of(context).colorScheme.primary,
-      body: Center(
-        child: SingleChildScrollView(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Card(
-                margin: const EdgeInsets.all(20),
-                child: SingleChildScrollView(
+      backgroundColor: Colors.white,
+      appBar: AppBar(
+        backgroundColor: Colors.white,
+      ),
+      body: Padding(
+        padding: const EdgeInsets.all(20.0),
+        child: Center(
+          child: SingleChildScrollView(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                if (_isLogin)
+                  const Text(
+                    '반가워요 👋',
+                    style: TextStyle(
+                      fontSize: 30,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                if (_isLogin)
+                  const Text(
+                    '로그인 정보를 알려주세요',
+                    style: TextStyle(
+                      fontSize: 24,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                if (!_isLogin)
+                  const Text(
+                    '환영해요 👋',
+                    style: TextStyle(
+                      fontSize: 30,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                if (!_isLogin)
+                  const Text(
+                    '회원가입 정보를 알려주세요',
+                    style: TextStyle(
+                      fontSize: 24,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                SingleChildScrollView(
                   child: Padding(
                     padding: const EdgeInsets.all(16),
                     child: Form(
@@ -139,7 +174,9 @@ class _AuthScreenState extends State<AuthScreen> {
                         children: [
                           TextFormField(
                             decoration: const InputDecoration(
-                                labelText: 'Email Address'),
+                              labelText: '이메일',
+                              border: OutlineInputBorder(),
+                            ),
                             keyboardType: TextInputType.emailAddress,
                             autocorrect: false,
                             textCapitalization: TextCapitalization.none,
@@ -147,7 +184,7 @@ class _AuthScreenState extends State<AuthScreen> {
                               if (value == null ||
                                   value.trim().isEmpty ||
                                   !value.contains('@')) {
-                                return 'Please enter a valid email address.';
+                                return '올바른 이메일 주소를 입력해주세요.';
                               }
                               return null;
                             },
@@ -155,13 +192,22 @@ class _AuthScreenState extends State<AuthScreen> {
                               _enteredEmail = value!;
                             },
                           ),
+                          const SizedBox(height: 20),
                           TextFormField(
-                            decoration:
-                                const InputDecoration(labelText: 'Password'),
+                            decoration: InputDecoration(
+                              labelText: '비밀번호',
+                              border: const OutlineInputBorder(),
+                              suffixIcon: IconButton(
+                                icon: const Icon(Icons.visibility_off),
+                                onPressed: () {
+                                  // 비밀번호 가시성 토글 로직
+                                },
+                              ),
+                            ),
                             obscureText: true,
                             validator: (value) {
                               if (value == null || value.trim().length < 6) {
-                                return 'Password must be at least 6 characters long';
+                                return '비밀번호는 최소 6자 이상이어야 합니다.';
                               }
                               return null;
                             },
@@ -169,10 +215,33 @@ class _AuthScreenState extends State<AuthScreen> {
                               _enteredPassword = value!;
                             },
                           ),
+                          if (_isLogin)
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                TextButton(
+                                  onPressed: () {
+                                    // 이메일 찾기 로직
+                                  },
+                                  child: const Text('이메일 찾기'),
+                                ),
+                                TextButton(
+                                  onPressed: () {
+                                    setState(() {
+                                      _isLogin = false;
+                                    });
+                                  },
+                                  child: const Text('회원가입'),
+                                ),
+                              ],
+                            ),
+                          if (!_isLogin) const SizedBox(height: 20),
                           if (!_isLogin)
                             TextFormField(
-                              decoration:
-                                  const InputDecoration(labelText: 'Nickname'),
+                              decoration: const InputDecoration(
+                                labelText: '닉네임',
+                                border: OutlineInputBorder(),
+                              ),
                               validator: (value) {
                                 if (value == null || value.trim().isEmpty) {
                                   return 'Please enter a nickname.';
@@ -224,8 +293,9 @@ class _AuthScreenState extends State<AuthScreen> {
                     ),
                   ),
                 ),
-              )
-            ],
+                // )
+              ],
+            ),
           ),
         ),
       ),
