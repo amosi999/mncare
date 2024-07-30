@@ -114,56 +114,59 @@ class _PetDoctorScreenState extends State<PetDoctorScreen> {
   }
 
   Future<void> _submit() async {
-    if (_image == null || _selectedPet == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('이미지나 선택된 펫이 없습니다.')),
-      );
-      return;
-    }
-
-    setState(() {
-      _isUploading = true;
-    });
-
-    try {
-      final fileName = path.basename(_image!.path);
-      final firebaseStorageRef = FirebaseStorage.instance.ref().child('petDoctor/$fileName');
-      
-      await firebaseStorageRef.putFile(_image!);
-      
-      final downloadUrl = await firebaseStorageRef.getDownloadURL();
-      
-      // Firestore에 데이터 저장 (수정된 부분)
-      final user = FirebaseAuth.instance.currentUser;
-      if (user != null) {
-        await FirebaseFirestore.instance
-            .collection('users')
-            .doc(user.uid)
-            .collection('pets')
-            .doc(_selectedPet!.id)
-            .collection('petDoctor')
-            .add({
-          'img_url': downloadUrl,
-          'createdDate': FieldValue.serverTimestamp(),
-        });
-      }
-      
-      print('파일 업로드 및 데이터 저장 완료: $downloadUrl');
-      
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('이미지가 성공적으로 업로드되고 저장되었습니다!')),
-      );
-    } catch (e) {
-      print('이미지 업로드 및 데이터 저장 중 오류 발생: $e');
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('이미지 업로드 및 데이터 저장 중 오류가 발생했습니다.')),
-      );
-    } finally {
-      setState(() {
-        _isUploading = false;
-      });
-    }
+  if (_image == null || _selectedPet == null) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('이미지나 선택된 펫이 없습니다.')),
+    );
+    return;
   }
+
+  setState(() {
+    _isUploading = true;
+  });
+
+  try {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) {
+      throw Exception('User not logged in');
+    }
+
+    final fileName = path.basename(_image!.path);
+    final storageRef = FirebaseStorage.instance.ref()
+        .child('${user.uid}/${_selectedPet!.name}/$fileName');
+    
+    await storageRef.putFile(_image!);
+    
+    final downloadUrl = await storageRef.getDownloadURL();
+    
+    // Firestore에 데이터 저장
+    await FirebaseFirestore.instance
+        .collection('users')
+        .doc(user.uid)
+        .collection('pets')
+        .doc(_selectedPet!.id)
+        .collection('petDoctor')
+        .add({
+      'img_url': downloadUrl,
+      'createdDate': FieldValue.serverTimestamp(),
+    });
+    
+    print('파일 업로드 및 데이터 저장 완료: $downloadUrl');
+    
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('이미지가 성공적으로 업로드되고 저장되었습니다!')),
+    );
+  } catch (e) {
+    print('이미지 업로드 및 데이터 저장 중 오류 발생: $e');
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('이미지 업로드 및 데이터 저장 중 오류가 발생했습니다.')),
+    );
+  } finally {
+    setState(() {
+      _isUploading = false;
+    });
+  }
+}
 
   @override
   Widget build(BuildContext context) {

@@ -19,6 +19,7 @@ class MainScreen extends StatefulWidget {
 class _MainScreenState extends State<MainScreen> {
   int _selectedIndex = 2; // 홈 화면을 기본으로 설정
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
+  
 
   final List<Widget> _screens = [
     const TrackingScreen(),

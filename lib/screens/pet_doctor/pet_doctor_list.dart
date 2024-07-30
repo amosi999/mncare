@@ -4,6 +4,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:mncare/screens/pet_doctor/pet_doctor_screen.dart';
 import 'package:intl/intl.dart';
+import 'package:toggle_list/toggle_list.dart';
 
 class Pet {
   final String id;
@@ -55,7 +56,30 @@ class _PetDoctorListState extends State<PetDoctorList> {
   @override
   void initState() {
     super.initState();
-    _loadData();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _loadDataWithRefresh();
+    });
+  }
+
+  
+
+  Future<void> _loadDataWithRefresh() async {
+    // 새로고침 인디케이터를 표시합니다.
+    if (mounted) {
+      setState(() {
+        _isLoading = true;
+      });
+    }
+
+    // 데이터를 새로 로드합니다.
+    await _loadData();
+
+    // 새로고침 인디케이터를 숨깁니다.
+    if (mounted) {
+      setState(() {
+        _isLoading = false;
+      });
+    }
   }
 
   Future<void> _loadData() async {
@@ -119,6 +143,8 @@ class _PetDoctorListState extends State<PetDoctorList> {
 
         _petImages.addAll(petImages);
       }
+      _petImages.sort((a, b) => b.createdDate.compareTo(a.createdDate));  //전체보기에서 최신순으로 정렬
+
       setState(() {});
     }
   }
@@ -146,13 +172,13 @@ class _PetDoctorListState extends State<PetDoctorList> {
         });
 
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Image deleted successfully from Firestore and Storage')),
+          const SnackBar(content: Text('이미지가 Firestore와 Storage에서 성공적으로 삭제되었습니다')),
         );
       }
     } catch (e) {
-      print('Error deleting image: $e');
+      print('이미지 삭제 중 오류 발생: $e');
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Failed to delete image: $e')),
+        SnackBar(content: Text('이미지 삭제 실패: $e')),
       );
     }
   }
@@ -161,8 +187,16 @@ class _PetDoctorListState extends State<PetDoctorList> {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
+      backgroundColor: Colors.transparent,
       builder: (BuildContext context) {
-        return PetImageDetailView(petImage: petImage);
+        return DraggableScrollableSheet(
+          initialChildSize: 0.9,
+          minChildSize: 0.5,
+          maxChildSize: 0.95,
+          builder: (_, controller) {
+            return PetImageDetailView(petImage: petImage, scrollController: controller);
+          },
+        );
       },
     );
   }
@@ -176,14 +210,25 @@ class _PetDoctorListState extends State<PetDoctorList> {
     return Scaffold(
       body: _isLoading
           ? Center(child: CircularProgressIndicator())
-          : Column(
+          : RefreshIndicator(
+          onRefresh: _loadDataWithRefresh,
+          child: Column(
               children: [
-                Padding(
-                  padding: const EdgeInsets.all(8.0),
-                  child: DropdownButton<Pet?>(
+                Container(
+                  padding: const EdgeInsets.all(16),
+                  
+                  child: DropdownButtonFormField<Pet?>(
+                    decoration: InputDecoration(
+                      filled: true,
+                      fillColor: Colors.white,
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(8),
+                        borderSide: BorderSide.none,
+                      ),
+                    ),
                     value: _selectedPet,
                     items: [
-                      DropdownMenuItem<Pet?>(
+                      const DropdownMenuItem<Pet?>(
                         value: null,
                         child: Text('전체 보기'),
                       ),
@@ -199,36 +244,71 @@ class _PetDoctorListState extends State<PetDoctorList> {
                         _selectedPet = newValue;
                       });
                     },
-                    isExpanded: true,
                   ),
                 ),
                 Expanded(
-                  child: RefreshIndicator(
-                    onRefresh: _loadData,
-                    child: ListView.builder(
-                      itemCount: filteredImages.length,
-                      itemBuilder: (ctx, index) => Dismissible(
-                        key: Key(filteredImages[index].id),
-                        direction: DismissDirection.endToStart,
-                        background: Container(
-                          color: Colors.red,
-                          alignment: Alignment.centerRight,
-                          padding: const EdgeInsets.symmetric(horizontal: 20),
-                          child: const Icon(Icons.delete, color: Colors.white),
-                        ),
-                        onDismissed: (direction) {
-                          _deletePetImage(filteredImages[index]);
-                        },
-                        child: GestureDetector(
-                          onTap: () => _showDetailView(filteredImages[index]),
-                          child: PetImageItem(filteredImages[index]),
-                        ),
-                      ),
+                  
+                    child: ToggleList(
+                      divider: const SizedBox(height: 8),
+                      toggleAnimationDuration: const Duration(milliseconds: 300),
+                      scrollPosition: AutoScrollPosition.begin,
+                      children: filteredImages.map((petImage) {
+                        return ToggleListItem(
+                          title: Padding(
+                            padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
+                            child: Row(
+                              children: [
+                                CircleAvatar(
+                                  backgroundImage: NetworkImage(petImage.imageUrl),
+                                  radius: 25,
+                                ),
+                                const SizedBox(width: 16),
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        DateFormat('yyyy-MM-dd HH:mm').format(petImage.createdDate),
+                                        style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                                      ),
+                                      Text(
+                                        petImage.petName,
+                                        style: TextStyle(color: Colors.grey[600]),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          content: PetImageItem(petImage, onDelete: () => _deletePetImage(petImage), onView: () => _showDetailView(petImage)),
+                          headerDecoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(8),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.grey.withOpacity(0.3),
+                                spreadRadius: 1,
+                                blurRadius: 3,
+                                offset: const Offset(0, 1),
+                              ),
+                            ],
+                          ),
+                          expandedHeaderDecoration: BoxDecoration(
+                            color: Colors.blue[50],
+                            borderRadius: const BorderRadius.only(
+                              topLeft: Radius.circular(8),
+                              topRight: Radius.circular(8),
+                            ),
+                          ),
+                        );
+                      }).toList(),
                     ),
                   ),
-                ),
               ],
+                ),
             ),
+          
       floatingActionButton: FloatingActionButton(
         onPressed: () async {
           await Navigator.of(context).push(
@@ -238,49 +318,86 @@ class _PetDoctorListState extends State<PetDoctorList> {
           );
           _loadData();
         },
-        child: const Icon(Icons.add),
+        child: Icon(Icons.add),
+        backgroundColor: Colors.blue[700],
       ),
     );
   }
 }
 
 class PetImageItem extends StatelessWidget {
-  const PetImageItem(this.petImage, {super.key});
+  const PetImageItem(this.petImage, {super.key, required this.onDelete, required this.onView});
 
   final PetImage petImage;
+  final VoidCallback onDelete;
+  final VoidCallback onView;
 
   @override
   Widget build(BuildContext context) {
-    final DateFormat formatter = DateFormat('yyyy-MM-dd HH:mm'); 
-
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(petImage.petName, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-            const SizedBox(height: 8),
-            Image.network(
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: const BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.only(
+          bottomLeft: Radius.circular(8),
+          bottomRight: Radius.circular(8),
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          ClipRRect(
+            borderRadius: BorderRadius.circular(8),
+            child: Image.network(
               petImage.imageUrl,
               height: 200,
               width: double.infinity,
               fit: BoxFit.cover,
               loadingBuilder: (context, child, loadingProgress) {
                 if (loadingProgress == null) return child;
-                return Center(
-                  child: CircularProgressIndicator(
-                    value: loadingProgress.expectedTotalBytes != null
-                        ? loadingProgress.cumulativeBytesLoaded / loadingProgress.expectedTotalBytes!
-                        : null,
+                return Container(
+                  height: 200,
+                  width: double.infinity,
+                  color: Colors.grey[200],
+                  child: Center(
+                    child: CircularProgressIndicator(
+                      value: loadingProgress.expectedTotalBytes != null
+                          ? loadingProgress.cumulativeBytesLoaded /
+                              loadingProgress.expectedTotalBytes!
+                          : null,
+                    ),
                   ),
                 );
               },
             ),
-            const SizedBox(height: 8),
-            Text('Date: ${formatter.format(petImage.createdDate)}'), 
-          ],
-        ),
+          ),
+          const SizedBox(height: 16),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+            children: [
+              ElevatedButton.icon(
+                onPressed: onView,
+                icon: const Icon(Icons.visibility),
+                label:const Text('상세 보기'),
+                style: ElevatedButton.styleFrom(
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                ),
+              ),
+              ElevatedButton.icon(
+                onPressed: onDelete,
+                icon: const Icon(Icons.delete),
+                label: const Text('삭제'),
+                style: ElevatedButton.styleFrom(
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ],
       ),
     );
   }
@@ -288,43 +405,66 @@ class PetImageItem extends StatelessWidget {
 
 class PetImageDetailView extends StatelessWidget {
   final PetImage petImage;
+  final ScrollController scrollController;
 
-  const PetImageDetailView({Key? key, required this.petImage}) : super(key: key);
+  const PetImageDetailView({Key? key, required this.petImage, required this.scrollController})
+      : super(key: key);
 
   @override
   Widget build(BuildContext context) {
     final DateFormat formatter = DateFormat('yyyy-MM-dd HH:mm');
 
     return Container(
-      padding: const EdgeInsets.all(16),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.start,
+      decoration: const BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      child: ListView(
+        controller: scrollController,
+        padding: const EdgeInsets.all(20),
         children: [
-          Text(petImage.petName, style: const TextStyle(fontWeight: FontWeight.bold)),
-          const SizedBox(height: 8),
-          Image.network(
-            petImage.imageUrl,
-            height: 300,
-            width: double.infinity,
-            fit: BoxFit.cover,
-            loadingBuilder: (context, child, loadingProgress) {
-              if (loadingProgress == null) return child;
-              return Center(
-                child: CircularProgressIndicator(
-                  value: loadingProgress.expectedTotalBytes != null
-                      ? loadingProgress.cumulativeBytesLoaded / loadingProgress.expectedTotalBytes!
-                      : null,
-                ),
-              );
-            },
+          Text(
+            petImage.petName,
+            style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
           ),
           const SizedBox(height: 16),
-          Text('Date: ${formatter.format(petImage.createdDate)}'), 
+          ClipRRect(
+            borderRadius: BorderRadius.circular(12),
+            child: Image.network(
+              petImage.imageUrl,
+              fit: BoxFit.cover,
+              loadingBuilder: (context, child, loadingProgress) {
+                if (loadingProgress == null) return child;
+                return Container(
+                  height: 300,
+                  color: Colors.grey[200],
+                  child: Center(
+                    child: CircularProgressIndicator(
+                      value: loadingProgress.expectedTotalBytes != null
+                          ? loadingProgress.cumulativeBytesLoaded /
+                              loadingProgress.expectedTotalBytes!
+                          : null,
+                    ),
+                  ),
+                );
+              },
+            ),
+          ),
           const SizedBox(height: 16),
+          Text(
+            '날짜: ${formatter.format(petImage.createdDate)}',
+            style: TextStyle(fontSize: 16, color: Colors.grey[600]),
+          ),
+          const SizedBox(height: 24),
           ElevatedButton(
             onPressed: () => Navigator.of(context).pop(),
-            child: const Text('Close'),
+            child: Text('닫기'),
+            style: ElevatedButton.styleFrom(
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(20),
+              ),
+              padding: const EdgeInsets.symmetric(vertical: 12),
+            ),
           ),
         ],
       ),
