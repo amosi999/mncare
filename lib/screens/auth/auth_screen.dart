@@ -1,5 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:google_sign_in/google_sign_in.dart';
+import 'package:mncare/screens/auth/input_info_screen.dart';
 
 class AuthScreen extends StatefulWidget {
   const AuthScreen({super.key});
@@ -17,26 +21,102 @@ class _AuthScreenState extends State<AuthScreen> {
   String? _gender;
   final _birthController = TextEditingController();
 
+  final FirebaseAuth _firebaseAuth = FirebaseAuth.instance;
+  final GoogleSignIn _googleSignIn = GoogleSignIn();
+
   void _switchAuthMode() {
     setState(() {
       _isLogin = !_isLogin;
     });
   }
 
-  void _submit() {
+  Future<void> _submit() async {
     if (_formKey.currentState!.validate()) {
-      // 여기에 로그인 또는 회원가입 로직 구현
-      print(_isLogin ? '로그인 시도' : '회원가입 시도');
-      print('이메일: ${_emailController.text}');
-      print('비밀번호: ${_passwordController.text}');
-      if (!_isLogin) {
-        print('닉네임: ${_nicknameController.text}');
-        print('성별: $_gender');
-        print('생년월일: ${_birthController.text}');
+      try {
+        if (_isLogin) {
+          await _firebaseAuth.signInWithEmailAndPassword(
+            email: _emailController.text,
+            password: _passwordController.text,
+          );
+        } else {
+          final userCredentials = await _firebaseAuth.createUserWithEmailAndPassword(
+            email: _emailController.text,
+            password: _passwordController.text,
+          );
+          Navigator.of(context).pushReplacement(
+                        MaterialPageRoute(
+                          builder: (ctx) => const InputInfoScreen(),
+                        ),
+                      );
+          await FirebaseFirestore.instance
+              .collection('users')
+              .doc(userCredentials.user!.uid)
+              .set({
+            'username': _nicknameController.text,
+            'email': _emailController.text,
+            'gender': _gender,
+            'birthdate': _birthController.text,
+          });
+         
+        }
+      } on FirebaseAuthException catch (error) {
+        ScaffoldMessenger.of(context).clearSnackBars();
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(error.message ?? 'Authentication failed.'),
+          ),
+        );
       }
     }
   }
 
+  Future<void> _signInWithGoogle() async {
+    try {
+      final GoogleSignInAccount? googleUser = await _googleSignIn.signIn();
+      if (googleUser == null) {
+        return;
+      }
+
+      final GoogleSignInAuthentication googleAuth = await googleUser.authentication;
+      final credential = GoogleAuthProvider.credential(
+        accessToken: googleAuth.accessToken,
+        idToken: googleAuth.idToken,
+      );
+
+      final userCredentials = await _firebaseAuth.signInWithCredential(credential);
+      final user = userCredentials.user;
+
+      if (user != null) {
+        final userDoc = await FirebaseFirestore.instance
+            .collection('users')
+            .doc(user.uid)
+            .get();
+
+        if (!userDoc.exists) {
+          await FirebaseFirestore.instance
+              .collection('users')
+              .doc(user.uid)
+              .set({
+            'username': user.displayName ?? 'Unknown',
+            'email': user.email ?? 'Unknown',
+          });
+
+          Navigator.of(context).pushReplacement(
+            MaterialPageRoute(
+              builder: (ctx) => const InputInfoScreen(),
+            ),
+          );
+        }
+      }
+    } catch (error) {
+      print('Google Sign-In failed: $error');
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Google 로그인에 실패했습니다. 나중에 다시 시도해주세요.'),
+        ),
+      );
+    }
+  }
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -227,7 +307,7 @@ class _AuthScreenState extends State<AuthScreen> {
                         fixedSize: const Size(200, 50),
                         backgroundColor: const Color.fromARGB(255, 255, 178, 0),
                       ),
-                      onPressed: () {},
+                      onPressed: _signInWithGoogle,
                       child: const Text(
                         'Google로 로그인',
                         style: TextStyle(
