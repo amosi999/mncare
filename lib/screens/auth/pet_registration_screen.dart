@@ -1,8 +1,8 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:mncare/screens/main_screen.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 
 class PetRegistrationScreen extends StatefulWidget {
   const PetRegistrationScreen({super.key});
@@ -105,7 +105,8 @@ class _PetRegistrationScreenState extends State<PetRegistrationScreen> {
                   const SizedBox(height: 16),
                   const Text('특이사항'),
                   const SizedBox(height: 10),
-                  _buildTextField(_otherController, '갖고 있는 질환이나 알러지원을 적어주세요'),
+                  _buildTextField(_otherController, '갖고 있는 질환이나 알러지원을 적어주세요',
+                      isRequired: false),
                   const SizedBox(height: 20),
                   ElevatedButton(
                     onPressed: _submitForm,
@@ -126,7 +127,7 @@ class _PetRegistrationScreenState extends State<PetRegistrationScreen> {
   }
 
   Widget _buildTextField(TextEditingController controller, String label,
-      {String? suffix}) {
+      {String? suffix, bool isRequired = true}) {
     return TextFormField(
       controller: controller,
       decoration: InputDecoration(
@@ -143,12 +144,14 @@ class _PetRegistrationScreenState extends State<PetRegistrationScreen> {
           borderSide: BorderSide(color: Colors.grey),
         ),
       ),
-      validator: (value) {
-        if (value == null || value.isEmpty) {
-          return '$label을(를) 입력해주세요';
-        }
-        return null;
-      },
+      validator: isRequired
+          ? (value) {
+              if (value == null || value.isEmpty) {
+                return '$label을(를) 입력해주세요';
+              }
+              return null;
+            }
+          : null,
     );
   }
 
@@ -385,7 +388,8 @@ class _PetRegistrationScreenState extends State<PetRegistrationScreen> {
             'isNeutered': _isNeutered,
             'petWeight': double.parse(_weightController.text),
             'petBirthDate': _birthController.text,
-            'etc': _otherController.text,
+            'etc':
+                _otherController.text.isNotEmpty ? _otherController.text : null,
           });
 
           String petId = petDocRef.id;
