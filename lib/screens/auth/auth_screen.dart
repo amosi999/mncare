@@ -1,9 +1,10 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:firebase_auth/firebase_auth.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:google_sign_in/google_sign_in.dart';
-import 'package:mncare/screens/auth/input_info_screen.dart';
+
+import 'pet_registration_screen.dart';
 
 class AuthScreen extends StatefulWidget {
   const AuthScreen({super.key});
@@ -39,15 +40,16 @@ class _AuthScreenState extends State<AuthScreen> {
             password: _passwordController.text,
           );
         } else {
-          final userCredentials = await _firebaseAuth.createUserWithEmailAndPassword(
+          final userCredentials =
+              await _firebaseAuth.createUserWithEmailAndPassword(
             email: _emailController.text,
             password: _passwordController.text,
           );
           Navigator.of(context).pushReplacement(
-                        MaterialPageRoute(
-                          builder: (ctx) => const InputInfoScreen(),
-                        ),
-                      );
+            MaterialPageRoute(
+              builder: (ctx) => const PetRegistrationScreen(),
+            ),
+          );
           await FirebaseFirestore.instance
               .collection('users')
               .doc(userCredentials.user!.uid)
@@ -57,7 +59,6 @@ class _AuthScreenState extends State<AuthScreen> {
             'gender': _gender,
             'birthdate': _birthController.text,
           });
-         
         }
       } on FirebaseAuthException catch (error) {
         ScaffoldMessenger.of(context).clearSnackBars();
@@ -77,13 +78,15 @@ class _AuthScreenState extends State<AuthScreen> {
         return;
       }
 
-      final GoogleSignInAuthentication googleAuth = await googleUser.authentication;
+      final GoogleSignInAuthentication googleAuth =
+          await googleUser.authentication;
       final credential = GoogleAuthProvider.credential(
         accessToken: googleAuth.accessToken,
         idToken: googleAuth.idToken,
       );
 
-      final userCredentials = await _firebaseAuth.signInWithCredential(credential);
+      final userCredentials =
+          await _firebaseAuth.signInWithCredential(credential);
       final user = userCredentials.user;
 
       if (user != null) {
@@ -103,7 +106,7 @@ class _AuthScreenState extends State<AuthScreen> {
 
           Navigator.of(context).pushReplacement(
             MaterialPageRoute(
-              builder: (ctx) => const InputInfoScreen(),
+              builder: (ctx) => const PetRegistrationScreen(),
             ),
           );
         }
@@ -117,6 +120,7 @@ class _AuthScreenState extends State<AuthScreen> {
       );
     }
   }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
