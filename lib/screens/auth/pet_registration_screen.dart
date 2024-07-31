@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:mncare/screens/main_screen.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 class PetRegistrationScreen extends StatefulWidget {
   const PetRegistrationScreen({super.key});
@@ -366,9 +368,44 @@ class _PetRegistrationScreenState extends State<PetRegistrationScreen> {
     );
   }
 
-  void _submitForm() {
+  void _submitForm() async {
     if (_formKey.currentState!.validate()) {
-      print('Form is valid. Submitting...');
+      try {
+        User? currentUser = FirebaseAuth.instance.currentUser;
+        if (currentUser != null) {
+          DocumentReference petDocRef = await FirebaseFirestore.instance
+              .collection('users')
+              .doc(currentUser.uid)
+              .collection('pets')
+              .add({
+            'petName': _nameController.text,
+            'petType': _petType,
+            'petBreed': _breed,
+            'petGender': _gender,
+            'isNeutered': _isNeutered,
+            'petWeight': double.parse(_weightController.text),
+            'petBirthDate': _birthController.text,
+            'etc': _otherController.text,
+          });
+
+          String petId = petDocRef.id;
+
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('반려동물 정보가 성공적으로 저장되었습니다!')),
+          );
+
+          // 메인 화면으로 이동
+          Navigator.of(context).pushReplacement(
+            MaterialPageRoute(builder: (context) => const MainScreen()),
+          );
+        } else {
+          throw Exception('로그인된 사용자가 없습니다');
+        }
+      } catch (error) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('반려동물 정보 저장에 실패했습니다: $error')),
+        );
+      }
     }
   }
 }
