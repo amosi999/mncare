@@ -2,8 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:intl/intl.dart';
-import 'package:mncare/screens/trackings/detail_screen.dart';
 import 'package:table_calendar/table_calendar.dart';
+import 'food_detail_screen.dart';
+import 'poop_detail_screen.dart';
+import 'vomit_detail_screen.dart';
+import 'water_detail_screen.dart';
 
 class TrackingScreen extends StatefulWidget {
   const TrackingScreen({super.key});
@@ -63,11 +66,9 @@ class _TrackingScreenState extends State<TrackingScreen> {
         .collection('trackings')
         .doc(formattedDate)
         .get();
-    print('선택된 펫 ID: $_selectedPetId');
 
     if (doc.exists) {
       final data = doc.data() as Map<String, dynamic>?;
-      print("Document exists: ${doc.data()}");
       if (data != null) {
         setState(() {
           _trackingData = {
@@ -75,19 +76,46 @@ class _TrackingScreenState extends State<TrackingScreen> {
             'food': data['food'] ?? 0,
             'vomit': data['vomit'] ?? 0,
             'water': data['water'] ?? 0,
+            'daily_goal_food': data['daily_goal_food'] ?? 100,
+            'feeding_times_food': data['feeding_times_food'] ?? 4,
           };
         });
       }
     } else {
-      print("Document does not exist");
-      setState(() {
-        _trackingData = {
-          'poop': 0,
-          'food': 0,
-          'vomit': 0,
-          'water': 0,
-        };
-      });
+      final previousDoc = await _firestore
+          .collection('users')
+          .doc(user!.uid)
+          .collection('pets')
+          .doc(_selectedPetId)
+          .collection('trackings')
+          .orderBy('date', descending: true)
+          .limit(1)
+          .get();
+
+      if (previousDoc.docs.isNotEmpty) {
+        final previousData = previousDoc.docs.first.data();
+        setState(() {
+          _trackingData = {
+            'poop': 0,
+            'food': 0,
+            'vomit': 0,
+            'water': 0,
+            'daily_goal_food': previousData['daily_goal_food'] ?? 100,
+            'feeding_times_food': previousData['feeding_times_food'] ?? 4,
+          };
+        });
+      } else {
+        setState(() {
+          _trackingData = {
+            'poop': 0,
+            'food': 0,
+            'vomit': 0,
+            'water': 0,
+            'daily_goal_food': 100,
+            'feeding_times_food': 4,
+          };
+        });
+      }
     }
   }
 
@@ -149,6 +177,53 @@ class _TrackingScreenState extends State<TrackingScreen> {
     }
   }
 
+  void _navigateToDetailScreen(String key) {
+    Widget detailScreen;
+    switch (key) {
+      case 'food':
+        detailScreen = FoodDetailScreen(
+          label: '사료',
+          value: _trackingData[key] ?? 0,
+          dailyGoal: _trackingData['daily_goal_food'] ?? 100,
+          feedingTimes: _trackingData['feeding_times_food'] ?? 4,
+          onSave: (int newGoal, int newTimes, int newCount) {
+            setState(() {
+              _trackingData['daily_goal_food'] = newGoal;
+              _trackingData['feeding_times_food'] = newTimes;
+              _trackingData[key] = newCount;
+            });
+            _updateTrackingData(key, newCount);
+          },
+        );
+        break;
+      case 'poop':
+        detailScreen = PoopDetailScreen(
+          label: '대변',
+          value: _trackingData[key] ?? 0,
+        );
+        break;
+      case 'vomit':
+        detailScreen = VomitDetailScreen(
+          label: '구토',
+          value: _trackingData[key] ?? 0,
+        );
+        break;
+      case 'water':
+        detailScreen = WaterDetailScreen(
+          label: '물',
+          value: _trackingData[key] ?? 0,
+        );
+        break;
+      default:
+        return;
+    }
+
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (context) => detailScreen),
+    );
+  }
+
   Widget _buildTrackingItem(String label, String key) {
     String translatedLabel = getTranslatedLabel(label);
 
@@ -167,28 +242,7 @@ class _TrackingScreenState extends State<TrackingScreen> {
               IconButton(
                 icon: Icon(Icons.info_outline),
                 onPressed: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      //test
-                      //이부분이 왜 필요한데?
-                      builder: (context) => DetailScreen(
-                        label: translatedLabel,
-                        value: _trackingData[key] ?? 0,
-                        dailyGoal: _trackingData['daily_goal_$key'] ??
-                            100, // 예시로 일일 목표 기본값을 100으로 설정
-                        feedingTimes: _trackingData['feeding_times_$key'] ??
-                            3, // 예시로 사료 주는 횟수 기본값을 3으로 설정
-                        onSave: (int newGoal, int newTimes) {
-                          setState(() {
-                            _trackingData['daily_goal_$key'] = newGoal;
-                            _trackingData['feeding_times_$key'] = newTimes;
-                            //aa
-                          });
-                        },
-                      ),
-                    ),
-                  );
+                  _navigateToDetailScreen(key);
                 },
               ),
               IconButton(
