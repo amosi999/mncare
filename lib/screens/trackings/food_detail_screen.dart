@@ -5,17 +5,17 @@ import 'package:intl/intl.dart';
 
 class FoodDetailScreen extends StatefulWidget {
   final String label;
-  final int value;
   final int dailyGoal;
   final int feedingTimes;
-  final Function(int, int, int) onSave;
+  final Function(int, int) onSave;
+  final String selectedPetId;
 
   FoodDetailScreen({
     required this.label,
-    required this.value,
     required this.dailyGoal,
     required this.feedingTimes,
     required this.onSave,
+    required this.selectedPetId,
   });
 
   @override
@@ -35,21 +35,20 @@ class _FoodDetailScreenState extends State<FoodDetailScreen> {
     super.initState();
     _dailyGoal = widget.dailyGoal;
     _feedingTimes = widget.feedingTimes;
-    _count = widget.value;
-    _currentFood = (_count * (_dailyGoal / _feedingTimes)).toInt();
+    _count = 0; // Initialize _count to avoid LateInitializationError
+    _currentFood = 0; // Initialize _currentFood to avoid LateInitializationError
     _loadTrackingData();
   }
 
   Future<void> _loadTrackingData() async {
     if (user == null) return;
 
-    final String formattedDate =
-        DateFormat('yyyy-MM-dd').format(DateTime.now());
+    final String formattedDate = DateFormat('yyyy-MM-dd').format(DateTime.now());
     final DocumentSnapshot doc = await _firestore
         .collection('users')
         .doc(user!.uid)
         .collection('pets')
-        .doc('selectedPetId') // 실제 petId로 교체
+        .doc(widget.selectedPetId) // _selectedPetId from TrackingScreen
         .collection('trackings')
         .doc(formattedDate)
         .get();
@@ -58,9 +57,9 @@ class _FoodDetailScreenState extends State<FoodDetailScreen> {
       final data = doc.data() as Map<String, dynamic>?;
       if (data != null) {
         setState(() {
-          _dailyGoal = data['foodGoal'] ?? _dailyGoal;
-          _feedingTimes = data['foodCount'] ?? _feedingTimes;
-          _count = data['count'] ?? _count;
+          _dailyGoal = data['daily_goal_food'] ?? _dailyGoal;
+          _feedingTimes = data['feeding_times_food'] ?? _feedingTimes;
+          _count = data['food'] ?? 0;
           _currentFood = (_count * (_dailyGoal / _feedingTimes)).toInt();
         });
       }
@@ -76,32 +75,31 @@ class _FoodDetailScreenState extends State<FoodDetailScreen> {
   }
 
   int _calculateRecommendedFoodGoal() {
-    // 여기에 권장 사료량 공식을 추가하세요.
+    // 여기에 권장 사료량 공식
     return 100; // 예시로 100을 반환
   }
 
   void _saveChanges() {
-    widget.onSave(_dailyGoal, _feedingTimes, _count);
+    widget.onSave(_dailyGoal, _feedingTimes);
     Navigator.of(context).pop();
   }
 
   Future<void> _updateTrackingData() async {
     if (user == null) return;
 
-    final String formattedDate =
-        DateFormat('yyyy-MM-dd').format(DateTime.now());
+    final String formattedDate = DateFormat('yyyy-MM-dd').format(DateTime.now());
     final DocumentReference docRef = _firestore
         .collection('users')
         .doc(user!.uid)
         .collection('pets')
-        .doc('selectedPetId') // 실제 petId로 교체
+        .doc(widget.selectedPetId) // _selectedPetId from TrackingScreen
         .collection('trackings')
         .doc(formattedDate);
 
     await docRef.set({
-      'foodGoal': _dailyGoal,
-      'foodCount': _feedingTimes,
-      'count': _count,
+      'daily_goal_food': _dailyGoal,
+      'feeding_times_food': _feedingTimes,
+      'food': _count,
     }, SetOptions(merge: true));
   }
 
@@ -130,8 +128,7 @@ class _FoodDetailScreenState extends State<FoodDetailScreen> {
                 onChanged: (value) {
                   setState(() {
                     _dailyGoal = int.tryParse(value) ?? _dailyGoal;
-                    _currentFood =
-                        (_count * (_dailyGoal / _feedingTimes)).toInt();
+                    _currentFood = (_count * (_dailyGoal / _feedingTimes)).toInt();
                   });
                 },
                 controller: TextEditingController(text: _dailyGoal.toString()),
@@ -144,12 +141,10 @@ class _FoodDetailScreenState extends State<FoodDetailScreen> {
                 onChanged: (value) {
                   setState(() {
                     _feedingTimes = int.tryParse(value) ?? _feedingTimes;
-                    _currentFood =
-                        (_count * (_dailyGoal / _feedingTimes)).toInt();
+                    _currentFood = (_count * (_dailyGoal / _feedingTimes)).toInt();
                   });
                 },
-                controller:
-                    TextEditingController(text: _feedingTimes.toString()),
+                controller: TextEditingController(text: _feedingTimes.toString()),
               ),
             ],
           ),

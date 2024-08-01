@@ -2,11 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:intl/intl.dart';
-import 'package:table_calendar/table_calendar.dart';
-import 'food_detail_screen.dart';
-import 'poop_detail_screen.dart';
-import 'vomit_detail_screen.dart';
-import 'water_detail_screen.dart';
+import 'package:mncare/screens/trackings/food_detail_screen.dart';
+import 'package:mncare/screens/trackings/poop_detail_screen.dart';
+import 'package:mncare/screens/trackings/vomit_detail_screen.dart';
+import 'package:mncare/screens/trackings/water_detail_screen.dart';
 
 class TrackingScreen extends StatefulWidget {
   const TrackingScreen({super.key});
@@ -25,17 +24,22 @@ class _TrackingScreenState extends State<TrackingScreen> {
     'vomit': 0,
     'water': 0,
   };
-  String? _selectedPetId;
-  List<Pet> _pets = [];
+  //이거도 필요가 없음.
+  Map<String, dynamic> _foodData = {
+    'daily_goal_food': 100, // 추후 공식으로 계산함.
+    'feeding_times_food': 4, // 4가 기본값.
+  };
+  String? _selectedPetId; //선택된 동물의 Id
+  List<Pet> _pets = []; //동물 선택을 위한 리스트
 
   @override
   void initState() {
     super.initState();
-    _fetchPets();
+    _fetchPets(); //Pets 정보 가져오기
   }
 
   Future<void> _fetchPets() async {
-    if (user == null) return;
+    if (user == null) return; //사용자 확인
 
     final querySnapshot = await _firestore
         .collection('users')
@@ -49,13 +53,15 @@ class _TrackingScreenState extends State<TrackingScreen> {
           .toList();
       if (_pets.isNotEmpty) {
         _selectedPetId = _pets.first.id;
-        _loadTrackingData();
+        _loadTrackingData(); //트레킹 기록 불러오기
       }
     });
   }
 
+//여기까진 확인.
+
   Future<void> _loadTrackingData() async {
-    if (user == null || _selectedPetId == null) return;
+    if (user == null || _selectedPetId == null) return; //유저와 펫의 존재 여부 확인
 
     final String formattedDate = DateFormat('yyyy-MM-dd').format(_selectedDate);
     final DocumentSnapshot doc = await _firestore
@@ -66,9 +72,14 @@ class _TrackingScreenState extends State<TrackingScreen> {
         .collection('trackings')
         .doc(formattedDate)
         .get();
+    print('선택된 펫 ID: $_selectedPetId'); //log
 
+    //doc이 존재한다. 이미 해당 날짜에 대한 트래킹이 초기화된거임.
     if (doc.exists) {
       final data = doc.data() as Map<String, dynamic>?;
+      print("Document exists: ${doc.data()}");
+      //doc이 존재하면 해당 DB에 있는 데이터를 불러온다.
+      //그러면
       if (data != null) {
         setState(() {
           _trackingData = {
@@ -76,46 +87,31 @@ class _TrackingScreenState extends State<TrackingScreen> {
             'food': data['food'] ?? 0,
             'vomit': data['vomit'] ?? 0,
             'water': data['water'] ?? 0,
+          };
+          //이거도 필요 없음.
+          _foodData = {
             'daily_goal_food': data['daily_goal_food'] ?? 100,
             'feeding_times_food': data['feeding_times_food'] ?? 4,
           };
         });
       }
-    } else {
-      final previousDoc = await _firestore
-          .collection('users')
-          .doc(user!.uid)
-          .collection('pets')
-          .doc(_selectedPetId)
-          .collection('trackings')
-          .orderBy('date', descending: true)
-          .limit(1)
-          .get();
-
-      if (previousDoc.docs.isNotEmpty) {
-        final previousData = previousDoc.docs.first.data();
-        setState(() {
-          _trackingData = {
-            'poop': 0,
-            'food': 0,
-            'vomit': 0,
-            'water': 0,
-            'daily_goal_food': previousData['daily_goal_food'] ?? 100,
-            'feeding_times_food': previousData['feeding_times_food'] ?? 4,
-          };
-        });
-      } else {
-        setState(() {
-          _trackingData = {
-            'poop': 0,
-            'food': 0,
-            'vomit': 0,
-            'water': 0,
-            'daily_goal_food': 100,
-            'feeding_times_food': 4,
-          };
-        });
-      }
+    }
+    //doc존재하지 않으면
+    else {
+      print("Document does not exist");
+      setState(() {
+        _trackingData = {
+          'poop': 0,
+          'food': 0,
+          'vomit': 0,
+          'water': 0,
+        };
+        //이거도 필요 없음.
+        _foodData = {
+          'daily_goal_food': 100,
+          'feeding_times_food': 4,
+        };
+      });
     }
   }
 
@@ -135,7 +131,11 @@ class _TrackingScreenState extends State<TrackingScreen> {
       _trackingData[key] = value;
     });
 
-    await docRef.set(_trackingData, SetOptions(merge: true));
+    await docRef.set({
+      key: value,
+      'daily_goal_food': _foodData['daily_goal_food'],
+      'feeding_times_food': _foodData['feeding_times_food'],
+    }, SetOptions(merge: true));
   }
 
   bool isToday() {
@@ -183,16 +183,15 @@ class _TrackingScreenState extends State<TrackingScreen> {
       case 'food':
         detailScreen = FoodDetailScreen(
           label: '사료',
-          value: _trackingData[key] ?? 0,
-          dailyGoal: _trackingData['daily_goal_food'] ?? 100,
-          feedingTimes: _trackingData['feeding_times_food'] ?? 4,
-          onSave: (int newGoal, int newTimes, int newCount) {
+          dailyGoal: _foodData['daily_goal_food'],
+          feedingTimes: _foodData['feeding_times_food'],
+          selectedPetId: _selectedPetId!, // _selectedPetId를 전달
+          onSave: (int newGoal, int newTimes) {
             setState(() {
-              _trackingData['daily_goal_food'] = newGoal;
-              _trackingData['feeding_times_food'] = newTimes;
-              _trackingData[key] = newCount;
+              _foodData['daily_goal_food'] = newGoal;
+              _foodData['feeding_times_food'] = newTimes;
+              _updateTrackingData(key, _trackingData[key] ?? 0);
             });
-            _updateTrackingData(key, newCount);
           },
         );
         break;
@@ -226,6 +225,9 @@ class _TrackingScreenState extends State<TrackingScreen> {
 
   Widget _buildTrackingItem(String label, String key) {
     String translatedLabel = getTranslatedLabel(label);
+    int currentFood = (_trackingData['food']! *
+            (_foodData['daily_goal_food'] / _foodData['feeding_times_food']))
+        .toInt();
 
     return Card(
       margin: const EdgeInsets.all(8.0),
@@ -256,7 +258,19 @@ class _TrackingScreenState extends State<TrackingScreen> {
               ),
             ],
           ),
-          Text(_trackingData[key].toString(), style: TextStyle(fontSize: 24)),
+          if (key == 'food') ...[
+            Text(
+              '$currentFood / ${_foodData['daily_goal_food']} g',
+              style: TextStyle(fontSize: 20),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              '${_trackingData[key]} / ${_foodData['feeding_times_food']} 회',
+              style: TextStyle(fontSize: 18),
+            ),
+            const SizedBox(height: 16),
+          ] else
+            Text(_trackingData[key].toString(), style: TextStyle(fontSize: 24)),
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
@@ -316,23 +330,6 @@ class _TrackingScreenState extends State<TrackingScreen> {
                     ),
                   ],
                 ),
-              ),
-              TableCalendar(
-                firstDay: DateTime.utc(2020, 1, 1),
-                lastDay: DateTime.utc(2030, 12, 31),
-                focusedDay: _selectedDate,
-                calendarFormat: CalendarFormat.week,
-                selectedDayPredicate: (day) {
-                  return isSameDay(_selectedDate, day);
-                },
-                onDaySelected: (selectedDay, focusedDay) {
-                  setState(() {
-                    _selectedDate = selectedDay;
-                    _loadTrackingData();
-                  });
-                },
-                headerVisible: false,
-                daysOfWeekVisible: true,
               ),
               if (_pets.isNotEmpty)
                 Padding(
