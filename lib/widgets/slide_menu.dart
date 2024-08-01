@@ -1,5 +1,6 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:mncare/screens/auth/auth_screen.dart';
 
 class SlideMenu extends StatelessWidget {
   const SlideMenu({super.key});
@@ -48,6 +49,10 @@ class SlideMenu extends StatelessWidget {
             title: const Text('로그아웃'),
             onTap: () {
               FirebaseAuth.instance.signOut();
+              Navigator.of(context).pushAndRemoveUntil(
+                MaterialPageRoute(builder: (context) => const AuthScreen()),
+                (Route<dynamic> route) => false,
+              );
             },
           ),
         ],
