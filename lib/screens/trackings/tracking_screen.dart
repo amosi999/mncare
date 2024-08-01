@@ -6,6 +6,7 @@ import 'package:mncare/screens/trackings/food_detail_screen.dart';
 import 'package:mncare/screens/trackings/poop_detail_screen.dart';
 import 'package:mncare/screens/trackings/vomit_detail_screen.dart';
 import 'package:mncare/screens/trackings/water_detail_screen.dart';
+import 'package:table_calendar/table_calendar.dart';
 
 class TrackingScreen extends StatefulWidget {
   const TrackingScreen({super.key});
@@ -329,6 +330,36 @@ class _TrackingScreenState extends State<TrackingScreen> {
                       onPressed: _presentDatePicker,
                     ),
                   ],
+                ),
+              ),
+              TableCalendar(
+                firstDay: DateTime.utc(2020, 1, 1),
+                lastDay: DateTime.utc(2030, 12, 31),
+                focusedDay: _selectedDate,
+                calendarFormat: CalendarFormat.week,
+                selectedDayPredicate: (day) {
+                  return isSameDay(_selectedDate, day);
+                },
+                onDaySelected: (selectedDay, focusedDay) {
+                  setState(() {
+                    _selectedDate = selectedDay;
+                    _loadTrackingData();
+                  });
+                },
+                headerVisible: false,
+                daysOfWeekVisible: true,
+                calendarStyle: CalendarStyle(
+                  todayDecoration: BoxDecoration(
+                    color: Theme.of(context).colorScheme.primary,
+                    shape: BoxShape.circle,
+                  ),
+                  selectedDecoration: BoxDecoration(
+                    color: Theme.of(context).colorScheme.secondary,
+                    shape: BoxShape.circle,
+                  ),
+                  weekendTextStyle: TextStyle().copyWith(
+                    color: Theme.of(context).colorScheme.primary,
+                  ),
                 ),
               ),
               if (_pets.isNotEmpty)
