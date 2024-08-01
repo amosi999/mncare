@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:syncfusion_flutter_calendar/calendar.dart';
-
+import 'package:firebase_auth/firebase_auth.dart';
 import 'appointment_dialog.dart';
 import 'appointment_list_dialog.dart';
 import 'calendar_controller.dart';
@@ -31,12 +31,23 @@ class _CalendarScreenState extends State<CalendarScreen>
     WidgetsBinding.instance.addPostFrameCallback((_) {
       widget.controller.resetToToday();
     });
+    _loadUserData(); // 사용자 정보를 로드하는 함수 호출
   }
 
   @override
   void dispose() {
     widget.controller.removeListener(_scheduleUpdate);
     super.dispose();
+  }
+
+  //현재 User정보 불러 오는 코드.. 동시에 Pet의 정보도 받아와?
+  Future<void> _loadUserData() async {
+    User? user = FirebaseAuth.instance.currentUser;
+    if (user != null) {
+      // Firestore에서 사용자 데이터를 가져오거나, 필요에 따라 추가 작업을 수행합니다.
+      print("스케줄러 User ID: ${user.uid}");
+      // 여기에 Firestore에서 데이터를 가져오는 코드 추가
+    }
   }
 
   void _scheduleUpdate() {
