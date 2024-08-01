@@ -7,6 +7,7 @@ import 'appointment_list_dialog.dart';
 import 'calendar_controller.dart';
 import 'calendar_view.dart' as custom_view;
 import 'schedule_info.dart';
+import 'schedule_type_manager.dart';
 
 class CalendarScreen extends StatefulWidget {
   final CalendarScreenController controller;
@@ -20,6 +21,7 @@ class CalendarScreen extends StatefulWidget {
 class _CalendarScreenState extends State<CalendarScreen>
     with AutomaticKeepAliveClientMixin<CalendarScreen> {
   bool _needsUpdate = false;
+  final ScheduleTypeManager _scheduleTypeManager = ScheduleTypeManager();
 
   @override
   bool get wantKeepAlive => true;
@@ -32,6 +34,12 @@ class _CalendarScreenState extends State<CalendarScreen>
       widget.controller.resetToToday();
     });
     _loadUserData(); // 사용자 정보를 로드하는 함수 호출
+    _fetchScheduleTypes();
+  }
+
+  Future<void> _fetchScheduleTypes() async {
+    await _scheduleTypeManager.fetchTypesFromFirestore();
+    widget.controller.updateScheduleTypes(_scheduleTypeManager.types);
   }
 
   @override

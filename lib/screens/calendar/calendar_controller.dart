@@ -10,6 +10,12 @@ class CalendarScreenController extends ChangeNotifier {
   final List<Appointment> _appointments = [];
   late String _headerText;
   ScheduleOwner _selectedCategory = ScheduleOwner.all;
+  List<ScheduleTypeInfo> _scheduleTypes = [];
+
+  void updateScheduleTypes(List<ScheduleTypeInfo> types) {
+    _scheduleTypes = types;
+    notifyListeners();
+  }
 
   CalendarScreenController(this.controller) {
     _updateHeaderText();
