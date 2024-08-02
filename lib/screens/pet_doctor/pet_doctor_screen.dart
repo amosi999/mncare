@@ -106,156 +106,187 @@ class _PetDoctorScreenState extends State<PetDoctorScreen> {
     }
   }
 
-  void _retakePicture() {
-    setState(() {
-      _image = null;
-      _isCameraView = true;
-    });
-  }
-
   Future<void> _submit() async {
-  if (_image == null || _selectedPet == null) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('이미지나 선택된 펫이 없습니다.')),
-    );
-    return;
-  }
-
-  setState(() {
-    _isUploading = true;
-  });
-
-  try {
-    final user = FirebaseAuth.instance.currentUser;
-    if (user == null) {
-      throw Exception('User not logged in');
+    if (_image == null || _selectedPet == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('이미지나 선택된 펫이 없습니다.')),
+      );
+      return;
     }
 
-    final fileName = path.basename(_image!.path);
-    final storageRef = FirebaseStorage.instance.ref()
-        .child('${user.uid}/${_selectedPet!.name}/$fileName');
-    
-    await storageRef.putFile(_image!);
-    
-    final downloadUrl = await storageRef.getDownloadURL();
-    
-    // Firestore에 데이터 저장
-    await FirebaseFirestore.instance
-        .collection('users')
-        .doc(user.uid)
-        .collection('pets')
-        .doc(_selectedPet!.id)
-        .collection('petDoctor')
-        .add({
-      'img_url': downloadUrl,
-      'createdDate': FieldValue.serverTimestamp(),
-    });
-    
-    print('파일 업로드 및 데이터 저장 완료: $downloadUrl');
-    
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('이미지가 성공적으로 업로드되고 저장되었습니다!')),
-    );
-  } catch (e) {
-    print('이미지 업로드 및 데이터 저장 중 오류 발생: $e');
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('이미지 업로드 및 데이터 저장 중 오류가 발생했습니다.')),
-    );
-  } finally {
     setState(() {
-      _isUploading = false;
+      _isUploading = true;
     });
+
+    try {
+      final user = FirebaseAuth.instance.currentUser;
+      if (user == null) {
+        throw Exception('User not logged in');
+      }
+
+      final fileName = path.basename(_image!.path);
+      final storageRef = FirebaseStorage.instance.ref()
+          .child('${user.uid}/${_selectedPet!.name}/$fileName');
+      
+      await storageRef.putFile(_image!);
+      
+      final downloadUrl = await storageRef.getDownloadURL();
+      
+      // Firestore에 데이터 저장
+      await FirebaseFirestore.instance
+          .collection('users')
+          .doc(user.uid)
+          .collection('pets')
+          .doc(_selectedPet!.id)
+          .collection('petDoctor')
+          .add({
+        'img_url': downloadUrl,
+        'createdDate': FieldValue.serverTimestamp(),
+      });
+      
+      print('파일 업로드 및 데이터 저장 완료: $downloadUrl');
+      
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('이미지가 성공적으로 업로드되고 저장되었습니다!')),
+      );
+    } catch (e) {
+      print('이미지 업로드 및 데이터 저장 중 오류 발생: $e');
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('이미지 업로드 및 데이터 저장 중 오류가 발생했습니다.')),
+      );
+    } finally {
+      setState(() {
+        _isUploading = false;
+      });
+    }
   }
-}
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text("Pet Doctor")),
-      body: Column(
-        crossAxisAlignment: CrossAxisAlignment.center,
+      body: Stack(
         children: [
-          const SizedBox(height: 30, width: double.infinity),
-          if (_pets.isNotEmpty)
-            DropdownButton<Pet>(
-              value: _selectedPet,
-              items: _pets.map((Pet pet) {
-                return DropdownMenuItem<Pet>(
-                  value: pet,
-                  child: Text(pet.name),
-                );
-              }).toList(),
-              onChanged: (Pet? newValue) {
-                setState(() {
-                  _selectedPet = newValue;
-                });
-              },
+          _isCameraView ? _buildFullScreenCameraPreview() : _buildImagePreview(),
+          Positioned(
+            top: 40,
+            left: 20,
+            child: IconButton(
+              icon: const Icon(Icons.arrow_back, color: Colors.white),
+              onPressed: () => Navigator.of(context).pop(),
             ),
-          const SizedBox(height: 20),
-          _isCameraView ? _buildCameraPreview() : _buildImagePreview(),
-          const SizedBox(height: 20),
-          _buildButtons(),
-          const SizedBox(height: 20),
-          if (_image != null)
-            ElevatedButton(
-              onPressed: _isUploading ? null : _submit,
-              child: _isUploading
-                  ? const CircularProgressIndicator()
-                  : const Text('사진 업로드'),
+          ),
+          if (_isCameraView)
+            Positioned(
+              bottom: 30,
+              left: 0,
+              right: 0,
+              child: _buildCameraControls(),
+            ),
+          if (!_isCameraView)
+            Positioned(
+              bottom: 30,
+              left: 0,
+              right: 0,
+              child: _buildImageControls(),
             ),
         ],
       ),
     );
   }
 
-  Widget _buildCameraPreview() {
+  Widget _buildCameraControls() {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceAround,
+      children: [
+        IconButton(
+          icon: const Icon(Icons.photo_library, color: Colors.white, size: 30),
+          onPressed: _pickImage,
+        ),
+        FloatingActionButton(
+          onPressed: _takePicture,
+          child: const Icon(Icons.camera, size: 36),
+        ),
+        _buildPetDropdown(),
+      ],
+    );
+  }
+
+  Widget _buildImageControls() {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceAround,
+          children: [
+            ElevatedButton(
+              onPressed: () {
+                setState(() {
+                  _isCameraView = true;
+                  _image = null;
+                });
+              },
+              child: const Text("취소"),
+            ),
+            ElevatedButton(
+              onPressed: _isUploading ? null : _submit,
+              child: _isUploading
+                  ? const CircularProgressIndicator()
+                  : const Text('사진 업로드'),
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+
+  Widget _buildPetDropdown() {
+    return DropdownButton<Pet>(
+      value: _selectedPet,
+      dropdownColor: Colors.black54,
+      icon: const Icon(Icons.pets, color: Colors.white),
+      items: _pets.map((Pet pet) {
+        return DropdownMenuItem<Pet>(
+          value: pet,
+          child: Text(pet.name, style: const TextStyle(color: Colors.white)),
+        );
+      }).toList(),
+      onChanged: (Pet? newValue) {
+        setState(() {
+          _selectedPet = newValue;
+        });
+      },
+    );
+  }
+
+  Widget _buildFullScreenCameraPreview() {
     return FutureBuilder<void>(
       future: _initializeControllerFuture,
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.done) {
-          return SizedBox(
-            width: 400,
-            height: 400,
+          return SizedBox.expand(
             child: Stack(
-              alignment: Alignment.center,
+              fit: StackFit.expand,
               children: [
                 CameraPreview(_controller!),
-                CustomPaint(
-                  size: const Size(300, 300),
-                  painter: GuidelinePainter(),
+                Center(
+                  child: CustomPaint(
+                    size: Size(MediaQuery.of(context).size.width * 0.8, MediaQuery.of(context).size.width * 0.8),
+                    painter: GuidelinePainter(),
+                  ),
                 ),
               ],
             ),
           );
         } else {
-          return const CircularProgressIndicator();
+          return const Center(child: CircularProgressIndicator());
         }
       },
     );
   }
 
   Widget _buildImagePreview() {
-    return SizedBox(
-      width: 300,
-      height: 300,
+    return SizedBox.expand(
       child: Image.file(_image!, fit: BoxFit.cover),
-    );
-  }
-
-  Widget _buildButtons() {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: [
-        ElevatedButton(
-          onPressed: _isCameraView ? _takePicture : _retakePicture,
-          child: Text(_isCameraView ? "사진 찍기" : "다시 찍기"),
-        ),
-        const SizedBox(width: 20),
-        ElevatedButton(
-          onPressed: _pickImage,
-          child: const Text("갤러리에서 선택"),
-        ),
-      ],
     );
   }
 
