@@ -1,12 +1,16 @@
 import 'package:flutter/material.dart';
-import 'package:mncare/screens/calendar/schedule_type_manager.dart';
+import 'package:mncare/screens/calendar/schedule_type_manager.dart'; 
 
-enum ScheduleOwner { all, meru, darae }
+//기존의 enum로직 삭제 후 Pet 클래스 추가
+class Pet {
+  final String id;
+  final String name;
 
-enum ScheduleType { vaccination, visit }
+  Pet({required this.id, required this.name});
+}
 
 class ScheduleInfo {
-  final ScheduleOwner owner;
+  final Pet owner;
   final ScheduleTypeInfo type;
   final String title;
   final DateTime date;
@@ -28,27 +32,7 @@ class ScheduleInfo {
 
   @override
   String toString() {
-    return 'ScheduleInfo(owner: $owner, type: $type, title: $title, date: $date, isAllDay: $isAllDay, startTime: $startTime, endTime: $endTime, description: $description)';
+    return 'ScheduleInfo(owner: ${owner.name}, type: ${type.name}, title: $title, date: $date, isAllDay: $isAllDay, startTime: $startTime, endTime: $endTime, description: $description)';
   }
 }
 
-// 유틸리티 함수들
-String scheduleOwnerToString(ScheduleOwner owner) {
-  switch (owner) {
-    case ScheduleOwner.all:
-      return '전체';
-    case ScheduleOwner.meru:
-      return '머루';
-    case ScheduleOwner.darae:
-      return '다래';
-  }
-}
-
-String scheduleTypeToString(ScheduleType type) {
-  switch (type) {
-    case ScheduleType.vaccination:
-      return '접종';
-    case ScheduleType.visit:
-      return '내원';
-  }
-}

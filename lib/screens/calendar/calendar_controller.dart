@@ -1,3 +1,5 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:syncfusion_flutter_calendar/calendar.dart';
@@ -8,10 +10,11 @@ import 'schedule_type_manager.dart';
 class CalendarScreenController extends ChangeNotifier {
   final CalendarController controller;
   final List<Appointment> _appointments = [];
-  late String _headerText;
-  ScheduleOwner _selectedCategory = ScheduleOwner.all;
   List<ScheduleTypeInfo> _scheduleTypes = [];
+  late String _headerText;
+  Pet? _selectedPet;
 
+  //타입의 업데이트를 반여하려면 필요하다.
   void updateScheduleTypes(List<ScheduleTypeInfo> types) {
     _scheduleTypes = types;
     notifyListeners();
@@ -22,7 +25,7 @@ class CalendarScreenController extends ChangeNotifier {
   }
 
   String get headerText => _headerText;
-  ScheduleOwner get selectedCategory => _selectedCategory;
+  List<ScheduleTypeInfo> get scheduleTypes => _scheduleTypes;
 
   void _updateHeaderText() {
     DateTime displayDate = controller.displayDate ?? DateTime.now();
@@ -74,49 +77,113 @@ class CalendarScreenController extends ChangeNotifier {
     return MeetingDataSource(_appointments);
   }
 
-  void setSelectedCategory(ScheduleOwner category) {
-    if (_selectedCategory != category) {
-      _selectedCategory = category;
-      notifyListeners();
+
+  void setSelectedPet(Pet pet) {
+    _selectedPet = pet;
+    _fetchAppointments(); // 선택한 펫의 일정 불러오기
+    notifyListeners();
+  }
+
+Future<void> _fetchAppointments() async {
+    if (_selectedPet == null) return;
+    User? user = FirebaseAuth.instance.currentUser;
+    if (user == null) return;
+
+    final querySnapshot = await FirebaseFirestore.instance
+        .collection('users')
+        .doc(user.uid)
+        .collection('pets')
+        .doc(_selectedPet!.id)
+        .collection('appointments')
+        .get();
+
+    _appointments.clear();
+    for (var doc in querySnapshot.docs) {
+      final data = doc.data();
+      final pet = _selectedPet!;
+      final type = _scheduleTypes.firstWhere(
+        (t) => t.name == data['type'],
+        orElse: () => _scheduleTypes.first,
+      );
+      
+      final scheduleInfo = ScheduleInfo(
+        owner: pet,
+        type: type,
+        title: data['title'],
+        date: DateTime.parse(data['date']),
+        isAllDay: data['isAllDay'],
+        startTime: data['startTime'] != null
+            ? TimeOfDay(
+                hour: int.parse(data['startTime'].split(':')[0]),
+                minute: int.parse(data['startTime'].split(':')[1]),
+              )
+            : null,
+        endTime: data['endTime'] != null
+            ? TimeOfDay(
+                hour: int.parse(data['endTime'].split(':')[0]),
+                minute: int.parse(data['endTime'].split(':')[1]),
+              )
+            : null,
+        description: data['description'],
+      );
+      
+      _appointments.add(Appointment(
+        startTime: scheduleInfo.date,
+        endTime: scheduleInfo.isAllDay
+            ? DateTime(scheduleInfo.date.year, scheduleInfo.date.month,
+                scheduleInfo.date.day, 23, 59, 59)
+            : DateTime(
+                scheduleInfo.date.year,
+                scheduleInfo.date.month,
+                scheduleInfo.date.day,
+                scheduleInfo.endTime!.hour,
+                scheduleInfo.endTime!.minute,
+              ),
+        subject: scheduleInfo.title,
+        color: scheduleInfo.type.color,
+        isAllDay: scheduleInfo.isAllDay,
+        notes: "${scheduleInfo.description ?? ''}\n${scheduleInfo.owner.name}",
+      ));
     }
+    notifyListeners();
   }
 
-  List<Appointment> getFilteredAppointments() {
-    if (_selectedCategory == ScheduleOwner.all) {
-      return _appointments;
-    }
-    return _appointments.where((appointment) {
-      String ownerString = appointment.notes?.split('\n').last ?? '';
-      return ownerString == _selectedCategory.toString();
-    }).toList();
+  List<Appointment> getAppointmentsForDate(DateTime date) {
+    return _appointments
+        .where((appointment) =>
+            appointment.startTime.year == date.year &&
+            appointment.startTime.month == date.month &&
+            appointment.startTime.day == date.day)
+        .toList();
   }
 
-  MeetingDataSource getFilteredCalendarDataSource() {
-    return MeetingDataSource(getFilteredAppointments());
-  }
+  //firebase에 일정 추가하는 로직 추가.
+  void addScheduleToCalendar(ScheduleInfo schedule) async {
+    User? user = FirebaseAuth.instance.currentUser;
+    if (user == null) return;
 
-  ScheduleInfo appointmentToScheduleInfo(Appointment appointment) {
-    ScheduleOwner owner = ScheduleOwner.all;
-    String ownerString = appointment.notes?.split('\n').last ?? '';
-    if (ownerString == ScheduleOwner.meru.toString()) {
-      owner = ScheduleOwner.meru;
-    } else if (ownerString == ScheduleOwner.darae.toString()) {
-      owner = ScheduleOwner.darae;
-    }
+    final DocumentReference docRef = FirebaseFirestore.instance
+        .collection('users')
+        .doc(user.uid)
+        .collection('pets')
+        .doc(schedule.owner.id)
+        .collection('appointments')
+        .doc();
 
-    return ScheduleInfo(
-      owner: owner,
-      type: getScheduleTypeFromColor(appointment.color),
-      title: appointment.subject,
-      date: appointment.startTime,
-      isAllDay: appointment.isAllDay,
-      startTime: TimeOfDay.fromDateTime(appointment.startTime),
-      endTime: TimeOfDay.fromDateTime(appointment.endTime),
-      description: appointment.notes?.split('\n').first,
-    );
-  }
+    await docRef.set({
+      'title': schedule.title,
+      'type': schedule.type.name,
+      'date': schedule.date.toIso8601String(),
+      'isAllDay': schedule.isAllDay,
+      'startTime': schedule.startTime != null
+          ? '${schedule.startTime!.hour}:${schedule.startTime!.minute}'
+          : null,
+      'endTime': schedule.endTime != null
+          ? '${schedule.endTime!.hour}:${schedule.endTime!.minute}'
+          : null,
+      'description': schedule.description,
+    });
 
-  void addScheduleToCalendar(ScheduleInfo schedule) {
     _appointments.add(Appointment(
       startTime: schedule.isAllDay
           ? DateTime(schedule.date.year, schedule.date.month, schedule.date.day)
@@ -140,18 +207,9 @@ class CalendarScreenController extends ChangeNotifier {
       subject: schedule.title,
       color: schedule.type.color,
       isAllDay: schedule.isAllDay,
-      notes: "${schedule.description ?? ''}\n${schedule.owner}",
+      notes: "${schedule.description ?? ''}\n${schedule.owner.name}",
     ));
     notifyListeners();
-  }
-
-  List<Appointment> getAppointmentsForDate(DateTime date) {
-    return _appointments
-        .where((appointment) =>
-            appointment.startTime.year == date.year &&
-            appointment.startTime.month == date.month &&
-            appointment.startTime.day == date.day)
-        .toList();
   }
 
   void updateScheduleInCalendar(
@@ -182,7 +240,7 @@ class CalendarScreenController extends ChangeNotifier {
         subject: updatedSchedule.title,
         color: updatedSchedule.type.color,
         isAllDay: updatedSchedule.isAllDay,
-        notes: "${updatedSchedule.description ?? ''}\n${updatedSchedule.owner}",
+        notes: "${updatedSchedule.description ?? ''}\n${updatedSchedule.owner.name}",
       );
       notifyListeners();
     }
@@ -194,9 +252,9 @@ class CalendarScreenController extends ChangeNotifier {
   }
 
   ScheduleTypeInfo getScheduleTypeFromColor(Color color) {
-    return ScheduleTypeManager().types.firstWhere(
+    return _scheduleTypes.firstWhere(
           (type) => type.color == color,
-          orElse: () => ScheduleTypeManager().types.first,
+          orElse: () => _scheduleTypes.first,
         );
   }
 }

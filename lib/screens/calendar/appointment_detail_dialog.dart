@@ -18,7 +18,7 @@ class AppointmentDetailDialog extends StatelessWidget {
             Text('제목: ${schedule.title}',
                 style: const TextStyle(fontWeight: FontWeight.bold)),
             const SizedBox(height: 8),
-            Text('소유자: ${scheduleOwnerToString(schedule.owner)}'),
+            Text('소유자: ${schedule.owner.name}'), //소유자의 이름울 출력 // 여기서는 Pet의 이름이겠지/ 
             const SizedBox(height: 8),
             Text('유형: ${schedule.type.name}'),
             const SizedBox(height: 8),

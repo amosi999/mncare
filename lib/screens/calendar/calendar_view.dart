@@ -23,7 +23,7 @@ class CalendarView extends StatelessWidget {
     return sfcalendar.SfCalendar(
       view: sfcalendar.CalendarView.month,
       controller: controller,
-      dataSource: calendarScreenController.getFilteredCalendarDataSource(),
+      //dataSource: calendarScreenController.getFilteredCalendarDataSource(),
       monthViewSettings: getMonthViewSettings(),
       headerHeight: 0,
       viewHeaderHeight: 40,

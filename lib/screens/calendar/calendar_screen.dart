@@ -89,8 +89,7 @@ class _CalendarScreenState extends State<CalendarScreen>
   }
 
   void _editAppointment(Appointment appointment) {
-    ScheduleInfo scheduleInfo =
-        widget.controller.appointmentToScheduleInfo(appointment);
+    //ScheduleInfo scheduleInfo = widget.controller.appointmentToScheduleInfo(appointment);
 
     showAppointmentDialog(
       context,
@@ -104,7 +103,7 @@ class _CalendarScreenState extends State<CalendarScreen>
           );
         }
       },
-      initialSchedule: scheduleInfo,
+      //initialSchedule: scheduleInfo,
     );
   }
 

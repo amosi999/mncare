@@ -20,13 +20,9 @@ class AppointmentListDialog extends StatelessWidget {
   });
 
   ScheduleInfo _appointmentToScheduleInfo(Appointment appointment) {
-    ScheduleOwner owner = ScheduleOwner.all;
+    Pet owner = Pet(id: '', name: ''); // 기본값을 빈 Pet 객체로 설정
     String ownerString = appointment.notes?.split('\n').last ?? '';
-    if (ownerString == ScheduleOwner.meru.toString()) {
-      owner = ScheduleOwner.meru;
-    } else if (ownerString == ScheduleOwner.darae.toString()) {
-      owner = ScheduleOwner.darae;
-    }
+    // 실제 펫 객체를 찾아 설정하는 로직 필요
 
     return ScheduleInfo(
       owner: owner,
@@ -73,7 +69,7 @@ class AppointmentListDialog extends StatelessWidget {
                           children: [
                             TextSpan(
                               text:
-                                  '[${scheduleOwnerToString(schedule.owner)}/${schedule.type.name}] ',
+                                  '[${schedule.owner.name}/${schedule.type.name}] ',
                               style: TextStyle(
                                 fontWeight: FontWeight.bold,
                                 color: schedule.type.color,

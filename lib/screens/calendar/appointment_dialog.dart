@@ -1,3 +1,5 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
@@ -10,7 +12,7 @@ void showAppointmentDialog(
   ScheduleInfo? initialSchedule,
 }) {
   final bool isEditing = initialSchedule != null;
-  ScheduleOwner owner = initialSchedule?.owner ?? ScheduleOwner.all;
+  Pet? owner = initialSchedule?.owner;
   ScheduleTypeInfo? type = initialSchedule?.type;
   String title = initialSchedule?.title ?? '';
   DateTime date = initialSchedule?.date ?? DateTime.now();
@@ -18,31 +20,67 @@ void showAppointmentDialog(
   TimeOfDay? startTime = initialSchedule?.startTime;
   TimeOfDay? endTime = initialSchedule?.endTime;
   String? description = initialSchedule?.description;
+  List<Pet>? _pets;
+  Pet? _selectedPet = owner;
 
   showDialog(
     context: context,
     builder: (BuildContext context) {
       return StatefulBuilder(
         builder: (context, setState) {
+          if (_pets == null) {
+            _fetchPets().then((pets) {
+              setState(() {
+                _pets = pets;
+              });
+            });
+          }
+
           return AlertDialog(
             title: Text(isEditing ? '일정 수정' : '새 일정 추가'),
             content: SingleChildScrollView(
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  DropdownButtonFormField<ScheduleOwner>(
-                    value: owner,
-                    onChanged: (ScheduleOwner? value) {
-                      setState(() => owner = value!);
-                    },
-                    items: ScheduleOwner.values.map((ScheduleOwner ownerValue) {
-                      return DropdownMenuItem<ScheduleOwner>(
-                        value: ownerValue,
-                        child: Text(scheduleOwnerToString(ownerValue)),
-                      );
-                    }).toList(),
-                    decoration: const InputDecoration(labelText: '누구의 일정'),
-                  ),
+                  //if (_pets == null)
+                  //FutureBuilder<List<Pet>>(
+                  //future: _fetchPets(),
+                  //builder: (context, snapshot) {
+                  // if (snapshot.connectionState ==
+                  //     ConnectionState.waiting) {
+                  //   return const CircularProgressIndicator();
+                  // }
+                  // if (snapshot.hasError) {
+                  //   return Text('Error: ${snapshot.error}');
+                  // }
+                  // if (!snapshot.hasData || snapshot.data!.isEmpty) {
+                  //   return const Text('No pets found.');
+                  // }
+                  if (_pets == null)
+                    const CircularProgressIndicator()
+                  else if (_pets!.isEmpty)
+                    const Text('No pets found.')
+                  else
+                    _buildPetDropdown(_pets!, _selectedPet, (Pet? newValue) {
+                      setState(() {
+                        _selectedPet = newValue;
+                        owner = newValue;
+                      });
+                      print("Selected owner value: ${owner?.name}");
+                    }),
+
+                  // _pets = snapshot.data!;
+
+                  //     return _buildPetDropdown(_pets!, _selectedPet,
+                  //         (Pet? newValue) {
+                  //       setState(() {
+                  //         _selectedPet = newValue;
+                  //         owner = newValue;
+                  //       });
+                  //       print("Selected owner value: ${owner?.name}");
+                  //     });
+                  //   },
+                  // ),
                   DropdownButtonFormField<ScheduleTypeInfo>(
                     value: type,
                     onChanged: (ScheduleTypeInfo? value) {
@@ -131,9 +169,11 @@ void showAppointmentDialog(
               TextButton(
                 child: Text(isEditing ? '수정' : '추가'),
                 onPressed: () {
-                  if (type != null && title.isNotEmpty) {
+                  if (type != null &&
+                      title.isNotEmpty &&
+                      _selectedPet != null) {
                     ScheduleInfo schedule = ScheduleInfo(
-                      owner: owner,
+                      owner: _selectedPet!,
                       type: type!,
                       title: title,
                       date: date,
@@ -158,4 +198,38 @@ void showAppointmentDialog(
       );
     },
   );
+}
+
+Widget _buildPetDropdown(
+    List<Pet> pets, Pet? selectedPet, ValueChanged<Pet?> onChanged) {
+  return DropdownButtonFormField<Pet>(
+    value: selectedPet,
+    onChanged: onChanged,
+    items: pets.map((Pet pet) {
+      return DropdownMenuItem<Pet>(
+        value: pet,
+        child: Text(pet.name),
+      );
+    }).toList(),
+    decoration: const InputDecoration(labelText: '누구의 일정'),
+  );
+}
+
+Future<List<Pet>> _fetchPets() async {
+  User? user = FirebaseAuth.instance.currentUser;
+  if (user == null) {
+    print("User not logged in");
+    return [];
+  }
+  final querySnapshot = await FirebaseFirestore.instance
+      .collection('users')
+      .doc(user.uid)
+      .collection('pets')
+      .get();
+
+  print("Pets fetched: ${querySnapshot.docs.length}");
+
+  return querySnapshot.docs
+      .map((doc) => Pet(id: doc.id, name: doc['petName']))
+      .toList();
 }
