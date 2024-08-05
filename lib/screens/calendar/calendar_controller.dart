@@ -331,51 +331,66 @@ class CalendarScreenController extends ChangeNotifier {
 //     description: description,
 //   );
 // }
-Future<ScheduleInfo?> fetchScheduleById(String id) async {
-  User? user = FirebaseAuth.instance.currentUser;
-  if (user == null || _selectedPet == null) return null;
+  Future<ScheduleInfo?> fetchScheduleById(String id) async {
+    User? user = FirebaseAuth.instance.currentUser;
+    if (user == null || _selectedPet == null) return null;
 
-  final petDocRef = FirebaseFirestore.instance
-      .collection('users')
-      .doc(user.uid)
-      .collection('pets')
-      .doc(_selectedPet!.id);
+    final petDocRef = FirebaseFirestore.instance
+        .collection('users')
+        .doc(user.uid)
+        .collection('pets')
+        .doc(_selectedPet!.id);
 
-  final petDoc = await petDocRef.get();
-  if (!petDoc.exists) return null;
+    final petDoc = await petDocRef.get();
+    if (!petDoc.exists) return null;
 
-  final petData = petDoc.data()!;
-  final owner = Pet(id: petDoc.id, name: petData['petName']);
+    final petData = petDoc.data()!;
+    final owner = Pet(id: petDoc.id, name: petData['petName']);
 
-  final docRef = petDocRef.collection('appointments').doc(id);
-  final doc = await docRef.get();
-  if (!doc.exists) return null;
+    final docRef = petDocRef.collection('appointments').doc(id);
+    final doc = await docRef.get();
+    if (!doc.exists) return null;
 
-  final data = doc.data()!;
-  final type = _scheduleTypes.firstWhere((t) => t.name == data['type'], orElse: () => _scheduleTypes.first);
+    final data = doc.data()!;
+    final type = _scheduleTypes.firstWhere((t) => t.name == data['type'],
+        orElse: () => _scheduleTypes.first);
 
-  return ScheduleInfo(
-    id: doc.id,
-    owner: owner,
-    type: type,
-    title: data['title'],
-    date: DateTime.parse(data['date']),
-    isAllDay: data['isAllDay'],
-    startTime: data['startTime'] != null
-        ? TimeOfDay(
-            hour: int.parse(data['startTime'].split(':')[0]),
-            minute: int.parse(data['startTime'].split(':')[1]),
-          )
-        : null,
-    endTime: data['endTime'] != null
-        ? TimeOfDay(
-            hour: int.parse(data['endTime'].split(':')[0]),
-            minute: int.parse(data['endTime'].split(':')[1]),
-          )
-        : null,
-    description: data['description'],
-  );
-}
+    return ScheduleInfo(
+      id: doc.id,
+      owner: owner,
+      type: type,
+      title: data['title'],
+      date: DateTime.parse(data['date']),
+      isAllDay: data['isAllDay'],
+      startTime: data['startTime'] != null
+          ? TimeOfDay(
+              hour: int.parse(data['startTime'].split(':')[0]),
+              minute: int.parse(data['startTime'].split(':')[1]),
+            )
+          : null,
+      endTime: data['endTime'] != null
+          ? TimeOfDay(
+              hour: int.parse(data['endTime'].split(':')[0]),
+              minute: int.parse(data['endTime'].split(':')[1]),
+            )
+          : null,
+      description: data['description'],
+    );
+  }
+
+  // 일정 필터링 로직 추가
+  List<Appointment> getFilteredAppointments() {
+    //기존에 있던 == 전체 로직을 지웠음. 나중에 추가.
+    return _appointments.where((appointment) {
+      String ownerString = appointment.notes?.split('\n').last ?? '';
+      return ownerString == _selectedPet?.name;
+    }).toList();
+  }
+
+  MeetingDataSource getFilteredCalendarDataSource() {
+    return MeetingDataSource(getFilteredAppointments());
+  }
+
 }
 
 class MeetingDataSource extends CalendarDataSource {
