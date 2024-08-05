@@ -2,14 +2,19 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:syncfusion_flutter_calendar/calendar.dart';
 
 import 'schedule_info.dart';
 import 'schedule_type_manager.dart';
 
 void showAppointmentDialog(
   BuildContext context,
+  //스케줄을 저장하는 부분에 대해. 수정 삭제 스케줄러..
   Function(ScheduleInfo) onSaveSchedule, {
   ScheduleInfo? initialSchedule,
+  Function(Appointment, ScheduleInfo)? onUpdateSchedule,
+  //Function(Appointment)? onDeleteSchedule,
+  Appointment? appointment,
 }) {
   final bool isEditing = initialSchedule != null;
   Pet? owner = initialSchedule?.owner;
@@ -28,59 +33,66 @@ void showAppointmentDialog(
     builder: (BuildContext context) {
       return StatefulBuilder(
         builder: (context, setState) {
+/*구간1 add만 정삭 작동 */
+          // if (_pets == null) {
+          //   _fetchPets().then((pets) {
+          //     setState(() {
+          //       _pets = pets;
+          //     });
+          //   });
+          // }
+          // return AlertDialog(
+          //   title: Text(isEditing ? '일정 수정' : '새 일정 추가'),
+          //   content: SingleChildScrollView(
+          //     child: Column(
+          //       mainAxisSize: MainAxisSize.min,
+          //       children: [
+          //         if (_pets == null)
+          //           const CircularProgressIndicator()
+          //         else if (_pets!.isEmpty)
+          //           const Text('No pets found.')
+          //         else
+          //           _buildPetDropdown(_pets!, _selectedPet, (Pet? newValue) {
+          //             setState(() {
+          //               _selectedPet = newValue;
+          //               owner = newValue;
+          //             });
+          //             print("Selected owner value: ${owner?.name}");
+          //           }),
+/*구간2 수정은 개선됐는데, add에서 문제. */
           if (_pets == null) {
             _fetchPets().then((pets) {
               setState(() {
                 _pets = pets;
+                if (_selectedPet != null && !_pets!.contains(_selectedPet)) {
+                  _selectedPet = owner;
+                  //owner = _selectedPet;
+                }
               });
             });
           }
-
           return AlertDialog(
             title: Text(isEditing ? '일정 수정' : '새 일정 추가'),
             content: SingleChildScrollView(
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  //if (_pets == null)
-                  //FutureBuilder<List<Pet>>(
-                  //future: _fetchPets(),
-                  //builder: (context, snapshot) {
-                  // if (snapshot.connectionState ==
-                  //     ConnectionState.waiting) {
-                  //   return const CircularProgressIndicator();
-                  // }
-                  // if (snapshot.hasError) {
-                  //   return Text('Error: ${snapshot.error}');
-                  // }
-                  // if (!snapshot.hasData || snapshot.data!.isEmpty) {
-                  //   return const Text('No pets found.');
-                  // }
                   if (_pets == null)
                     const CircularProgressIndicator()
                   else if (_pets!.isEmpty)
                     const Text('No pets found.')
                   else
-                    _buildPetDropdown(_pets!, _selectedPet, (Pet? newValue) {
-                      setState(() {
-                        _selectedPet = newValue;
-                        owner = newValue;
-                      });
-                      print("Selected owner value: ${owner?.name}");
-                    }),
-
-                  // _pets = snapshot.data!;
-
-                  //     return _buildPetDropdown(_pets!, _selectedPet,
-                  //         (Pet? newValue) {
-                  //       setState(() {
-                  //         _selectedPet = newValue;
-                  //         owner = newValue;
-                  //       });
-                  //       print("Selected owner value: ${owner?.name}");
-                  //     });
-                  //   },
-                  // ),
+                    isEditing
+                        ? _buildPetDropdownDisabled(_selectedPet)
+                        : _buildPetDropdown(_pets!, _selectedPet,
+                            (Pet? newValue) {
+                            setState(() {
+                              _selectedPet = newValue;
+                              owner = newValue;
+                            });
+                            print("Selected owner value: ${owner?.name}");
+                          }),
+/*구간3*/
                   DropdownButtonFormField<ScheduleTypeInfo>(
                     value: type,
                     onChanged: (ScheduleTypeInfo? value) {
@@ -173,6 +185,7 @@ void showAppointmentDialog(
                       title.isNotEmpty &&
                       _selectedPet != null) {
                     ScheduleInfo schedule = ScheduleInfo(
+                      id: isEditing ? initialSchedule!.id : null,
                       owner: _selectedPet!,
                       type: type!,
                       title: title,
@@ -197,6 +210,17 @@ void showAppointmentDialog(
         },
       );
     },
+  );
+}
+
+Widget _buildPetDropdownDisabled(Pet? selectedPet) {
+  return DropdownButtonFormField<Pet>(
+    value: selectedPet,
+    onChanged: null, // 비활성화
+    items: [
+      DropdownMenuItem<Pet>(value: selectedPet, child: Text(selectedPet!.name))
+    ],
+    decoration: const InputDecoration(labelText: '누구의 일정'),
   );
 }
 

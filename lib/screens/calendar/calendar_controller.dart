@@ -77,14 +77,13 @@ class CalendarScreenController extends ChangeNotifier {
     return MeetingDataSource(_appointments);
   }
 
-
   void setSelectedPet(Pet pet) {
     _selectedPet = pet;
     _fetchAppointments(); // 선택한 펫의 일정 불러오기
     notifyListeners();
   }
 
-Future<void> _fetchAppointments() async {
+  Future<void> _fetchAppointments() async {
     if (_selectedPet == null) return;
     User? user = FirebaseAuth.instance.currentUser;
     if (user == null) return;
@@ -105,8 +104,9 @@ Future<void> _fetchAppointments() async {
         (t) => t.name == data['type'],
         orElse: () => _scheduleTypes.first,
       );
-      
+
       final scheduleInfo = ScheduleInfo(
+        id: doc.id,
         owner: pet,
         type: type,
         title: data['title'],
@@ -126,8 +126,9 @@ Future<void> _fetchAppointments() async {
             : null,
         description: data['description'],
       );
-      
+
       _appointments.add(Appointment(
+        id: scheduleInfo.id, // Firestore에서 가져온 고유 ID
         startTime: scheduleInfo.date,
         endTime: scheduleInfo.isAllDay
             ? DateTime(scheduleInfo.date.year, scheduleInfo.date.month,
@@ -166,7 +167,7 @@ Future<void> _fetchAppointments() async {
         .collection('users')
         .doc(user.uid)
         .collection('pets')
-        .doc(schedule.owner.id)
+        .doc(schedule.owner.id) // _selectedPet 대신 schedule.owner를 사용
         .collection('appointments')
         .doc();
 
@@ -184,7 +185,20 @@ Future<void> _fetchAppointments() async {
       'description': schedule.description,
     });
 
+    final newSchedule = ScheduleInfo(
+      id: docRef.id, // Firestore에서 생성된 고유 ID를 할당합니다.
+      owner: schedule.owner,
+      type: schedule.type,
+      title: schedule.title,
+      date: schedule.date,
+      isAllDay: schedule.isAllDay,
+      startTime: schedule.startTime,
+      endTime: schedule.endTime,
+      description: schedule.description,
+    );
+
     _appointments.add(Appointment(
+      id: newSchedule.id, // 고유 ID 추가 ..
       startTime: schedule.isAllDay
           ? DateTime(schedule.date.year, schedule.date.month, schedule.date.day)
           : DateTime(
@@ -209,15 +223,42 @@ Future<void> _fetchAppointments() async {
       isAllDay: schedule.isAllDay,
       notes: "${schedule.description ?? ''}\n${schedule.owner.name}",
     ));
+
+    print('스케줄 내용 : ${newSchedule}');
     notifyListeners();
   }
 
-  void updateScheduleInCalendar(
-      Appointment oldAppointment, ScheduleInfo updatedSchedule) {
+  void updateScheduleInCalendar(ScheduleInfo updatedSchedule) async {
+    User? user = FirebaseAuth.instance.currentUser;
+    if (user == null || _selectedPet == null) return;
+
+    final docRef = FirebaseFirestore.instance
+        .collection('users')
+        .doc(user.uid)
+        .collection('pets')
+        .doc(updatedSchedule.owner.id)
+        .collection('appointments')
+        .doc(updatedSchedule.id);
+
+    await docRef.update({
+      'title': updatedSchedule.title,
+      'type': updatedSchedule.type.name,
+      'date': updatedSchedule.date.toIso8601String(),
+      'isAllDay': updatedSchedule.isAllDay,
+      'startTime': updatedSchedule.startTime != null
+          ? '${updatedSchedule.startTime!.hour}:${updatedSchedule.startTime!.minute}'
+          : null,
+      'endTime': updatedSchedule.endTime != null
+          ? '${updatedSchedule.endTime!.hour}:${updatedSchedule.endTime!.minute}'
+          : null,
+      'description': updatedSchedule.description,
+    });
+
     int index = _appointments
-        .indexWhere((appointment) => appointment == oldAppointment);
+        .indexWhere((appointment) => appointment.id == updatedSchedule.id);
     if (index != -1) {
       _appointments[index] = Appointment(
+        id: updatedSchedule.id, // 고유 ID 유지
         startTime: updatedSchedule.isAllDay
             ? updatedSchedule.date
             : DateTime(
@@ -240,23 +281,101 @@ Future<void> _fetchAppointments() async {
         subject: updatedSchedule.title,
         color: updatedSchedule.type.color,
         isAllDay: updatedSchedule.isAllDay,
-        notes: "${updatedSchedule.description ?? ''}\n${updatedSchedule.owner.name}",
+        notes:
+            "${updatedSchedule.description ?? ''}\n${updatedSchedule.owner.name}",
       );
       notifyListeners();
     }
   }
 
-  void deleteScheduleFromCalendar(Appointment appointment) {
-    _appointments.remove(appointment);
+  void deleteScheduleFromCalendar(String scheduleId) async {
+    User? user = FirebaseAuth.instance.currentUser;
+    if (user == null || _selectedPet == null) return;
+
+    final docRef = FirebaseFirestore.instance
+        .collection('users')
+        .doc(user.uid)
+        .collection('pets')
+        .doc(_selectedPet!.id)
+        .collection('appointments')
+        .doc(scheduleId);
+
+    await docRef.delete();
+
+    _appointments.removeWhere((a) => a.id == scheduleId);
     notifyListeners();
   }
 
-  ScheduleTypeInfo getScheduleTypeFromColor(Color color) {
-    return _scheduleTypes.firstWhere(
-          (type) => type.color == color,
-          orElse: () => _scheduleTypes.first,
-        );
-  }
+//appointment을 ScheduleInfo로 변환하는 로직 추가.
+//왜..? 그냥 스케줄러를 불러오면 되는거 아닌가?
+//왜.. appointment를 스케줄러 객체로 변환하는 수고를 해야하는 거지? 의도가 있나?
+// ScheduleInfo appointmentToScheduleInfo(Appointment appointment) {
+//   final notesParts = appointment.notes?.split('\n') ?? [];
+//   final description = notesParts.isNotEmpty ? notesParts[0] : '';
+//   final ownerName = notesParts.length > 1 ? notesParts[1] : '';
+
+//   // 실제 펫 객체를 찾아 설정하는 로직 필요
+//   final owner = _pets.firstWhere((pet) => pet.name == ownerName,
+//       orElse: () => Pet(id: '', name: ''));
+
+//   return ScheduleInfo(
+//     id: appointment.id,
+//     owner: owner,
+//     type: _scheduleTypes.firstWhere((type) => type.color == appointment.color,
+//         orElse: () => _scheduleTypes.first),
+//     title: appointment.subject,
+//     date: appointment.startTime,
+//     isAllDay: appointment.isAllDay,
+//     startTime: TimeOfDay.fromDateTime(appointment.startTime),
+//     endTime: TimeOfDay.fromDateTime(appointment.endTime),
+//     description: description,
+//   );
+// }
+Future<ScheduleInfo?> fetchScheduleById(String id) async {
+  User? user = FirebaseAuth.instance.currentUser;
+  if (user == null || _selectedPet == null) return null;
+
+  final petDocRef = FirebaseFirestore.instance
+      .collection('users')
+      .doc(user.uid)
+      .collection('pets')
+      .doc(_selectedPet!.id);
+
+  final petDoc = await petDocRef.get();
+  if (!petDoc.exists) return null;
+
+  final petData = petDoc.data()!;
+  final owner = Pet(id: petDoc.id, name: petData['petName']);
+
+  final docRef = petDocRef.collection('appointments').doc(id);
+  final doc = await docRef.get();
+  if (!doc.exists) return null;
+
+  final data = doc.data()!;
+  final type = _scheduleTypes.firstWhere((t) => t.name == data['type'], orElse: () => _scheduleTypes.first);
+
+  return ScheduleInfo(
+    id: doc.id,
+    owner: owner,
+    type: type,
+    title: data['title'],
+    date: DateTime.parse(data['date']),
+    isAllDay: data['isAllDay'],
+    startTime: data['startTime'] != null
+        ? TimeOfDay(
+            hour: int.parse(data['startTime'].split(':')[0]),
+            minute: int.parse(data['startTime'].split(':')[1]),
+          )
+        : null,
+    endTime: data['endTime'] != null
+        ? TimeOfDay(
+            hour: int.parse(data['endTime'].split(':')[0]),
+            minute: int.parse(data['endTime'].split(':')[1]),
+          )
+        : null,
+    description: data['description'],
+  );
+}
 }
 
 class MeetingDataSource extends CalendarDataSource {

@@ -20,11 +20,12 @@ class AppointmentListDialog extends StatelessWidget {
   });
 
   ScheduleInfo _appointmentToScheduleInfo(Appointment appointment) {
-    Pet owner = Pet(id: '', name: ''); // 기본값을 빈 Pet 객체로 설정
-    String ownerString = appointment.notes?.split('\n').last ?? '';
-    // 실제 펫 객체를 찾아 설정하는 로직 필요
+    final notesParts = appointment.notes?.split('\n') ?? [];
+    final ownerName = notesParts.length > 1 ? notesParts[1] : '';
+    Pet owner = Pet(id: '', name: ownerName);
 
     return ScheduleInfo(
+      id: appointment.id.toString(),
       owner: owner,
       type: ScheduleTypeManager().types.firstWhere(
             (type) => type.color == appointment.color,
@@ -53,6 +54,7 @@ class AppointmentListDialog extends StatelessWidget {
                 itemBuilder: (context, index) {
                   final appointment = appointments[index];
                   final schedule = _appointmentToScheduleInfo(appointment);
+                  //일정 상세보기.
                   return InkWell(
                     onTap: () {
                       showDialog(
@@ -90,6 +92,7 @@ class AppointmentListDialog extends StatelessWidget {
                             onPressed: () {
                               Navigator.of(context).pop();
                               onEdit(appointment);
+                              print("스케줄 : ${appointment}");
                             },
                           ),
                           IconButton(

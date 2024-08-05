@@ -54,7 +54,6 @@ class _CalendarScreenState extends State<CalendarScreen>
     if (user != null) {
       // Firestore에서 사용자 데이터를 가져오거나, 필요에 따라 추가 작업을 수행합니다.
       print("스케줄러 User ID: ${user.uid}");
-      // 여기에 Firestore에서 데이터를 가져오는 코드 추가
     }
   }
 
@@ -88,28 +87,30 @@ class _CalendarScreenState extends State<CalendarScreen>
     }
   }
 
-  void _editAppointment(Appointment appointment) {
-    //ScheduleInfo scheduleInfo = widget.controller.appointmentToScheduleInfo(appointment);
+  void _editAppointment(Appointment appointment) async {
+    print('저장된 아이디 : ${appointment.id as String}');
+    final scheduleInfo =
+        await widget.controller.fetchScheduleById(appointment.id as String);
+    if (scheduleInfo == null) return;
 
     showAppointmentDialog(
       context,
       (updatedSchedule) {
         try {
-          widget.controller
-              .updateScheduleInCalendar(appointment, updatedSchedule);
+          widget.controller.updateScheduleInCalendar(updatedSchedule);
         } catch (e) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(content: Text('일정 업데이트 중 오류가 발생했습니다: $e')),
           );
         }
       },
-      //initialSchedule: scheduleInfo,
+      initialSchedule: scheduleInfo,
     );
   }
 
   void _deleteAppointment(Appointment appointment) {
     try {
-      widget.controller.deleteScheduleFromCalendar(appointment);
+      widget.controller.deleteScheduleFromCalendar(appointment.id as String);
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('일정 삭제 중 오류가 발생했습니다: $e')),
