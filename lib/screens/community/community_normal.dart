@@ -24,17 +24,19 @@ class Post {
   });
 
   factory Post.fromFirestore(DocumentSnapshot doc) {
-    Map data = doc.data() as Map<String, dynamic>;
-    return Post(
-      id: doc.id,
-      title: data['title'] ?? '',
-      content: data['content'] ?? '',
-      author: data['author'] ?? '익명',
-      createdAt: (data['createdDate'] as Timestamp).toDate(),
-      imageUrl: data['imageUrl'],
-      link: data['link'],
-    );
-  }
+  Map<String, dynamic> data = doc.data() as Map<String, dynamic>;
+  return Post(
+    id: doc.id,
+    title: data['title'] ?? '',
+    content: data['content'] ?? '',
+    author: data['author'] ?? '익명',
+    createdAt: data['createdDate'] != null 
+      ? (data['createdDate'] as Timestamp).toDate()
+      : DateTime.now(),  // createdDate가 null일 경우 현재 시간을 사용
+    imageUrl: data['imageUrl'],
+    link: data['link'],
+  );
+}
 }
 
 class CommunityNormal extends StatefulWidget {
@@ -57,17 +59,12 @@ void initState() {
 }
 
   void _addNewPost() {
-    Navigator.of(context).push(
-      PageRouteBuilder(
-        pageBuilder: (context, animation, secondaryAnimation) =>
-            CommunityPostScreen(),
-        transitionsBuilder: (context, animation, secondaryAnimation, child) {
-          return FadeTransition(opacity: animation, child: child);
-        },
-      ),
-    );
-  }
-
+  Navigator.of(context).push(
+    MaterialPageRoute(
+      builder: (context) => CommunityPostScreen(),
+    ),
+  );
+}
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -101,6 +98,7 @@ void initState() {
                   Navigator.of(context).push(
                     MaterialPageRoute(
                       builder: (context) => PostDetailScreen(
+                        postId: posts[index].id,  // 이 줄을 추가합니다
                         title: posts[index].title,
                         content: posts[index].content,
                         author: posts[index].author,
@@ -117,6 +115,7 @@ void initState() {
         },
       ),
       floatingActionButton: FloatingActionButton(
+        heroTag: 'addPost',
         onPressed: _addNewPost,
         child: Icon(Icons.add),
         tooltip: '새 게시물 작성',
