@@ -51,7 +51,7 @@ class _MainScreenState extends State<MainScreen> {
             .toList();
         if (_pets.isNotEmpty) {
           _selectedPet = null;
-          _calendarScreenController.setSelectedPet(_selectedPet);
+          //_calendarScreenController.setSelectedPet(_selectedPet);
         }
       });
     }

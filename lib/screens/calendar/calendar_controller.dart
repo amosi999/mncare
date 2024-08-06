@@ -153,6 +153,8 @@ class CalendarScreenController extends ChangeNotifier {
     User? user = FirebaseAuth.instance.currentUser;
     if (user == null) return;
 
+    _appointments.clear();
+
     QuerySnapshot querySnapshot;
     //전체 선택시에
     if (_selectedPet == null) {
@@ -165,6 +167,7 @@ class CalendarScreenController extends ChangeNotifier {
       List<Pet> allPets = querySnapshot.docs
           .map((doc) => Pet(id: doc.id, name: doc['petName']))
           .toList();
+      print('전체 allpets 들어가 있는 펫 ${allPets.length}');
 
       _appointments.clear();
       for (Pet pet in allPets) {
@@ -175,8 +178,11 @@ class CalendarScreenController extends ChangeNotifier {
             .doc(pet.id)
             .collection('appointments')
             .get();
+        print('전체에 들어가 있는 펫 ${pet.name}');
 
+        //각 펫의 일정을 불러와서 _appointments에 추가
         for (var doc in petAppointments.docs) {
+          //print('전체에 일정 :  ${doc.id}}');
           final data = doc.data() as Map<String, dynamic>;
           if (data == null) continue;
           final type = _scheduleTypes.firstWhere(
