@@ -12,6 +12,7 @@ class Post {
   final DateTime createdAt;
   final String? imageUrl;
   final String? link;
+  final String userId; // userId 추가
 
   Post({
     required this.id,
@@ -21,22 +22,22 @@ class Post {
     required this.createdAt,
     this.imageUrl,
     this.link,
+    required this.userId, // userId 추가
   });
 
   factory Post.fromFirestore(DocumentSnapshot doc) {
-  Map<String, dynamic> data = doc.data() as Map<String, dynamic>;
-  return Post(
-    id: doc.id,
-    title: data['title'] ?? '',
-    content: data['content'] ?? '',
-    author: data['author'] ?? '익명',
-    createdAt: data['createdDate'] != null 
-      ? (data['createdDate'] as Timestamp).toDate()
-      : DateTime.now(),  // createdDate가 null일 경우 현재 시간을 사용
-    imageUrl: data['imageUrl'],
-    link: data['link'],
-  );
-}
+    Map<String, dynamic> data = doc.data() as Map<String, dynamic>;
+    return Post(
+      id: doc.id,
+      title: data['title'] ?? '',
+      content: data['content'] ?? '',
+      author: data['author'] ?? '익명',
+      createdAt: (data['createdDate'] as Timestamp).toDate(),
+      imageUrl: data['imageUrl'],
+      link: data['link'],
+      userId: data['authorId'] ?? '', // authorId를 userId로 사용
+    );
+  }
 }
 
 class CommunityNormal extends StatefulWidget {
@@ -48,23 +49,24 @@ class _CommunityNormalState extends State<CommunityNormal> {
   late Stream<QuerySnapshot> _postsStream;
 
   @override
-void initState() {
-  super.initState();
-  _postsStream = FirebaseFirestore.instance
-      .collection('community')
-      .doc('normal')
-      .collection('posts')
-      .orderBy('createdDate', descending: true)
-      .snapshots();
-}
+  void initState() {
+    super.initState();
+    _postsStream = FirebaseFirestore.instance
+        .collection('community')
+        .doc('normal')
+        .collection('posts')
+        .orderBy('createdDate', descending: true)
+        .snapshots();
+  }
 
   void _addNewPost() {
-  Navigator.of(context).push(
-    MaterialPageRoute(
-      builder: (context) => CommunityPostScreen(),
-    ),
-  );
-}
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (context) => CommunityPostScreen(),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -98,13 +100,14 @@ void initState() {
                   Navigator.of(context).push(
                     MaterialPageRoute(
                       builder: (context) => PostDetailScreen(
-                        postId: posts[index].id,  // 이 줄을 추가합니다
+                        postId: posts[index].id,
                         title: posts[index].title,
                         content: posts[index].content,
                         author: posts[index].author,
                         createdAt: posts[index].createdAt,
                         imageUrl: posts[index].imageUrl,
                         link: posts[index].link,
+                        userId: posts[index].userId, // userId 추가
                       ),
                     ),
                   );

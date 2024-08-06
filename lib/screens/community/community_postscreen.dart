@@ -87,7 +87,7 @@ class _CommunityPostScreenState extends State<CommunityPostScreen> {
       'content': _contentController.text,
       'author': username,
       'authorId': user.uid,
-      'createdDate': FieldValue.serverTimestamp(),
+      'createdDate': Timestamp.now(),
       'imageUrl': imageUrl,
       'link': _linkController.text,
     });
