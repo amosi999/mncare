@@ -77,75 +77,219 @@ class CalendarScreenController extends ChangeNotifier {
     return MeetingDataSource(_appointments);
   }
 
-  void setSelectedPet(Pet pet) {
+  void setSelectedPet(Pet? pet) {
     _selectedPet = pet;
     _fetchAppointments(); // 선택한 펫의 일정 불러오기
     notifyListeners();
   }
 
+  // Future<void> _fetchAppointments() async {
+  //   if (_selectedPet == null) return;
+  //   User? user = FirebaseAuth.instance.currentUser;
+  //   if (user == null) return;
+
+  //   final querySnapshot = await FirebaseFirestore.instance
+  //       .collection('users')
+  //       .doc(user.uid)
+  //       .collection('pets')
+  //       .doc(_selectedPet!.id)
+  //       .collection('appointments')
+  //       .get();
+
+  //   _appointments.clear();
+  //   for (var doc in querySnapshot.docs) {
+  //     final data = doc.data();
+  //     final pet = _selectedPet!;
+  //     final type = _scheduleTypes.firstWhere(
+  //       (t) => t.name == data['type'],
+  //       orElse: () => _scheduleTypes.first,
+  //     );
+
+  //     final scheduleInfo = ScheduleInfo(
+  //       id: doc.id,
+  //       owner: pet,
+  //       type: type,
+  //       title: data['title'],
+  //       date: DateTime.parse(data['date']),
+  //       isAllDay: data['isAllDay'],
+  //       startTime: data['startTime'] != null
+  //           ? TimeOfDay(
+  //               hour: int.parse(data['startTime'].split(':')[0]),
+  //               minute: int.parse(data['startTime'].split(':')[1]),
+  //             )
+  //           : null,
+  //       endTime: data['endTime'] != null
+  //           ? TimeOfDay(
+  //               hour: int.parse(data['endTime'].split(':')[0]),
+  //               minute: int.parse(data['endTime'].split(':')[1]),
+  //             )
+  //           : null,
+  //       description: data['description'],
+  //     );
+
+  //     _appointments.add(Appointment(
+  //       id: scheduleInfo.id, // Firestore에서 가져온 고유 ID
+  //       startTime: scheduleInfo.date,
+  //       endTime: scheduleInfo.isAllDay
+  //           ? DateTime(scheduleInfo.date.year, scheduleInfo.date.month,
+  //               scheduleInfo.date.day, 23, 59, 59)
+  //           : DateTime(
+  //               scheduleInfo.date.year,
+  //               scheduleInfo.date.month,
+  //               scheduleInfo.date.day,
+  //               scheduleInfo.endTime!.hour,
+  //               scheduleInfo.endTime!.minute,
+  //             ),
+  //       subject: scheduleInfo.title,
+  //       color: scheduleInfo.type.color,
+  //       isAllDay: scheduleInfo.isAllDay,
+  //       notes: "${scheduleInfo.description ?? ''}\n${scheduleInfo.owner.name}",
+  //     ));
+  //   }
+  //   notifyListeners();
+  // }
+
   Future<void> _fetchAppointments() async {
-    if (_selectedPet == null) return;
     User? user = FirebaseAuth.instance.currentUser;
     if (user == null) return;
 
-    final querySnapshot = await FirebaseFirestore.instance
-        .collection('users')
-        .doc(user.uid)
-        .collection('pets')
-        .doc(_selectedPet!.id)
-        .collection('appointments')
-        .get();
+    QuerySnapshot querySnapshot;
+    //전체 선택시에
+    if (_selectedPet == null) {
+      querySnapshot = await FirebaseFirestore.instance
+          .collection('users')
+          .doc(user.uid)
+          .collection('pets')
+          .get();
 
-    _appointments.clear();
-    for (var doc in querySnapshot.docs) {
-      final data = doc.data();
-      final pet = _selectedPet!;
-      final type = _scheduleTypes.firstWhere(
-        (t) => t.name == data['type'],
-        orElse: () => _scheduleTypes.first,
-      );
+      List<Pet> allPets = querySnapshot.docs
+          .map((doc) => Pet(id: doc.id, name: doc['petName']))
+          .toList();
 
-      final scheduleInfo = ScheduleInfo(
-        id: doc.id,
-        owner: pet,
-        type: type,
-        title: data['title'],
-        date: DateTime.parse(data['date']),
-        isAllDay: data['isAllDay'],
-        startTime: data['startTime'] != null
-            ? TimeOfDay(
-                hour: int.parse(data['startTime'].split(':')[0]),
-                minute: int.parse(data['startTime'].split(':')[1]),
-              )
-            : null,
-        endTime: data['endTime'] != null
-            ? TimeOfDay(
-                hour: int.parse(data['endTime'].split(':')[0]),
-                minute: int.parse(data['endTime'].split(':')[1]),
-              )
-            : null,
-        description: data['description'],
-      );
+      _appointments.clear();
+      for (Pet pet in allPets) {
+        QuerySnapshot petAppointments = await FirebaseFirestore.instance
+            .collection('users')
+            .doc(user.uid)
+            .collection('pets')
+            .doc(pet.id)
+            .collection('appointments')
+            .get();
 
-      _appointments.add(Appointment(
-        id: scheduleInfo.id, // Firestore에서 가져온 고유 ID
-        startTime: scheduleInfo.date,
-        endTime: scheduleInfo.isAllDay
-            ? DateTime(scheduleInfo.date.year, scheduleInfo.date.month,
-                scheduleInfo.date.day, 23, 59, 59)
-            : DateTime(
-                scheduleInfo.date.year,
-                scheduleInfo.date.month,
-                scheduleInfo.date.day,
-                scheduleInfo.endTime!.hour,
-                scheduleInfo.endTime!.minute,
-              ),
-        subject: scheduleInfo.title,
-        color: scheduleInfo.type.color,
-        isAllDay: scheduleInfo.isAllDay,
-        notes: "${scheduleInfo.description ?? ''}\n${scheduleInfo.owner.name}",
-      ));
+        for (var doc in petAppointments.docs) {
+          final data = doc.data() as Map<String, dynamic>;
+          if (data == null) continue;
+          final type = _scheduleTypes.firstWhere(
+            (t) => t.name == data['type'],
+            orElse: () => _scheduleTypes.first,
+          );
+
+          final scheduleInfo = ScheduleInfo(
+            id: doc.id,
+            owner: pet,
+            type: type,
+            title: data['title'],
+            date: DateTime.parse(data['date']),
+            isAllDay: data['isAllDay'],
+            startTime: data['startTime'] != null
+                ? TimeOfDay(
+                    hour: int.parse(data['startTime'].split(':')[0]),
+                    minute: int.parse(data['startTime'].split(':')[1]),
+                  )
+                : null,
+            endTime: data['endTime'] != null
+                ? TimeOfDay(
+                    hour: int.parse(data['endTime'].split(':')[0]),
+                    minute: int.parse(data['endTime'].split(':')[1]),
+                  )
+                : null,
+            description: data['description'],
+          );
+
+          _appointments.add(Appointment(
+            id: scheduleInfo.id,
+            startTime: scheduleInfo.date,
+            endTime: scheduleInfo.isAllDay
+                ? DateTime(scheduleInfo.date.year, scheduleInfo.date.month,
+                    scheduleInfo.date.day, 23, 59, 59)
+                : DateTime(
+                    scheduleInfo.date.year,
+                    scheduleInfo.date.month,
+                    scheduleInfo.date.day,
+                    scheduleInfo.endTime!.hour,
+                    scheduleInfo.endTime!.minute,
+                  ),
+            subject: scheduleInfo.title,
+            color: scheduleInfo.type.color,
+            isAllDay: scheduleInfo.isAllDay,
+            notes:
+                "${scheduleInfo.description ?? ''}\n${scheduleInfo.owner.name}",
+          ));
+        }
+      }
+    } else {
+      querySnapshot = await FirebaseFirestore.instance
+          .collection('users')
+          .doc(user.uid)
+          .collection('pets')
+          .doc(_selectedPet!.id)
+          .collection('appointments')
+          .get();
+
+      _appointments.clear();
+      for (var doc in querySnapshot.docs) {
+        final data = doc.data() as Map<String, dynamic>;
+        if (data == null) continue; // Null 체크 추가
+        final pet = _selectedPet!;
+        final type = _scheduleTypes.firstWhere(
+          (t) => t.name == data['type'],
+          orElse: () => _scheduleTypes.first,
+        );
+
+        final scheduleInfo = ScheduleInfo(
+          id: doc.id,
+          owner: pet,
+          type: type,
+          title: data['title'],
+          date: DateTime.parse(data['date']),
+          isAllDay: data['isAllDay'],
+          startTime: data['startTime'] != null
+              ? TimeOfDay(
+                  hour: int.parse(data['startTime'].split(':')[0]),
+                  minute: int.parse(data['startTime'].split(':')[1]),
+                )
+              : null,
+          endTime: data['endTime'] != null
+              ? TimeOfDay(
+                  hour: int.parse(data['endTime'].split(':')[0]),
+                  minute: int.parse(data['endTime'].split(':')[1]),
+                )
+              : null,
+          description: data['description'],
+        );
+
+        _appointments.add(Appointment(
+          id: scheduleInfo.id,
+          startTime: scheduleInfo.date,
+          endTime: scheduleInfo.isAllDay
+              ? DateTime(scheduleInfo.date.year, scheduleInfo.date.month,
+                  scheduleInfo.date.day, 23, 59, 59)
+              : DateTime(
+                  scheduleInfo.date.year,
+                  scheduleInfo.date.month,
+                  scheduleInfo.date.day,
+                  scheduleInfo.endTime!.hour,
+                  scheduleInfo.endTime!.minute,
+                ),
+          subject: scheduleInfo.title,
+          color: scheduleInfo.type.color,
+          isAllDay: scheduleInfo.isAllDay,
+          notes:
+              "${scheduleInfo.description ?? ''}\n${scheduleInfo.owner.name}",
+        ));
+      }
     }
+
     notifyListeners();
   }
 
@@ -380,7 +524,9 @@ class CalendarScreenController extends ChangeNotifier {
 
   // 일정 필터링 로직 추가
   List<Appointment> getFilteredAppointments() {
-    //기존에 있던 == 전체 로직을 지웠음. 나중에 추가.
+    if (_selectedPet == null) {
+      return _appointments; // "전체"가 선택된 경우 모든 일정을 반환합니다.
+    }
     return _appointments.where((appointment) {
       String ownerString = appointment.notes?.split('\n').last ?? '';
       return ownerString == _selectedPet?.name;
@@ -390,7 +536,6 @@ class CalendarScreenController extends ChangeNotifier {
   MeetingDataSource getFilteredCalendarDataSource() {
     return MeetingDataSource(getFilteredAppointments());
   }
-
 }
 
 class MeetingDataSource extends CalendarDataSource {

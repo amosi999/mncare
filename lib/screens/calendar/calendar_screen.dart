@@ -150,6 +150,7 @@ class _CalendarScreenState extends State<CalendarScreen>
           ),
         ],
       ),
+      //캘린더 요약 서비스를 보여주는 부분
       body: custom_view.CalendarView(
         controller: widget.controller.controller,
         calendarScreenController: widget.controller,

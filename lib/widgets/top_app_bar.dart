@@ -9,7 +9,7 @@ import '../screens/calendar/schedule_type_dialog.dart';
 class TopAppBar extends StatefulWidget implements PreferredSizeWidget {
   final int selectedIndex;
   final VoidCallback onMenuPressed;
-  final Function(Pet) onPetSelected;
+  final Function(Pet?) onPetSelected; // Pet?로 변경하여 null을 전달할 수 있도록 함
   final Pet? currentPet; // 현재 선택된 펫
   //  final List<Pet> pets; // 추가된 부분: 펫 목록 // 일단 보류
 
@@ -54,8 +54,8 @@ class _TopAppBarState extends State<TopAppBar> {
           .map((doc) => Pet(id: doc.id, name: doc.data()['petName'] as String))
           .toList();
       if (_pets.isNotEmpty) {
-        _selectedPet = _pets.first;
-        widget.onPetSelected(_selectedPet!);
+        _selectedPet = null;
+        widget.onPetSelected(_selectedPet);
       }
     });
   }
@@ -85,19 +85,23 @@ class _TopAppBarState extends State<TopAppBar> {
     return DropdownButton<Pet>(
       value: _selectedPet,
       onChanged: (Pet? newValue) {
-        if (newValue != null) {
-          setState(() {
-            _selectedPet = newValue;
-          });
-          widget.onPetSelected(newValue);
-        }
+        setState(() {
+          _selectedPet = newValue;
+        });
+        widget.onPetSelected(newValue);
       },
-      items: _pets.map<DropdownMenuItem<Pet>>((Pet pet) {
-        return DropdownMenuItem<Pet>(
-          value: pet,
-          child: Text(pet.name),
-        );
-      }).toList(),
+      items: [
+        const DropdownMenuItem<Pet>(
+          value: null,
+          child: Text('전체'),
+        ),
+        ..._pets.map<DropdownMenuItem<Pet>>((Pet pet) {
+          return DropdownMenuItem<Pet>(
+            value: pet,
+            child: Text(pet.name),
+          );
+        }).toList(),
+      ],
     );
   }
 }

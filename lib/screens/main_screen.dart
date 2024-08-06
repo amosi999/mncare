@@ -50,8 +50,8 @@ class _MainScreenState extends State<MainScreen> {
             .map((doc) => Pet(id: doc.id, name: doc['petName']))
             .toList();
         if (_pets.isNotEmpty) {
-          _selectedPet = _pets.first;
-          _calendarScreenController.setSelectedPet(_selectedPet!);
+          _selectedPet = null;
+          _calendarScreenController.setSelectedPet(_selectedPet);
         }
       });
     }
