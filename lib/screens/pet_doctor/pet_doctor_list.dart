@@ -12,6 +12,14 @@ class Pet {
   final String name;
 
   Pet({required this.id, required this.name});
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is Pet && runtimeType == other.runtimeType && id == other.id;
+
+  @override
+  int get hashCode => id.hashCode;
 }
 
 // PetImage 클래스 정의 (변경 없음)
@@ -140,7 +148,7 @@ class _PetDoctorListState extends State<PetDoctorList> {
 
   void _refreshData() {
     setState(() {
-      // StreamBuilder를 사용하고 있으므로, setState만 호출해도 
+      // StreamBuilder를 사용하고 있으므로, setState만 호출해도
       // 스트림이 새로운 데이터를 가져오게 됩니다.
     });
   }
@@ -185,8 +193,7 @@ class _PetDoctorListState extends State<PetDoctorList> {
           return StreamBuilder<List<PetImage>>(
             stream: _getPetImagesStream(),
             builder: (context, petImagesSnapshot) {
-              if (petImagesSnapshot.connectionState ==
-                  ConnectionState.waiting) {
+              if (petImagesSnapshot.connectionState == ConnectionState.waiting) {
                 return Center(child: CircularProgressIndicator());
               }
 
@@ -197,13 +204,10 @@ class _PetDoctorListState extends State<PetDoctorList> {
               final allPetImages = petImagesSnapshot.data ?? [];
               final filteredImages = _selectedPet == null
                   ? allPetImages
-                  : allPetImages
-                      .where((image) => image.petId == _selectedPet!.id)
-                      .toList();
+                  : allPetImages.where((image) => image.petId == _selectedPet!.id).toList();
 
               return Column(
                 children: [
-                  // 반려동물 선택 드롭다운
                   Container(
                     padding: const EdgeInsets.all(16),
                     child: DropdownButtonFormField<Pet?>(
@@ -217,12 +221,12 @@ class _PetDoctorListState extends State<PetDoctorList> {
                       ),
                       value: _selectedPet,
                       items: [
-                        const DropdownMenuItem<Pet?>(
+                        DropdownMenuItem<Pet?>(
                           value: null,
                           child: Text('전체 보기'),
                         ),
                         ...pets.map((Pet pet) {
-                          return DropdownMenuItem<Pet>(
+                          return DropdownMenuItem<Pet?>(
                             value: pet,
                             child: Text(pet.name),
                           );
@@ -317,7 +321,6 @@ class _PetDoctorListState extends State<PetDoctorList> {
               builder: (ctx) => PetDoctorScreen(
                 onImageUploaded: _refreshData,
               ),
-              
             ),
           );
           _refreshData();
