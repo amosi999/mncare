@@ -20,15 +20,14 @@ class AppointmentListDialog extends StatelessWidget {
   });
 
   ScheduleInfo _appointmentToScheduleInfo(Appointment appointment) {
-    ScheduleOwner owner = ScheduleOwner.all;
-    String ownerString = appointment.notes?.split('\n').last ?? '';
-    if (ownerString == ScheduleOwner.meru.toString()) {
-      owner = ScheduleOwner.meru;
-    } else if (ownerString == ScheduleOwner.darae.toString()) {
-      owner = ScheduleOwner.darae;
-    }
+    final notesParts = appointment.notes?.split('\n') ?? [];
+    final description = notesParts.isNotEmpty ? notesParts[0] : '';
+    final ownerName = notesParts.length > 1 ? notesParts[1] : '';
+    final ownerId = notesParts.length > 2 ? notesParts[2] : '';
+    Pet owner = Pet(id: ownerId, name: ownerName);
 
     return ScheduleInfo(
+      id: appointment.id.toString(),
       owner: owner,
       type: ScheduleTypeManager().types.firstWhere(
             (type) => type.color == appointment.color,
@@ -39,7 +38,7 @@ class AppointmentListDialog extends StatelessWidget {
       isAllDay: appointment.isAllDay,
       startTime: TimeOfDay.fromDateTime(appointment.startTime),
       endTime: TimeOfDay.fromDateTime(appointment.endTime),
-      description: appointment.notes?.split('\n').first,
+      description: description,
     );
   }
 
@@ -57,6 +56,7 @@ class AppointmentListDialog extends StatelessWidget {
                 itemBuilder: (context, index) {
                   final appointment = appointments[index];
                   final schedule = _appointmentToScheduleInfo(appointment);
+                  //일정 상세보기.
                   return InkWell(
                     onTap: () {
                       showDialog(
@@ -73,7 +73,7 @@ class AppointmentListDialog extends StatelessWidget {
                           children: [
                             TextSpan(
                               text:
-                                  '[${scheduleOwnerToString(schedule.owner)}/${schedule.type.name}] ',
+                                  '[${schedule.owner.name}/${schedule.type.name}] ',
                               style: TextStyle(
                                 fontWeight: FontWeight.bold,
                                 color: schedule.type.color,
@@ -94,6 +94,7 @@ class AppointmentListDialog extends StatelessWidget {
                             onPressed: () {
                               Navigator.of(context).pop();
                               onEdit(appointment);
+                              print("스케줄 : ${appointment}");
                             },
                           ),
                           IconButton(
