@@ -229,7 +229,7 @@ class CalendarScreenController extends ChangeNotifier {
             color: scheduleInfo.type.color,
             isAllDay: scheduleInfo.isAllDay,
             notes:
-                "${scheduleInfo.description ?? ''}\n${scheduleInfo.owner.name}",
+                "${scheduleInfo.description ?? ''}\n${scheduleInfo.owner.name}\n${scheduleInfo.owner.id}",
           ));
         }
       }
@@ -291,7 +291,7 @@ class CalendarScreenController extends ChangeNotifier {
           color: scheduleInfo.type.color,
           isAllDay: scheduleInfo.isAllDay,
           notes:
-              "${scheduleInfo.description ?? ''}\n${scheduleInfo.owner.name}",
+              "${scheduleInfo.description ?? ''}\n${scheduleInfo.owner.name}\n${scheduleInfo.owner.id}",
         ));
       }
     }
@@ -371,7 +371,8 @@ class CalendarScreenController extends ChangeNotifier {
       subject: schedule.title,
       color: schedule.type.color,
       isAllDay: schedule.isAllDay,
-      notes: "${schedule.description ?? ''}\n${schedule.owner.name}",
+      notes:
+          "${schedule.description ?? ''}\n${schedule.owner.name}\n${schedule.owner.id}",
     ));
 
     print('스케줄 내용 : ${newSchedule}');
@@ -380,7 +381,7 @@ class CalendarScreenController extends ChangeNotifier {
 
   void updateScheduleInCalendar(ScheduleInfo updatedSchedule) async {
     User? user = FirebaseAuth.instance.currentUser;
-    if (user == null || _selectedPet == null) return;
+    if (user == null) return;
 
     final docRef = FirebaseFirestore.instance
         .collection('users')
@@ -432,21 +433,21 @@ class CalendarScreenController extends ChangeNotifier {
         color: updatedSchedule.type.color,
         isAllDay: updatedSchedule.isAllDay,
         notes:
-            "${updatedSchedule.description ?? ''}\n${updatedSchedule.owner.name}",
+            "${updatedSchedule.description ?? ''}\n${updatedSchedule.owner.name}\n${updatedSchedule.owner.id}",
       );
       notifyListeners();
     }
   }
 
-  void deleteScheduleFromCalendar(String scheduleId) async {
+  void deleteScheduleFromCalendar(String scheduleId, String petId) async {
     User? user = FirebaseAuth.instance.currentUser;
-    if (user == null || _selectedPet == null) return;
+    if (user == null) return;
 
     final docRef = FirebaseFirestore.instance
         .collection('users')
         .doc(user.uid)
         .collection('pets')
-        .doc(_selectedPet!.id)
+        .doc(petId)
         .collection('appointments')
         .doc(scheduleId);
 
@@ -481,15 +482,15 @@ class CalendarScreenController extends ChangeNotifier {
 //     description: description,
 //   );
 // }
-  Future<ScheduleInfo?> fetchScheduleById(String id) async {
+  Future<ScheduleInfo?> fetchScheduleById(String id, String petId) async {
     User? user = FirebaseAuth.instance.currentUser;
-    if (user == null || _selectedPet == null) return null;
+    if (user == null) return null;
 
     final petDocRef = FirebaseFirestore.instance
         .collection('users')
         .doc(user.uid)
         .collection('pets')
-        .doc(_selectedPet!.id);
+        .doc(petId);
 
     final petDoc = await petDocRef.get();
     if (!petDoc.exists) return null;
@@ -535,7 +536,8 @@ class CalendarScreenController extends ChangeNotifier {
     }
     return _appointments.where((appointment) {
       String ownerString = appointment.notes?.split('\n').last ?? '';
-      return ownerString == _selectedPet?.name;
+      print("전체 비교 : ${ownerString} == ${_selectedPet?.id}");
+      return ownerString == _selectedPet?.id;
     }).toList();
   }
 

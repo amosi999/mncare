@@ -88,29 +88,38 @@ class _CalendarScreenState extends State<CalendarScreen>
   }
 
   void _editAppointment(Appointment appointment) async {
-    print('저장된 아이디 : ${appointment.id as String}');
-    final scheduleInfo =
-        await widget.controller.fetchScheduleById(appointment.id as String);
-    if (scheduleInfo == null) return;
+    final notesParts = appointment.notes?.split('\n') ?? [];
+    final petId =
+        notesParts.length > 2 ? notesParts[2] : ''; // 펫 ID를 notes에서 가져옴
+    final scheduleInfo = await widget.controller
+        .fetchScheduleById(appointment.id as String, petId);
 
-    showAppointmentDialog(
-      context,
-      (updatedSchedule) {
-        try {
-          widget.controller.updateScheduleInCalendar(updatedSchedule);
-        } catch (e) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('일정 업데이트 중 오류가 발생했습니다: $e')),
-          );
-        }
-      },
-      initialSchedule: scheduleInfo,
-    );
+    print(' 스케줄 수정 : ${scheduleInfo}');
+    if (scheduleInfo != null) {
+      showAppointmentDialog(
+        context,
+        (updatedSchedule) {
+          try {
+            widget.controller.updateScheduleInCalendar(updatedSchedule);
+          } catch (e) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text('일정 업데이트 중 오류가 발생했습니다: $e')),
+            );
+          }
+        },
+        initialSchedule: scheduleInfo,
+      );
+    }
   }
 
   void _deleteAppointment(Appointment appointment) {
     try {
-      widget.controller.deleteScheduleFromCalendar(appointment.id as String);
+      final notesParts = appointment.notes?.split('\n') ?? [];
+      final petId =
+          notesParts.length > 2 ? notesParts[2] : ''; // 펫 ID를 notes에서 가져옴
+
+      widget.controller
+          .deleteScheduleFromCalendar(appointment.id as String, petId);
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('일정 삭제 중 오류가 발생했습니다: $e')),

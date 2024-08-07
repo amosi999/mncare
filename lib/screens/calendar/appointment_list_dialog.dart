@@ -21,8 +21,10 @@ class AppointmentListDialog extends StatelessWidget {
 
   ScheduleInfo _appointmentToScheduleInfo(Appointment appointment) {
     final notesParts = appointment.notes?.split('\n') ?? [];
+    final description = notesParts.isNotEmpty ? notesParts[0] : '';
     final ownerName = notesParts.length > 1 ? notesParts[1] : '';
-    Pet owner = Pet(id: '', name: ownerName);
+    final ownerId = notesParts.length > 2 ? notesParts[2] : '';
+    Pet owner = Pet(id: ownerId, name: ownerName);
 
     return ScheduleInfo(
       id: appointment.id.toString(),
@@ -36,7 +38,7 @@ class AppointmentListDialog extends StatelessWidget {
       isAllDay: appointment.isAllDay,
       startTime: TimeOfDay.fromDateTime(appointment.startTime),
       endTime: TimeOfDay.fromDateTime(appointment.endTime),
-      description: appointment.notes?.split('\n').first,
+      description: description,
     );
   }
 
