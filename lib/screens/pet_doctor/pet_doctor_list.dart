@@ -6,6 +6,7 @@ import 'package:mncare/screens/pet_doctor/pet_doctor_screen.dart';
 import 'package:intl/intl.dart';
 import 'package:toggle_list/toggle_list.dart';
 
+// Pet 클래스 정의 (변경 없음)
 class Pet {
   final String id;
   final String name;
@@ -13,6 +14,7 @@ class Pet {
   Pet({required this.id, required this.name});
 }
 
+// PetImage 클래스 정의 (변경 없음)
 class PetImage {
   final String id;
   final String imageUrl;
@@ -35,7 +37,7 @@ class PetImage {
       imageUrl: data['img_url'] ?? '',
       createdDate: (data['createdDate'] as Timestamp).toDate(),
       petId: petId,
-      petName: '', // This will be set later
+      petName: '', // 나중에 설정됨
     );
   }
 }
@@ -48,112 +50,67 @@ class PetDoctorList extends StatefulWidget {
 }
 
 class _PetDoctorListState extends State<PetDoctorList> {
-  List<PetImage> _petImages = [];
-  List<Pet> _pets = [];
   Pet? _selectedPet;
-  bool _isLoading = true;
 
-  @override
-  void initState() {
-    super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      _loadDataWithRefresh();
-    });
-  }
-
-  
-
-  Future<void> _loadDataWithRefresh() async {
-    // 새로고침 인디케이터를 표시합니다.
-    if (mounted) {
-      setState(() {
-        _isLoading = true;
-      });
-    }
-
-    // 데이터를 새로 로드합니다.
-    await _loadData();
-
-    // 새로고침 인디케이터를 숨깁니다.
-    if (mounted) {
-      setState(() {
-        _isLoading = false;
-      });
-    }
-  }
-
-  Future<void> _loadData() async {
-    setState(() {
-      _isLoading = true;
-    });
-    await Future.wait([_loadPets(), _loadPetImages()]);
-    setState(() {
-      _isLoading = false;
-    });
-  }
-
-  Future<void> _loadPets() async {
+  // 반려동물 목록을 가져오는 Stream
+  Stream<List<Pet>> _getPetsStream() {
     final user = FirebaseAuth.instance.currentUser;
     if (user != null) {
-      final querySnapshot = await FirebaseFirestore.instance
+      return FirebaseFirestore.instance
           .collection('users')
           .doc(user.uid)
           .collection('pets')
-          .get();
-
-      setState(() {
-        _pets = querySnapshot.docs
-            .map((doc) => Pet(id: doc.id, name: doc['petName'] ?? 'Unknown Pet'))
+          .snapshots()
+          .map((snapshot) {
+        return snapshot.docs
+            .map(
+                (doc) => Pet(id: doc.id, name: doc['petName'] ?? 'Unknown Pet'))
             .toList();
-        if (_pets.isNotEmpty) {
-          _selectedPet = null;
-        }
       });
     }
+    return Stream.value([]);
   }
 
-  Future<void> _loadPetImages() async {
+  // 모든 반려동물의 이미지를 가져오는 Stream
+  Stream<List<PetImage>> _getPetImagesStream() {
     final user = FirebaseAuth.instance.currentUser;
     if (user != null) {
-      _petImages.clear();
-      for (var pet in _pets) {
-        final querySnapshot = await FirebaseFirestore.instance
-            .collection('users')
-            .doc(user.uid)
-            .collection('pets')
-            .doc(pet.id)
-            .collection('petDoctor')
-            .orderBy('createdDate', descending: true)
-            .get();
-
-        final petImages = querySnapshot.docs
-            .map((doc) => PetImage.fromFirestore(doc, pet.id))
-            .toList();
-
-        // Fetch pet name for each image
-        for (var image in petImages) {
-          final petDoc = await FirebaseFirestore.instance
-              .collection('users')
-              .doc(user.uid)
-              .collection('pets')
-              .doc(image.petId)
+      return FirebaseFirestore.instance
+          .collection('users')
+          .doc(user.uid)
+          .collection('pets')
+          .snapshots()
+          .asyncMap((petsSnapshot) async {
+        List<PetImage> allPetImages = [];
+        for (var petDoc in petsSnapshot.docs) {
+          final petId = petDoc.id;
+          final petName = petDoc['petName'] ?? 'Unknown Pet';
+          final imagesSnapshot = await petDoc.reference
+              .collection('petDoctor')
+              .orderBy('createdDate', descending: true)
               .get();
-          image.petName = petDoc['petName'] ?? 'Unknown Pet';
+
+          final petImages = imagesSnapshot.docs.map((imageDoc) {
+            final petImage = PetImage.fromFirestore(imageDoc, petId);
+            petImage.petName = petName;
+            return petImage;
+          }).toList();
+
+          allPetImages.addAll(petImages);
         }
-
-        _petImages.addAll(petImages);
-      }
-      _petImages.sort((a, b) => b.createdDate.compareTo(a.createdDate));  //전체보기에서 최신순으로 정렬
-
-      setState(() {});
+        allPetImages.sort((a, b) => b.createdDate.compareTo(a.createdDate));
+        return allPetImages;
+      });
     }
+    return Stream.value([]);
   }
 
+  // 이미지 삭제 함수
   Future<void> _deletePetImage(PetImage petImage) async {
     try {
       final user = FirebaseAuth.instance.currentUser;
       if (user != null) {
-        // Delete from Firestore
+        // Firestore에서 삭제
         await FirebaseFirestore.instance
             .collection('users')
             .doc(user.uid)
@@ -163,16 +120,14 @@ class _PetDoctorListState extends State<PetDoctorList> {
             .doc(petImage.id)
             .delete();
 
-        // Delete from Firebase Storage
-        final storageRef = FirebaseStorage.instance.refFromURL(petImage.imageUrl);
+        // Firebase Storage에서 삭제
+        final storageRef =
+            FirebaseStorage.instance.refFromURL(petImage.imageUrl);
         await storageRef.delete();
 
-        setState(() {
-          _petImages.remove(petImage);
-        });
-
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('이미지가 Firestore와 Storage에서 성공적으로 삭제되었습니다')),
+          const SnackBar(
+              content: Text('이미지가 Firestore와 Storage에서 성공적으로 삭제되었습니다')),
         );
       }
     } catch (e) {
@@ -183,6 +138,14 @@ class _PetDoctorListState extends State<PetDoctorList> {
     }
   }
 
+  void _refreshData() {
+    setState(() {
+      // StreamBuilder를 사용하고 있으므로, setState만 호출해도 
+      // 스트림이 새로운 데이터를 가져오게 됩니다.
+    });
+  }
+
+  // 상세 보기 모달 표시 함수
   void _showDetailView(PetImage petImage) {
     showModalBottomSheet(
       context: context,
@@ -194,7 +157,8 @@ class _PetDoctorListState extends State<PetDoctorList> {
           minChildSize: 0.5,
           maxChildSize: 0.95,
           builder: (_, controller) {
-            return PetImageDetailView(petImage: petImage, scrollController: controller);
+            return PetImageDetailView(
+                petImage: petImage, scrollController: controller);
           },
         );
       },
@@ -203,77 +167,109 @@ class _PetDoctorListState extends State<PetDoctorList> {
 
   @override
   Widget build(BuildContext context) {
-    List<PetImage> filteredImages = _selectedPet == null
-        ? _petImages
-        : _petImages.where((image) => image.petId == _selectedPet!.id).toList();
-
     return Scaffold(
-      body: _isLoading
-          ? Center(child: CircularProgressIndicator())
-          : RefreshIndicator(
-          onRefresh: _loadDataWithRefresh,
-          child: Column(
-              children: [
-                Container(
-                  padding: const EdgeInsets.all(16),
-                  
-                  child: DropdownButtonFormField<Pet?>(
-                    decoration: InputDecoration(
-                      filled: true,
-                      fillColor: Colors.white,
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(8),
-                        borderSide: BorderSide.none,
+      body: StreamBuilder<List<Pet>>(
+        stream: _getPetsStream(),
+        builder: (context, petsSnapshot) {
+          if (petsSnapshot.connectionState == ConnectionState.waiting) {
+            return Center(child: CircularProgressIndicator());
+          }
+
+          if (petsSnapshot.hasError) {
+            return Center(child: Text('오류: ${petsSnapshot.error}'));
+          }
+
+          final pets = petsSnapshot.data ?? [];
+
+          return StreamBuilder<List<PetImage>>(
+            stream: _getPetImagesStream(),
+            builder: (context, petImagesSnapshot) {
+              if (petImagesSnapshot.connectionState ==
+                  ConnectionState.waiting) {
+                return Center(child: CircularProgressIndicator());
+              }
+
+              if (petImagesSnapshot.hasError) {
+                return Center(child: Text('오류: ${petImagesSnapshot.error}'));
+              }
+
+              final allPetImages = petImagesSnapshot.data ?? [];
+              final filteredImages = _selectedPet == null
+                  ? allPetImages
+                  : allPetImages
+                      .where((image) => image.petId == _selectedPet!.id)
+                      .toList();
+
+              return Column(
+                children: [
+                  // 반려동물 선택 드롭다운
+                  Container(
+                    padding: const EdgeInsets.all(16),
+                    child: DropdownButtonFormField<Pet?>(
+                      decoration: InputDecoration(
+                        filled: true,
+                        fillColor: Colors.white,
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(8),
+                          borderSide: BorderSide.none,
+                        ),
                       ),
+                      value: _selectedPet,
+                      items: [
+                        const DropdownMenuItem<Pet?>(
+                          value: null,
+                          child: Text('전체 보기'),
+                        ),
+                        ...pets.map((Pet pet) {
+                          return DropdownMenuItem<Pet>(
+                            value: pet,
+                            child: Text(pet.name),
+                          );
+                        }).toList(),
+                      ],
+                      onChanged: (Pet? newValue) {
+                        setState(() {
+                          _selectedPet = newValue;
+                        });
+                      },
                     ),
-                    value: _selectedPet,
-                    items: [
-                      const DropdownMenuItem<Pet?>(
-                        value: null,
-                        child: Text('전체 보기'),
-                      ),
-                      ..._pets.map((Pet pet) {
-                        return DropdownMenuItem<Pet>(
-                          value: pet,
-                          child: Text(pet.name),
-                        );
-                      }).toList(),
-                    ],
-                    onChanged: (Pet? newValue) {
-                      setState(() {
-                        _selectedPet = newValue;
-                      });
-                    },
                   ),
-                ),
-                Expanded(
-                  
+                  // 이미지 목록
+                  Expanded(
                     child: ToggleList(
                       divider: const SizedBox(height: 8),
-                      toggleAnimationDuration: const Duration(milliseconds: 300),
+                      toggleAnimationDuration:
+                          const Duration(milliseconds: 300),
                       scrollPosition: AutoScrollPosition.begin,
                       children: filteredImages.map((petImage) {
                         return ToggleListItem(
                           title: Padding(
-                            padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
+                            padding: const EdgeInsets.symmetric(
+                                vertical: 8, horizontal: 16),
                             child: Row(
                               children: [
                                 CircleAvatar(
-                                  backgroundImage: NetworkImage(petImage.imageUrl),
+                                  backgroundImage:
+                                      NetworkImage(petImage.imageUrl),
                                   radius: 25,
                                 ),
                                 const SizedBox(width: 16),
                                 Expanded(
                                   child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
                                     children: [
                                       Text(
-                                        DateFormat('yyyy-MM-dd HH:mm').format(petImage.createdDate),
-                                        style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                                        DateFormat('yyyy-MM-dd HH:mm')
+                                            .format(petImage.createdDate),
+                                        style: const TextStyle(
+                                            fontSize: 18,
+                                            fontWeight: FontWeight.bold),
                                       ),
                                       Text(
                                         petImage.petName,
-                                        style: TextStyle(color: Colors.grey[600]),
+                                        style:
+                                            TextStyle(color: Colors.grey[600]),
                                       ),
                                     ],
                                   ),
@@ -281,7 +277,9 @@ class _PetDoctorListState extends State<PetDoctorList> {
                               ],
                             ),
                           ),
-                          content: PetImageItem(petImage, onDelete: () => _deletePetImage(petImage), onView: () => _showDetailView(petImage)),
+                          content: PetImageItem(petImage,
+                              onDelete: () => _deletePetImage(petImage),
+                              onView: () => _showDetailView(petImage)),
                           headerDecoration: BoxDecoration(
                             color: Colors.white,
                             borderRadius: BorderRadius.circular(8),
@@ -305,18 +303,23 @@ class _PetDoctorListState extends State<PetDoctorList> {
                       }).toList(),
                     ),
                   ),
-              ],
-                ),
-            ),
-          
+                ],
+              );
+            },
+          );
+        },
+      ),
       floatingActionButton: FloatingActionButton(
         onPressed: () async {
           await Navigator.of(context).push(
             MaterialPageRoute(
-              builder: (ctx) => const PetDoctorScreen(),
+              builder: (ctx) => PetDoctorScreen(
+                onImageUploaded: _refreshData,
+              ),
+              
             ),
           );
-          _loadData();
+          _refreshData();
         },
         child: Icon(Icons.add),
         backgroundColor: Colors.blue[700],
@@ -325,8 +328,10 @@ class _PetDoctorListState extends State<PetDoctorList> {
   }
 }
 
+// PetImageItem 클래스 (변경 없음)
 class PetImageItem extends StatelessWidget {
-  const PetImageItem(this.petImage, {super.key, required this.onDelete, required this.onView});
+  const PetImageItem(this.petImage,
+      {super.key, required this.onDelete, required this.onView});
 
   final PetImage petImage;
   final VoidCallback onDelete;
@@ -378,7 +383,7 @@ class PetImageItem extends StatelessWidget {
               ElevatedButton.icon(
                 onPressed: onView,
                 icon: const Icon(Icons.visibility),
-                label:const Text('상세 보기'),
+                label: const Text('상세 보기'),
                 style: ElevatedButton.styleFrom(
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(20),
@@ -403,11 +408,13 @@ class PetImageItem extends StatelessWidget {
   }
 }
 
+// PetImageDetailView 클래스 (변경 없음)
 class PetImageDetailView extends StatelessWidget {
   final PetImage petImage;
   final ScrollController scrollController;
 
-  const PetImageDetailView({Key? key, required this.petImage, required this.scrollController})
+  const PetImageDetailView(
+      {Key? key, required this.petImage, required this.scrollController})
       : super(key: key);
 
   @override

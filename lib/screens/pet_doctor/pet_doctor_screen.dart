@@ -11,17 +11,17 @@ import 'package:path/path.dart' as path;
 class Pet {
   final String id;
   final String name;
-
   Pet({required this.id, required this.name});
 }
 
 class PetDoctorScreen extends StatefulWidget {
-  const PetDoctorScreen({super.key});
+  final Function? onImageUploaded;  // 새로운 콜백 함수 추가
+
+  const PetDoctorScreen({Key? key, this.onImageUploaded}) : super(key: key);
 
   @override
   State<StatefulWidget> createState() => _PetDoctorScreenState();
 }
-
 class _PetDoctorScreenState extends State<PetDoctorScreen> {
   CameraController? _controller;
   Future<void>? _initializeControllerFuture;
@@ -149,6 +149,12 @@ class _PetDoctorScreenState extends State<PetDoctorScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('이미지가 성공적으로 업로드되고 저장되었습니다!')),
       );
+      if (widget.onImageUploaded != null) {
+        widget.onImageUploaded!();
+      }
+
+      // 업로드 성공 후 이전 화면으로 돌아가기
+      Navigator.of(context).pop();
     } catch (e) {
       print('이미지 업로드 및 데이터 저장 중 오류 발생: $e');
       ScaffoldMessenger.of(context).showSnackBar(
