@@ -8,7 +8,7 @@ import 'calendar/calendar_controller.dart';
 import 'calendar/calendar_screen.dart';
 import 'community_screen.dart';
 import 'home_screen.dart';
-import 'pet_doctor/pet_doctor_screen.dart';
+import 'package:mncare/screens/pet_doctor/pet_doctor_list.dart';
 import 'tracking_screen.dart';
 
 class MainScreen extends StatefulWidget {
@@ -78,7 +78,7 @@ class _MainScreenState extends State<MainScreen> {
           const TrackingScreen(),
           CalendarScreen(controller: _calendarScreenController),
           const HomeScreen(),
-          const PetDoctorScreen(),
+          const PetDoctorList(),
           const CommunityScreen(),
         ],
       ),

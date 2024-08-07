@@ -1,6 +1,7 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:mncare/screens/auth/auth_screen.dart';
+import 'package:mncare/screens/auth/pet_registration_screen.dart';
 
 class SlideMenu extends StatelessWidget {
   const SlideMenu({super.key});
@@ -42,6 +43,17 @@ class SlideMenu extends StatelessWidget {
             title: const Text('정보'),
             onTap: () {
               // 정보 페이지로 이동하는 로직
+            },
+          ),
+          ListTile(
+            leading: const Icon(Icons.add),
+            title: const Text('펫추가'),
+            onTap: () {
+              Navigator.of(context).push(
+              MaterialPageRoute(
+                builder: (ctx) => const PetRegistrationScreen(),
+              ),
+            );
             },
           ),
           ListTile(
