@@ -3,6 +3,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_sign_in/google_sign_in.dart';
+import 'package:mncare/screens/main_screen.dart';
 
 import 'pet_registration_screen.dart';
 
@@ -38,6 +39,11 @@ class _AuthScreenState extends State<AuthScreen> {
           await _firebaseAuth.signInWithEmailAndPassword(
             email: _emailController.text,
             password: _passwordController.text,
+          );
+          Navigator.of(context).pushReplacement(
+            MaterialPageRoute(
+              builder: (ctx) => const MainScreen(),
+            ),
           );
         } else {
           final userCredentials =
