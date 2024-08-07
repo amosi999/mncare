@@ -26,9 +26,6 @@ class ScheduleInfo {
     this.description,
   });
 
-  // 필요한 경우 여기에 추가 메서드를 구현할 수 있습니다.
-  // 예: toJson(), fromJson() 등
-
   @override
   String toString() {
     return 'ScheduleInfo(owner: $owner, type: $type, title: $title, date: $date, isAllDay: $isAllDay, startTime: $startTime, endTime: $endTime, description: $description)';
