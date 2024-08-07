@@ -78,9 +78,10 @@ class CalendarScreenController extends ChangeNotifier {
   }
 
   void setSelectedPet(Pet? pet) {
-    _selectedPet = pet;
-    _fetchAppointments(); // 선택한 펫의 일정 불러오기
-    notifyListeners();
+    _selectedPet = pet; // 선택한 펫의 일정 불러오기
+    _fetchAppointments().then((_) {
+      notifyListeners();
+    });
   }
 
   // Future<void> _fetchAppointments() async {
