@@ -10,7 +10,7 @@ import 'calendar/calendar_controller.dart';
 import 'calendar/calendar_screen.dart';
 import 'community_screen.dart';
 import 'home_screen.dart';
-import 'package:mncare/screens/pet_doctor/pet_doctor_list.dart';
+import 'package:mncare/screens/pet_doctor/pet_doctor_list.dart' as PetDoctor;
 import 'tracking_screen.dart';
 import 'calendar/schedule_info.dart';
 
@@ -106,7 +106,7 @@ class _MainScreenState extends State<MainScreen> {
           const TrackingScreen(),
           CalendarScreen(controller: _calendarScreenController),
           const HomeScreen(),
-          const PetDoctorList(),
+          const PetDoctor.PetDoctorList(),
           const CommunityScreen(),
         ],
       ),
