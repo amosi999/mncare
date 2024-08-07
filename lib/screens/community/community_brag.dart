@@ -1,16 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'community_postscreen.dart';
 import 'community_postdetailscreen.dart';
 import 'post.dart';
 
-class CommunityNormal extends StatefulWidget {
+class CommunityBrag extends StatefulWidget {
   @override
-  _CommunityNormalState createState() => _CommunityNormalState();
+  _CommunityBragState createState() => _CommunityBragState();
 }
 
-class _CommunityNormalState extends State<CommunityNormal> {
+class _CommunityBragState extends State<CommunityBrag> {
   late Stream<QuerySnapshot> _postsStream;
 
   @override
@@ -18,7 +17,7 @@ class _CommunityNormalState extends State<CommunityNormal> {
     super.initState();
     _postsStream = FirebaseFirestore.instance
         .collection('community')
-        .doc('normal')
+        .doc('brag')
         .collection('posts')
         .orderBy('createdDate', descending: true)
         .snapshots();
@@ -72,7 +71,7 @@ class _CommunityNormalState extends State<CommunityNormal> {
                         createdAt: posts[index].createdAt,
                         imageUrl: posts[index].imageUrl,
                         link: posts[index].link,
-                        userId: posts[index].userId, // userId 추가
+                        userId: posts[index].userId,
                       ),
                     ),
                   );
@@ -83,10 +82,10 @@ class _CommunityNormalState extends State<CommunityNormal> {
         },
       ),
       floatingActionButton: FloatingActionButton(
-        heroTag: 'addPost',
+        heroTag: 'addBragPost',
         onPressed: _addNewPost,
         child: Icon(Icons.add),
-        tooltip: '새 게시물 작성',
+        tooltip: '새 자랑 게시물 작성',
       ),
     );
   }

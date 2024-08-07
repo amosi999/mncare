@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:mncare/screens/community/community_screen.dart';
+import 'package:mncare/screens/community/community_tab.dart';
 import 'package:syncfusion_flutter_calendar/calendar.dart';
 
 import '../widgets/bottom_bar.dart';

@@ -1,4 +1,27 @@
 import 'package:flutter/material.dart';
+import 'community_normal.dart';
+import 'community_brag.dart';
+import 'community_question.dart';
+
+class CommunityScreen extends StatelessWidget {
+  const CommunityScreen({Key? key}) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    return CommunityTabBar(
+      tabs: const [
+        Tab(text: '일반'),
+        Tab(text: '자랑'),
+        Tab(text: '질문'),
+      ],
+      tabViews: [
+            CommunityNormal(),
+            CommunityBrag(),
+            CommunityQuestion(),
+      ],
+    );
+  }
+}
 
 class CommunityTabBar extends StatefulWidget {
   final List<Widget> tabs;
