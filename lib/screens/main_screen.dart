@@ -1,6 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:mncare/screens/community/community_tab.dart';
 import 'package:syncfusion_flutter_calendar/calendar.dart';
 
 import '../widgets/bottom_bar.dart';
@@ -8,7 +9,6 @@ import '../widgets/slide_menu.dart';
 import '../widgets/top_app_bar.dart';
 import 'calendar/calendar_controller.dart';
 import 'calendar/calendar_screen.dart';
-import 'community_screen.dart';
 import 'home_screen.dart';
 import 'package:mncare/screens/pet_doctor/pet_doctor_list.dart' as PetDoctor;
 import 'tracking_screen.dart';
