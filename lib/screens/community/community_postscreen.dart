@@ -8,25 +8,26 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:path/path.dart' as path;
 
 class CommunityPostScreen extends StatefulWidget {
-  const CommunityPostScreen({Key? key}) : super(key: key);
+  final String initialBoard;
+
+  const CommunityPostScreen({Key? key, this.initialBoard = 'normal'}) : super(key: key);
 
   @override
   _CommunityPostScreenState createState() => _CommunityPostScreenState();
 }
-
 class _CommunityPostScreenState extends State<CommunityPostScreen> {
   File? _image;
   final ImagePicker _picker = ImagePicker();
   bool _isUploading = false;
   final TextEditingController _titleController = TextEditingController();
   final TextEditingController _contentController = TextEditingController();
-  final TextEditingController _linkController = TextEditingController();
   String _selectedBoard = 'normal'; // 기본값은 일반 게시판
 
   @override
   void initState() {
     super.initState();
     _initializeFirebase();
+    _selectedBoard = widget.initialBoard;
   }
 
   Future<void> _initializeFirebase() async {
@@ -34,7 +35,8 @@ class _CommunityPostScreenState extends State<CommunityPostScreen> {
   }
 
   Future<void> _pickImage() async {
-    final XFile? pickedFile = await _picker.pickImage(source: ImageSource.gallery);
+    final XFile? pickedFile =
+        await _picker.pickImage(source: ImageSource.gallery);
     if (pickedFile != null) {
       setState(() {
         _image = File(pickedFile.path);
@@ -64,15 +66,16 @@ class _CommunityPostScreenState extends State<CommunityPostScreen> {
           .collection('users')
           .doc(user.uid)
           .get();
-      
+
       final username = userDoc.data()?['username'] ?? '익명';
 
       String? imageUrl;
       if (_image != null) {
         final fileName = path.basename(_image!.path);
-        final storageRef = FirebaseStorage.instance.ref()
+        final storageRef = FirebaseStorage.instance
+            .ref()
             .child('community/$_selectedBoard/$fileName');
-        
+
         await storageRef.putFile(_image!);
         imageUrl = await storageRef.getDownloadURL();
       }
@@ -88,16 +91,14 @@ class _CommunityPostScreenState extends State<CommunityPostScreen> {
         'authorId': user.uid,
         'createdDate': Timestamp.now(),
         'imageUrl': imageUrl,
-        'link': _linkController.text,
       });
-      
+
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('게시글이 성공적으로 업로드되었습니다!')),
       );
 
       _titleController.clear();
       _contentController.clear();
-      _linkController.clear();
       setState(() {
         _image = null;
       });
@@ -161,29 +162,38 @@ class _CommunityPostScreenState extends State<CommunityPostScreen> {
               maxLines: 5,
             ),
             const SizedBox(height: 16),
-            TextField(
-              controller: _linkController,
-              decoration: const InputDecoration(
-                labelText: '링크 (선택사항)',
-                border: OutlineInputBorder(),
-              ),
-            ),
-            const SizedBox(height: 16),
-            ElevatedButton(
-              onPressed: _pickImage,
-              child: const Text('이미지 선택'),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                ElevatedButton(
+                  onPressed: _pickImage,
+                  child: const Text('이미지 선택'),
+                ),
+                ElevatedButton(
+                  onPressed: _isUploading ? null : _submit,
+                  child: _isUploading
+                      ? const SizedBox(
+                          width: 20,
+                          height: 20,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        )
+                      : const Text('게시글 업로드'),
+                ),
+              ],
             ),
             if (_image != null) ...[
               const SizedBox(height: 16),
-              Image.file(_image!),
+              Center(
+                child: SizedBox(
+                  width: 200, // 이미지 뷰어의 너비를 200으로 제한
+                  height: 200, // 이미지 뷰어의 높이를 200으로 제한
+                  child: Image.file(
+                    _image!,
+                    fit: BoxFit.cover, // 이미지가 지정된 크기에 맞게 조절되도록 함
+                  ),
+                ),
+              ),
             ],
-            const SizedBox(height: 16),
-            ElevatedButton(
-              onPressed: _isUploading ? null : _submit,
-              child: _isUploading
-                  ? const CircularProgressIndicator()
-                  : const Text('게시글 업로드'),
-            ),
           ],
         ),
       ),
@@ -194,7 +204,6 @@ class _CommunityPostScreenState extends State<CommunityPostScreen> {
   void dispose() {
     _titleController.dispose();
     _contentController.dispose();
-    _linkController.dispose();
     super.dispose();
   }
 }

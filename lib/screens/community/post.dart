@@ -7,7 +7,6 @@ class Post {
   final String author;
   final DateTime createdAt;
   final String? imageUrl;
-  final String? link;
   final String userId;
 
   Post({
@@ -17,7 +16,6 @@ class Post {
     required this.author,
     required this.createdAt,
     this.imageUrl,
-    this.link,
     required this.userId,
   });
 
@@ -30,7 +28,6 @@ class Post {
       author: data['author'] ?? '익명',
       createdAt: (data['createdDate'] as Timestamp).toDate(),
       imageUrl: data['imageUrl'],
-      link: data['link'],
       userId: data['authorId'] ?? '',
     );
   }

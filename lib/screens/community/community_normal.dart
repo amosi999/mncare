@@ -25,12 +25,12 @@ class _CommunityNormalState extends State<CommunityNormal> {
   }
 
   void _addNewPost() {
-    Navigator.of(context).push(
-      MaterialPageRoute(
-        builder: (context) => CommunityPostScreen(),
-      ),
-    );
-  }
+  Navigator.of(context).push(
+    MaterialPageRoute(
+      builder: (context) => CommunityPostScreen(initialBoard: 'normal'),
+    ),
+  );
+}
 
   @override
   Widget build(BuildContext context) {
@@ -51,32 +51,42 @@ class _CommunityNormalState extends State<CommunityNormal> {
               .toList();
 
           return ListView.builder(
+            // Changed from ListView.separated to ListView.builder
             itemCount: posts.length,
             itemBuilder: (context, index) {
-              return ListTile(
-                title: Text(posts[index].title),
-                subtitle: Text(
-                    '${posts[index].author} | ${posts[index].createdAt.toString().substring(0, 16)}'),
-                leading: posts[index].imageUrl != null
-                    ? Image.network(posts[index].imageUrl!,
-                        width: 50, height: 50, fit: BoxFit.cover)
-                    : null,
-                onTap: () {
-                  Navigator.of(context).push(
-                    MaterialPageRoute(
-                      builder: (context) => PostDetailScreen(
-                        postId: posts[index].id,
-                        title: posts[index].title,
-                        content: posts[index].content,
-                        author: posts[index].author,
-                        createdAt: posts[index].createdAt,
-                        imageUrl: posts[index].imageUrl,
-                        link: posts[index].link,
-                        userId: posts[index].userId, // userId 추가
+              return Card(
+                elevation: 1,
+                margin: const EdgeInsets.symmetric(
+                    vertical: 4, horizontal: 8), // Adjusted margin
+                child: ListTile(
+                  title: Text(
+                    posts[index].title,
+                    style: const TextStyle(fontWeight: FontWeight.bold),
+                  ),
+                  subtitle: Text(
+                    '${posts[index].author} | ${posts[index].createdAt.toString().substring(0, 16)}',
+                    style: TextStyle(color: Colors.grey[600]),
+                  ),
+                  leading: posts[index].imageUrl != null
+                      ? const Icon(Icons.image,
+                          color: Color.fromARGB(255, 108, 153, 235)) // 아이콘으로 변경
+                      : null,
+                  onTap: () {
+                    Navigator.of(context).push(
+                      MaterialPageRoute(
+                        builder: (context) => PostDetailScreen(
+                          postId: posts[index].id,
+                          title: posts[index].title,
+                          content: posts[index].content,
+                          author: posts[index].author,
+                          createdAt: posts[index].createdAt,
+                          imageUrl: posts[index].imageUrl,
+                          userId: posts[index].userId,
+                        ),
                       ),
-                    ),
-                  );
-                },
+                    );
+                  },
+                ),
               );
             },
           );
@@ -87,6 +97,7 @@ class _CommunityNormalState extends State<CommunityNormal> {
         onPressed: _addNewPost,
         child: Icon(Icons.add),
         tooltip: '새 게시물 작성',
+        backgroundColor: const Color.fromARGB(255, 235, 91, 0),
       ),
     );
   }

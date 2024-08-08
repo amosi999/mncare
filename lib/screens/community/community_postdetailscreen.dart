@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:url_launcher/url_launcher.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_storage/firebase_storage.dart';
@@ -11,8 +10,7 @@ class PostDetailScreen extends StatefulWidget {
   final String author;
   final DateTime createdAt;
   final String? imageUrl;
-  final String? link;
-  final String userId;  // 게시물 작성자의 userId 추가
+  final String userId; // 게시물 작성자의 userId 추가
 
   const PostDetailScreen({
     Key? key,
@@ -22,8 +20,7 @@ class PostDetailScreen extends StatefulWidget {
     required this.author,
     required this.createdAt,
     this.imageUrl,
-    this.link,
-    required this.userId,  // userId 추가
+    required this.userId, // userId 추가
   }) : super(key: key);
 
   @override
@@ -36,21 +33,21 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
   final FirebaseAuth _auth = FirebaseAuth.instance;
 
   @override
-Widget build(BuildContext context) {
-  final textTheme = Theme.of(context).textTheme;
-  final currentUser = FirebaseAuth.instance.currentUser;
+  Widget build(BuildContext context) {
+    final textTheme = Theme.of(context).textTheme;
+    final currentUser = FirebaseAuth.instance.currentUser;
 
-  return Scaffold(
-    appBar: AppBar(
-      title: Text('게시물 상세'),
-      actions: [
-        if (currentUser != null && currentUser.uid == widget.userId)
-          IconButton(
-            icon: Icon(Icons.delete),
-            onPressed: _deletePost,
-          ),
-      ],
-    ),
+    return Scaffold(
+      appBar: AppBar(
+        title: Text('게시물 상세'),
+        actions: [
+          if (currentUser != null && currentUser.uid == widget.userId)
+            IconButton(
+              icon: Icon(Icons.delete),
+              onPressed: _deletePost,
+            ),
+        ],
+      ),
       body: SingleChildScrollView(
         padding: EdgeInsets.all(16.0),
         child: Column(
@@ -82,31 +79,28 @@ Widget build(BuildContext context) {
               widget.content,
               style: textTheme.bodyMedium,
             ),
-            if (widget.link != null) ...[
-              SizedBox(height: 16.0),
-              InkWell(
-                child: Text(
-                  '관련 링크',
-                  style: TextStyle(
-                      color: Colors.blue, decoration: TextDecoration.underline),
-                ),
-                onTap: () async {
-                  if (await canLaunch(widget.link!)) {
-                    await launch(widget.link!);
-                  } else {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(content: Text('링크를 열 수 없습니다.')),
-                    );
-                  }
-                },
-              ),
-            ],
             SizedBox(height: 24.0),
-            _buildCommentInput(),
-            SizedBox(height: 8.0),
-            Text('댓글', style: textTheme.titleMedium),
+            Divider(thickness: 1, color: Colors.grey[300]),
             SizedBox(height: 16.0),
-            _buildCommentList(),
+            Container(
+              padding: EdgeInsets.all(16.0),
+              decoration: BoxDecoration(
+                color: Colors.grey[100],
+                borderRadius: BorderRadius.circular(8.0),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text('댓글',
+                      style: textTheme.titleMedium
+                          ?.copyWith(fontWeight: FontWeight.bold)),
+                  SizedBox(height: 16.0),
+                  _buildCommentInput(),
+                  SizedBox(height: 16.0),
+                  _buildCommentList(),
+                ],
+              ),
+            ),
           ],
         ),
       ),
@@ -114,51 +108,51 @@ Widget build(BuildContext context) {
   }
 
   Widget _buildCommentList() {
-  return StreamBuilder<QuerySnapshot>(
-    stream: FirebaseFirestore.instance
-        .collection('community')
-        .doc('normal')
-        .collection('posts')
-        .doc(widget.postId)
-        .collection('comments')
-        .orderBy('createdAt', descending: true)
-        .snapshots(),
-    builder: (context, snapshot) {
-      if (snapshot.hasError) {
-        return Text('오류가 발생했습니다');
-      }
+    return StreamBuilder<QuerySnapshot>(
+      stream: FirebaseFirestore.instance
+          .collection('community')
+          .doc('normal')
+          .collection('posts')
+          .doc(widget.postId)
+          .collection('comments')
+          .orderBy('createdAt', descending: true)
+          .snapshots(),
+      builder: (context, snapshot) {
+        if (snapshot.hasError) {
+          return Text('오류가 발생했습니다');
+        }
 
-      if (snapshot.connectionState == ConnectionState.waiting) {
-        return CircularProgressIndicator();
-      }
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return CircularProgressIndicator();
+        }
 
-      return ListView(
-        shrinkWrap: true,
-        physics: NeverScrollableScrollPhysics(),
-        children: snapshot.data!.docs.map((DocumentSnapshot document) {
-          Map<String, dynamic> data = document.data() as Map<String, dynamic>;
-          return ListTile(
-            title: Text(data['author'] ?? '익명'),
-            subtitle: Text(data['content']),
-            trailing: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text(data['createdAt'] != null 
-                  ? data['createdAt'].toDate().toString().substring(0, 16)
-                  : '날짜 없음'),
-                if (data['userId'] == FirebaseAuth.instance.currentUser?.uid)
-                  IconButton(
-                    icon: Icon(Icons.delete),
-                    onPressed: () => _deleteComment(document.id),
-                  ),
-              ],
-            ),
-          );
-        }).toList(),
-      );
-    },
-  );
-}
+        return ListView(
+          shrinkWrap: true,
+          physics: NeverScrollableScrollPhysics(),
+          children: snapshot.data!.docs.map((DocumentSnapshot document) {
+            Map<String, dynamic> data = document.data() as Map<String, dynamic>;
+            return ListTile(
+              title: Text(data['author'] ?? '익명'),
+              subtitle: Text(data['content']),
+              trailing: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(data['createdAt'] != null
+                      ? data['createdAt'].toDate().toString().substring(0, 16)
+                      : '날짜 없음'),
+                  if (data['userId'] == FirebaseAuth.instance.currentUser?.uid)
+                    IconButton(
+                      icon: const Icon(Icons.delete),
+                      onPressed: () => _deleteComment(document.id),
+                    ),
+                ],
+              ),
+            );
+          }).toList(),
+        );
+      },
+    );
+  }
 
   Widget _buildCommentInput() {
     return Row(
@@ -166,16 +160,16 @@ Widget build(BuildContext context) {
         Expanded(
           child: TextField(
             controller: _commentController,
-            decoration: InputDecoration(
+            decoration: const InputDecoration(
               hintText: '댓글을 입력하세요',
               border: OutlineInputBorder(),
             ),
           ),
         ),
-        SizedBox(width: 8.0),
+        const SizedBox(width: 8.0),
         ElevatedButton(
           onPressed: _submitComment,
-          child: Text('작성'),
+          child: const Text('작성'),
         ),
       ],
     );
@@ -187,40 +181,32 @@ Widget build(BuildContext context) {
     final user = FirebaseAuth.instance.currentUser;
     if (user == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('댓글을 작성하려면 로그인이 필요합니다.')),
+        const SnackBar(content: Text('댓글을 작성하려면 로그인이 필요합니다.')),
       );
       return;
     }
 
     try {
-    final user = FirebaseAuth.instance.currentUser;
-    if (user == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('댓글을 작성하려면 로그인이 필요합니다.')),
-      );
-      return;
-    }
+      // 사용자 문서에서 username 가져오기
+      final userDoc = await FirebaseFirestore.instance
+          .collection('users')
+          .doc(user.uid)
+          .get();
 
-    // 사용자 문서에서 username 가져오기
-    final userDoc = await FirebaseFirestore.instance
-        .collection('users')
-        .doc(user.uid)
-        .get();
-    
-    final username = userDoc.data()?['username'] ?? '익명';
+      final username = userDoc.data()?['username'] ?? '익명';
 
-    await FirebaseFirestore.instance
-        .collection('community')
-        .doc('normal')
-        .collection('posts')
-        .doc(widget.postId)
-        .collection('comments')
-        .add({
-      'author': username,
-      'content': _commentController.text,
-      'createdAt': FieldValue.serverTimestamp(),
-      'userId': user.uid,  // 사용자 ID 저장
-    });
+      await FirebaseFirestore.instance
+          .collection('community')
+          .doc('normal')
+          .collection('posts')
+          .doc(widget.postId)
+          .collection('comments')
+          .add({
+        'author': username,
+        'content': _commentController.text,
+        'createdAt': FieldValue.serverTimestamp(),
+        'userId': user.uid, // 사용자 ID 저장
+      });
 
       _commentController.clear();
       FocusScope.of(context).unfocus();
@@ -232,91 +218,92 @@ Widget build(BuildContext context) {
   }
 
   void _deletePost() async {
-  // 삭제 확인 다이얼로그 표시
-  bool confirmDelete = await showDialog(
-    context: context,
-    builder: (BuildContext context) {
-      return AlertDialog(
-        title: Text('게시물 삭제'),
-        content: Text('이 게시물을 정말 삭제하시겠습니까? 관련된 모든 데이터가 삭제됩니다.'),
-        actions: <Widget>[
-          TextButton(
-            child: Text('취소'),
-            onPressed: () => Navigator.of(context).pop(false),
-          ),
-          TextButton(
-            child: Text('삭제'),
-            onPressed: () => Navigator.of(context).pop(true),
-          ),
-        ],
-      );
-    },
-  ) ?? false;
+    // 삭제 확인 다이얼로그 표시
+    bool confirmDelete = await showDialog(
+          context: context,
+          builder: (BuildContext context) {
+            return AlertDialog(
+              title: const Text('게시물 삭제'),
+              content: const Text('이 게시물을 정말 삭제하시겠습니까? 관련된 모든 데이터가 삭제됩니다.'),
+              actions: <Widget>[
+                TextButton(
+                  child: const Text('취소'),
+                  onPressed: () => Navigator.of(context).pop(false),
+                ),
+                TextButton(
+                  child: const Text('삭제'),
+                  onPressed: () => Navigator.of(context).pop(true),
+                ),
+              ],
+            );
+          },
+        ) ??
+        false;
 
-  if (confirmDelete) {
+    if (confirmDelete) {
+      try {
+        // 게시물 문서 참조
+        final postRef = FirebaseFirestore.instance
+            .collection('community')
+            .doc('normal')
+            .collection('posts')
+            .doc(widget.postId);
+
+        // 게시물 데이터 가져오기
+        final postSnapshot = await postRef.get();
+        final postData = postSnapshot.data();
+
+        // 이미지 URL이 있다면 Storage에서 삭제
+        if (postData != null && postData['imageUrl'] != null) {
+          final imageUrl = postData['imageUrl'] as String;
+          if (imageUrl.isNotEmpty) {
+            // Storage 참조 생성
+            final storageRef = FirebaseStorage.instance.refFromURL(imageUrl);
+
+            // Storage에서 이미지 삭제
+            await storageRef.delete();
+          }
+        }
+
+        // Firestore에서 게시물 삭제
+        await postRef.delete();
+
+        // 성공 메시지 표시
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('게시물과 관련 데이터가 삭제되었습니다.')),
+        );
+
+        // 이전 화면으로 돌아가기
+        Navigator.of(context).pop();
+      } catch (e) {
+        // 오류 메시지 표시
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('게시물 삭제 중 오류가 발생했습니다: $e')),
+        );
+      }
+    }
+  }
+
+  void _deleteComment(String commentId) async {
     try {
-      // 게시물 문서 참조
-      final postRef = FirebaseFirestore.instance
+      await FirebaseFirestore.instance
           .collection('community')
           .doc('normal')
           .collection('posts')
-          .doc(widget.postId);
+          .doc(widget.postId)
+          .collection('comments')
+          .doc(commentId)
+          .delete();
 
-      // 게시물 데이터 가져오기
-      final postSnapshot = await postRef.get();
-      final postData = postSnapshot.data();
-
-      // 이미지 URL이 있다면 Storage에서 삭제
-      if (postData != null && postData['imageUrl'] != null) {
-        final imageUrl = postData['imageUrl'] as String;
-        if (imageUrl.isNotEmpty) {
-          // Storage 참조 생성
-          final storageRef = FirebaseStorage.instance.refFromURL(imageUrl);
-          
-          // Storage에서 이미지 삭제
-          await storageRef.delete();
-        }
-      }
-
-      // Firestore에서 게시물 삭제
-      await postRef.delete();
-
-      // 성공 메시지 표시
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('게시물과 관련 데이터가 삭제되었습니다.')),
+        SnackBar(content: Text('댓글이 삭제되었습니다.')),
       );
-
-      // 이전 화면으로 돌아가기
-      Navigator.of(context).pop();
     } catch (e) {
-      // 오류 메시지 표시
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('게시물 삭제 중 오류가 발생했습니다: $e')),
+        SnackBar(content: Text('댓글 삭제 중 오류가 발생했습니다: $e')),
       );
     }
   }
-}
-
-  void _deleteComment(String commentId) async {
-  try {
-    await FirebaseFirestore.instance
-        .collection('community')
-        .doc('normal')
-        .collection('posts')
-        .doc(widget.postId)
-        .collection('comments')
-        .doc(commentId)
-        .delete();
-
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('댓글이 삭제되었습니다.')),
-    );
-  } catch (e) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('댓글 삭제 중 오류가 발생했습니다: $e')),
-    );
-  }
-}
 
   @override
   void dispose() {
