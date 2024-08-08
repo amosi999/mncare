@@ -126,7 +126,7 @@ class _PetDoctorScreenState extends State<PetDoctorScreen> {
 
       final fileName = path.basename(_image!.path);
       final storageRef = FirebaseStorage.instance.ref()
-          .child('${user.uid}/${_selectedPet!.name}/$fileName');
+          .child('petDoctor/${user.uid}/${_selectedPet!.name}/$fileName');
       
       await storageRef.putFile(_image!);
       
