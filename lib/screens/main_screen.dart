@@ -1,3 +1,5 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:mncare/screens/community/community_tab.dart';
 import 'package:syncfusion_flutter_calendar/calendar.dart';
@@ -8,8 +10,9 @@ import '../widgets/top_app_bar.dart';
 import 'calendar/calendar_controller.dart';
 import 'calendar/calendar_screen.dart';
 import 'home_screen.dart';
-import 'pet_doctor/pet_doctor_screen.dart';
+import 'package:mncare/screens/pet_doctor/pet_doctor_list.dart' as PetDoctor;
 import 'tracking_screen.dart';
+import 'calendar/schedule_info.dart';
 
 class MainScreen extends StatefulWidget {
   const MainScreen({super.key});
@@ -23,11 +26,35 @@ class _MainScreenState extends State<MainScreen> {
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
   final CalendarScreenController _calendarScreenController =
       CalendarScreenController(CalendarController());
+  List<Pet> _pets = [];
+  Pet? _selectedPet;
 
   @override
   void initState() {
     super.initState();
     _calendarScreenController.addListener(_updateState);
+    _fetchPets();
+  }
+
+  Future<void> _fetchPets() async {
+    User? user = FirebaseAuth.instance.currentUser;
+    if (user != null) {
+      final querySnapshot = await FirebaseFirestore.instance
+          .collection('users')
+          .doc(user.uid)
+          .collection('pets')
+          .get();
+
+      setState(() {
+        _pets = querySnapshot.docs
+            .map((doc) => Pet(id: doc.id, name: doc['petName']))
+            .toList();
+        if (_pets.isNotEmpty) {
+          _selectedPet = null;
+          //_calendarScreenController.setSelectedPet(_selectedPet);
+        }
+      });
+    }
   }
 
   void _updateState() {
@@ -65,11 +92,12 @@ class _MainScreenState extends State<MainScreen> {
       appBar: TopAppBar(
         selectedIndex: _selectedIndex,
         onMenuPressed: _openEndDrawer,
-        currentCategory: _calendarScreenController.selectedCategory,
-        onCategorySelected: (category) {
-          if (_selectedIndex == 1) {
-            _calendarScreenController.setSelectedCategory(category);
-          }
+        currentPet: _selectedPet,
+        onPetSelected: (pet) {
+          setState(() {
+            _selectedPet = pet;
+          });
+          _calendarScreenController.setSelectedPet(pet);
         },
       ),
       body: IndexedStack(
@@ -78,7 +106,7 @@ class _MainScreenState extends State<MainScreen> {
           const TrackingScreen(),
           CalendarScreen(controller: _calendarScreenController),
           const HomeScreen(),
-          const PetDoctorScreen(),
+          const PetDoctor.PetDoctorList(),
           const CommunityScreen(),
         ],
       ),

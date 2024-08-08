@@ -35,10 +35,8 @@ void showScheduleTypeDialog(BuildContext context) {
                           ),
                           IconButton(
                             icon: const Icon(Icons.delete),
-                            onPressed: () {
-                              setState(() {
-                                manager.removeType(i);
-                              });
+                            onPressed: () async {
+                              await _deleteType(context, i, setState);
                             },
                           ),
                         ],
@@ -65,7 +63,8 @@ void showScheduleTypeDialog(BuildContext context) {
   );
 }
 
-void _editType(BuildContext context, int index, StateSetter setState) {
+Future<void> _editType(
+    BuildContext context, int index, StateSetter setState) async {
   final manager = ScheduleTypeManager();
   final currentType = manager.types[index];
   String name = currentType.name;
@@ -100,10 +99,9 @@ void _editType(BuildContext context, int index, StateSetter setState) {
           ),
           TextButton(
             child: const Text('저장'),
-            onPressed: () {
-              setState(() {
-                manager.updateType(index, name, color);
-              });
+            onPressed: () async {
+              await manager.updateType(index, name, color); // Update Firestore
+              setState(() {});
               Navigator.of(context).pop();
             },
           ),
@@ -114,7 +112,7 @@ void _editType(BuildContext context, int index, StateSetter setState) {
   );
 }
 
-void _addNewType(BuildContext context, StateSetter setState) {
+Future<void> _addNewType(BuildContext context, StateSetter setState) async {
   final manager = ScheduleTypeManager();
   String name = '';
   Color color = Colors.blue;
@@ -147,11 +145,10 @@ void _addNewType(BuildContext context, StateSetter setState) {
           ),
           TextButton(
             child: const Text('추가'),
-            onPressed: () {
+            onPressed: () async {
               if (name.isNotEmpty) {
-                setState(() {
-                  manager.addType(name, color);
-                });
+                await manager.addType(name, color); // Add to Firestore
+                setState(() {});
                 Navigator.of(context).pop();
               }
             },
@@ -161,4 +158,11 @@ void _addNewType(BuildContext context, StateSetter setState) {
       );
     },
   );
+}
+
+Future<void> _deleteType(
+    BuildContext context, int index, StateSetter setState) async {
+  final manager = ScheduleTypeManager();
+  await manager.removeType(index); // Remove from Firestore
+  setState(() {});
 }
