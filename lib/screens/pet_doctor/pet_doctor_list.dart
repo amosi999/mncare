@@ -193,7 +193,8 @@ class _PetDoctorListState extends State<PetDoctorList> {
           return StreamBuilder<List<PetImage>>(
             stream: _getPetImagesStream(),
             builder: (context, petImagesSnapshot) {
-              if (petImagesSnapshot.connectionState == ConnectionState.waiting) {
+              if (petImagesSnapshot.connectionState ==
+                  ConnectionState.waiting) {
                 return Center(child: CircularProgressIndicator());
               }
 
@@ -204,7 +205,9 @@ class _PetDoctorListState extends State<PetDoctorList> {
               final allPetImages = petImagesSnapshot.data ?? [];
               final filteredImages = _selectedPet == null
                   ? allPetImages
-                  : allPetImages.where((image) => image.petId == _selectedPet!.id).toList();
+                  : allPetImages
+                      .where((image) => image.petId == _selectedPet!.id)
+                      .toList();
 
               return Column(
                 children: [
@@ -314,19 +317,28 @@ class _PetDoctorListState extends State<PetDoctorList> {
           );
         },
       ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () async {
-          await Navigator.of(context).push(
-            MaterialPageRoute(
-              builder: (ctx) => PetDoctorScreen(
-                onImageUploaded: _refreshData,
+      floatingActionButton: SizedBox(
+        width: 48,
+        height: 48,
+        child: FloatingActionButton(
+          onPressed: () async {
+            await Navigator.of(context).push(
+              MaterialPageRoute(
+                builder: (ctx) => PetDoctorScreen(
+                  onImageUploaded: _refreshData,
+                ),
               ),
-            ),
-          );
-          _refreshData();
-        },
-        child: Icon(Icons.add),
-        backgroundColor: Colors.blue[700],
+            );
+            _refreshData();
+          },
+          backgroundColor: const Color.fromARGB(255, 235, 91, 0),
+          shape: const CircleBorder(),
+          elevation: 1,
+          child: const Icon(
+            Icons.add,
+            color: Colors.white,
+          ),
+        ),
       ),
     );
   }

@@ -34,6 +34,7 @@ class _CommunityBragState extends State<CommunityBrag> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: const Color.fromARGB(255, 240, 240, 240),
       body: StreamBuilder<QuerySnapshot>(
         stream: _postsStream,
         builder: (BuildContext context, AsyncSnapshot<QuerySnapshot> snapshot) {
@@ -89,13 +90,22 @@ class _CommunityBragState extends State<CommunityBrag> {
           );
         },
       ),
-      floatingActionButton: FloatingActionButton(
-        heroTag: 'addBragPost',
-        onPressed: _addNewPost,
-        child: Icon(Icons.add),
-        tooltip: '새 자랑 게시물 작성',
-        backgroundColor: const Color.fromARGB(255, 235, 91, 0),
-      ),
+      floatingActionButton: SizedBox(
+  width: 48,
+  height: 48,
+  child: FloatingActionButton(
+    heroTag: 'addPost2',
+    onPressed: _addNewPost,
+    backgroundColor: const Color.fromARGB(255, 235, 91, 0),
+    shape: const CircleBorder(),
+    elevation: 1,
+    tooltip: '새 게시물 작성',
+    child: const Icon(
+      Icons.add,
+      color: Colors.white,
+    ),
+  ),
+),
     );
   }
 }
