@@ -5,7 +5,7 @@ import 'package:mncare/screens/community/community_tab.dart';
 import 'package:syncfusion_flutter_calendar/calendar.dart';
 
 import '../widgets/bottom_bar.dart';
-import '../widgets/slide_menu.dart';
+import '../widgets/side_menu.dart';
 import '../widgets/top_app_bar.dart';
 import 'calendar/calendar_controller.dart';
 import 'calendar/calendar_screen.dart';
