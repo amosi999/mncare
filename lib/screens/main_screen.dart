@@ -9,7 +9,7 @@ import 'calendar/calendar_screen.dart';
 import 'community_screen.dart';
 import 'home_screen.dart';
 import 'pet_doctor/pet_doctor_screen.dart';
-import 'tracking_screen.dart';
+import 'tracking/tracking_screen.dart';
 
 class MainScreen extends StatefulWidget {
   const MainScreen({super.key});
