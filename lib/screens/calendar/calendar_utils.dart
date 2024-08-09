@@ -9,9 +9,9 @@ MonthViewSettings getMonthViewSettings() {
     monthCellStyle: MonthCellStyle(
       textStyle: TextStyle(color: Colors.black),
       trailingDatesTextStyle: TextStyle(color: Colors.grey),
-      trailingDatesBackgroundColor: Color.fromARGB(255, 247, 247, 247),
+      trailingDatesBackgroundColor: Color.fromARGB(255, 240, 240, 240),
       leadingDatesTextStyle: TextStyle(color: Colors.grey),
-      leadingDatesBackgroundColor: Color.fromARGB(255, 247, 247, 247),
+      leadingDatesBackgroundColor: Color.fromARGB(255, 240, 240, 240),
       backgroundColor: Colors.white,
       todayBackgroundColor: Colors.white,
     ),

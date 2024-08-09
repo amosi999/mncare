@@ -1,6 +1,6 @@
-import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter/material.dart';
 
 import '../constants/app_constants.dart';
 import '../screens/calendar/schedule_info.dart';
@@ -65,7 +65,13 @@ class _TopAppBarState extends State<TopAppBar> {
     return AppBar(
       title: widget.selectedIndex == 1
           ? _buildDropdownMenu()
-          : Text(AppConstants.appBarTitles[widget.selectedIndex]),
+          : Text(
+              AppConstants.appBarTitles[widget.selectedIndex],
+              style: const TextStyle(
+                fontSize: 20,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
       backgroundColor: Colors.grey[50],
       actions: [
         if (widget.selectedIndex == 1)
@@ -100,7 +106,7 @@ class _TopAppBarState extends State<TopAppBar> {
             value: pet,
             child: Text(pet.name),
           );
-        }).toList(),
+        }),
       ],
     );
   }

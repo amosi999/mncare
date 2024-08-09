@@ -28,7 +28,7 @@ class CalendarView extends StatelessWidget {
       headerHeight: 0,
       viewHeaderHeight: 40,
       viewHeaderStyle: getViewHeaderStyle(),
-      todayHighlightColor: Color.fromARGB(255, 0, 0, 0),
+      todayHighlightColor: const Color.fromARGB(255, 235, 91, 0),
       cellBorderColor: Colors.grey[300],
       onViewChanged: onViewChanged,
       selectionDecoration: getSelectionDecoration(),

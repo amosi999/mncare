@@ -24,7 +24,7 @@ class BottomBar extends StatelessWidget {
       elevation: 8, // 그림자 효과
       items: const <BottomNavigationBarItem>[
         BottomNavigationBarItem(
-          icon: Icon(Icons.directions_run),
+          icon: Icon(Icons.show_chart),
           label: '트래킹',
         ),
         BottomNavigationBarItem(
