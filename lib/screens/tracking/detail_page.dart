@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:mncare/screens/tracking/add_%20poop_page.dart';
 import 'package:mncare/screens/tracking/add_food_page.dart';
+import 'package:mncare/screens/tracking/add_vomit_page.dart';
 import 'package:mncare/screens/tracking/add_water_page.dart';
 import 'package:mncare/screens/tracking/set_intake_goals.dart';
 
@@ -12,9 +14,9 @@ class DetailPage extends StatelessWidget {
 
   double _getContainerHeight(String title) {
     if (title == '물' || title == '사료') {
-      return 520;
+      return 494;
     } else {
-      return 710;
+      return 684;
     }
   }
 
@@ -186,6 +188,20 @@ class DetailPage extends StatelessWidget {
                         builder: (context) => const AddFoodPage()),
                   );
                 }
+                if (title == '대변') {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                        builder: (context) => const AddPoopPage()),
+                  );
+                }
+                if (title == '구토') {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                        builder: (context) => const AddVomitPage()),
+                  );
+                }
               }, // 기록 추가 로직으로 수정
               child: Container(
                 width: double.infinity,
@@ -308,7 +324,8 @@ class DetailPage extends StatelessWidget {
                                       color: Colors.grey,
                                     ),
                                     IconButton(
-                                      onPressed: () {}, // 기록 수정 로직으로 수정
+                                      onPressed:
+                                          () {}, // 기록 수정 로직으로 수정 이거는 기록 추가 화면 띄우는 대신 데이터를 여기서 가지고 있는 데이터로 넣어주면 될듯
                                       icon: const Icon(Icons.edit),
                                       color: Colors.grey,
                                     ),
