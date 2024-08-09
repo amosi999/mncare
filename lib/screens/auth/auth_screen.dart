@@ -54,7 +54,7 @@ class _AuthScreenState extends State<AuthScreen> {
 
           Navigator.of(context).pushReplacement(
             MaterialPageRoute(
-              builder: (ctx) => const PetRegistrationScreen(),
+              builder: (ctx) => const PetRegistrationScreen(showSkipButton: true),
             ),
           );
           await FirebaseFirestore.instance
@@ -143,7 +143,7 @@ class _AuthScreenState extends State<AuthScreen> {
 
           Navigator.of(context).pushReplacement(
             MaterialPageRoute(
-              builder: (ctx) => const PetRegistrationScreen(),
+              builder: (ctx) => const PetRegistrationScreen(showSkipButton: true),
             ),
           );
         }

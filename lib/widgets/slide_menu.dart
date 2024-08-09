@@ -50,10 +50,11 @@ class SlideMenu extends StatelessWidget {
             title: const Text('펫추가'),
             onTap: () {
               Navigator.of(context).push(
-              MaterialPageRoute(
-                builder: (ctx) => const PetRegistrationScreen(),
-              ),
-            );
+                MaterialPageRoute(
+                  builder: (ctx) =>
+                      const PetRegistrationScreen(showSkipButton: false),
+                ),
+              );
             },
           ),
           ListTile(
