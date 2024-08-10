@@ -76,7 +76,7 @@ class _AddFoodPageState extends State<AddFoodPage> {
                 ),
                 const SizedBox(width: 5),
                 const Text(
-                  'ml',
+                  'g',
                   style: TextStyle(
                     fontSize: 20,
                     fontWeight: FontWeight.bold,
@@ -91,12 +91,16 @@ class _AddFoodPageState extends State<AddFoodPage> {
     );
   }
 
+  //완료버튼에 대한 위젯
   Widget _buildCompleteButton() {
     bool hasInput = _inputController.text.isNotEmpty;
     return ElevatedButton(
       onPressed: hasInput
           ? () {
               // 기록 추가 로직으로 변경
+              // _inputVolume으로 받은 값을 회차별 DB에 저장하고
+              // pop으로 이전 페이지로 넘어감. 
+              print(_inputVolume);
               print(_inputController.text);
             }
           : null,

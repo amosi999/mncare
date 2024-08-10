@@ -1,22 +1,19 @@
 import 'package:flutter/material.dart';
+import 'package:mncare/screens/tracking/tracking_screen_controller.dart';
 
 import 'calendar_widget.dart';
 import 'tracking_grid.dart';
 
 class TrackingScreen extends StatefulWidget {
-  const TrackingScreen({super.key});
+  final TrackingScreenController controller;
+
+  const TrackingScreen({super.key, required this.controller});
 
   @override
   _TrackingPageState createState() => _TrackingPageState();
 }
 
 class _TrackingPageState extends State<TrackingScreen> {
-  String selectedPet = '머루';
-  DateTime selectedDate = DateTime.now();
-  Map<String, Map<String, Map<String, double>>> trackingData = {
-    '머루': {},
-    '다래': {},
-  };
 
   @override
   Widget build(BuildContext context) {
@@ -25,10 +22,10 @@ class _TrackingPageState extends State<TrackingScreen> {
       body: Column(
         children: [
           CalendarWidget(
-            selectedDate: selectedDate,
+            selectedDate: widget.controller.selectedDate,
             onDateChanged: (date) {
               setState(() {
-                selectedDate = date;
+                widget.controller.updateSelectedDate(date);
               });
             },
           ),

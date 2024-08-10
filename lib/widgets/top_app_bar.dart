@@ -1,62 +1,124 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 
 import '../constants/app_constants.dart';
 import '../screens/calendar/schedule_info.dart';
 import '../screens/calendar/schedule_type_dialog.dart';
 
-class TopAppBar extends StatelessWidget implements PreferredSizeWidget {
+class TopAppBar extends StatefulWidget implements PreferredSizeWidget {
   final int selectedIndex;
   final VoidCallback onMenuPressed;
-  final Function(ScheduleOwner) onCategorySelected;
-  final ScheduleOwner currentCategory;
+  final Function(CommonPet?) onPetSelected; // Pet?로 변경하여 null을 전달할 수 있도록 함
+  final CommonPet? currentPet; // 현재 선택된 펫
+  //  final List<Pet> pets; // 추가된 부분: 펫 목록 // 일단 보류
 
   const TopAppBar({
     super.key,
     required this.selectedIndex,
     required this.onMenuPressed,
-    required this.onCategorySelected,
-    required this.currentCategory,
+    required this.onPetSelected,
+    required this.currentPet,
+    // required this.pets, // 추가된 부분: 펫 목록
   });
+
+  @override
+  _TopAppBarState createState() => _TopAppBarState();
+
+  @override
+  Size get preferredSize => const Size.fromHeight(kToolbarHeight);
+}
+
+class _TopAppBarState extends State<TopAppBar> {
+  final User? user = FirebaseAuth.instance.currentUser;
+  List<CommonPet> _pets = [];
+  CommonPet? _selectedPet;
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchPets();
+  }
+
+  Future<void> _fetchPets() async {
+    if (user == null) return;
+
+    final querySnapshot = await FirebaseFirestore.instance
+        .collection('users')
+        .doc(user!.uid)
+        .collection('pets')
+        .get();
+
+    setState(() {
+      _pets = querySnapshot.docs
+          .map((doc) =>
+              CommonPet(id: doc.id, name: doc.data()['petName'] as String))
+          .toList();
+      print('로드 _pets : ${_pets}');
+
+      if (_pets.isNotEmpty) {
+        _selectedPet = null;
+        widget.onPetSelected(_selectedPet);
+      }
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
     return AppBar(
-      title: selectedIndex == 1
-          ? _buildDropdownMenu()
-          : Text(AppConstants.appBarTitles[selectedIndex]),
+      title: (widget.selectedIndex == 0 || widget.selectedIndex == 1)
+          ? _buildDropdownMenu(widget.selectedIndex)
+          : Text(
+              AppConstants.appBarTitles[widget.selectedIndex],
+              style: const TextStyle(
+                fontSize: 20,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
       backgroundColor: Colors.grey[50],
       actions: [
-        if (selectedIndex == 1)
+        if (widget.selectedIndex == 0 || widget.selectedIndex == 1)
           IconButton(
             icon: const Icon(Icons.loyalty),
             onPressed: () => showScheduleTypeDialog(context),
           ),
         IconButton(
           icon: const Icon(Icons.menu),
-          onPressed: onMenuPressed,
+          onPressed: widget.onMenuPressed,
         ),
       ],
     );
   }
 
-  Widget _buildDropdownMenu() {
-    return DropdownButton<ScheduleOwner>(
-      value: currentCategory,
-      onChanged: (ScheduleOwner? newValue) {
-        if (newValue != null) {
-          onCategorySelected(newValue);
-        }
+  Widget _buildDropdownMenu(int selectedIndex) {
+    return DropdownButton<CommonPet>(
+      value: _selectedPet,
+      onChanged: (CommonPet? newValue) {
+        setState(() {
+          _selectedPet = newValue;
+        });
+        widget.onPetSelected(newValue);
       },
-      items: ScheduleOwner.values
-          .map<DropdownMenuItem<ScheduleOwner>>((ScheduleOwner value) {
-        return DropdownMenuItem<ScheduleOwner>(
-          value: value,
-          child: Text(scheduleOwnerToString(value)),
-        );
-      }).toList(),
+      items: [
+        //if (widget.selectedIndex == 1)
+        const DropdownMenuItem<CommonPet>(
+          value: null,
+          child: Text('전체'),
+        ),
+        ..._pets.map<DropdownMenuItem<CommonPet>>((CommonPet pet) {
+          return DropdownMenuItem<CommonPet>(
+            value: pet,
+            child: Text(pet.name),
+          );
+        }),
+      ],
     );
   }
+}
 
-  @override
-  Size get preferredSize => const Size.fromHeight(kToolbarHeight);
+class CommonPet {
+  final String id;
+  final String name;
+
+  CommonPet({required this.id, required this.name});
 }

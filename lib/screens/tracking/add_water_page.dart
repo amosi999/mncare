@@ -97,6 +97,8 @@ class _AddWaterPageState extends State<AddWaterPage> {
       onPressed: hasInput
           ? () {
               // 기록 추가 로직으로 변경
+              // _inputVolume으로 받은 값을 회차별 DB에 저장하고
+              // pop으로 이전 페이지로 넘어감.
               print(_inputController.text);
             }
           : null,

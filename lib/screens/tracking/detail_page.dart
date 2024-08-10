@@ -45,7 +45,9 @@ class DetailPage extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
                   const Text(
-                    '20/200', // 데이터 받아서 띄우게 수정
+                    '20/200', 
+                    // 데이터 받아서 띄우게 수정
+                    //
                     style: TextStyle(fontSize: 30, fontWeight: FontWeight.w500),
                   ),
                   if (title == '물')
@@ -231,6 +233,7 @@ class DetailPage extends StatelessWidget {
               ),
             ),
           ),
+          //이 뒤에 부터는 리스트로 기록들 불수 있도록 
           Padding(
             padding: const EdgeInsets.fromLTRB(15, 0, 15, 15),
             child: Container(
