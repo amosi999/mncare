@@ -1,9 +1,10 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+
 import 'package:mncare/screens/tracking/tracking_screen.dart';
 import 'package:mncare/screens/tracking/tracking_screen_controller.dart';
-// import 'package:mncare/screens/community/community_tab.dart';
+import 'package:mncare/screens/community/community_tab.dart';
 import 'package:syncfusion_flutter_calendar/calendar.dart';
 
 import '../widgets/bottom_bar.dart';
@@ -33,6 +34,10 @@ class _MainScreenState extends State<MainScreen> {
   List<CommonPet> _pets = [];
   CommonPet? _selectedPet;
 
+// 트래킹 머지 전 펫
+//   List<Pet> _pets = [];
+//   Pet? _selectedPet;
+
   @override
   void initState() {
     super.initState();
@@ -50,6 +55,7 @@ class _MainScreenState extends State<MainScreen> {
           .get();
 
       setState(() {
+
         // Initializing the selected pet
         if (querySnapshot.docs.isNotEmpty) {
           _selectedPet = CommonPet(
@@ -66,6 +72,15 @@ class _MainScreenState extends State<MainScreen> {
       //     PetTracking.Pet(id: _selectedPet!.id, name: _selectedPet!.name),
       //   );
       // }
+// 트래킹 머지 전 펫
+//         _pets = querySnapshot.docs
+//             .map((doc) => Pet(id: doc.id, name: doc['petName']))
+//             .toList();
+//         if (_pets.isNotEmpty) {
+//           _selectedPet = null;
+//           //_calendarScreenController.setSelectedPet(_selectedPet);
+//         }
+//       });
     }
   }
 
@@ -123,6 +138,14 @@ class _MainScreenState extends State<MainScreen> {
           }
 
           // 필수로 필요한 것들에 대해서만? 나머지는 필요한가? 얘는 나머지 정보고 필요할 수 있음 . 다른곳에서 초기화하던가.
+
+          // 트래킹 머지 전 펫
+//         onPetSelected: (pet) {
+//           setState(() {
+//             _selectedPet = pet;
+//           });
+//           _calendarScreenController.setSelectedPet(pet);
+
         },
       ),
       body: IndexedStack(
@@ -132,7 +155,7 @@ class _MainScreenState extends State<MainScreen> {
           CalendarScreen(controller: _calendarScreenController),
           const HomeScreen(),
           const PetDoctor.PetDoctorList(),
-          //const CommunityScreen(),
+          const CommunityScreen(),
         ],
       ),
       bottomNavigationBar: BottomBar(

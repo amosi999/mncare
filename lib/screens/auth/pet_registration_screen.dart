@@ -5,7 +5,10 @@ import 'package:flutter/services.dart';
 import 'package:mncare/screens/main_screen.dart';
 
 class PetRegistrationScreen extends StatefulWidget {
-  const PetRegistrationScreen({super.key});
+  final bool showSkipButton;
+
+  const PetRegistrationScreen({Key? key, this.showSkipButton = true})
+      : super(key: key);
 
   @override
   _PetRegistrationScreenState createState() => _PetRegistrationScreenState();
@@ -54,14 +57,15 @@ class _PetRegistrationScreenState extends State<PetRegistrationScreen> {
         backgroundColor: Colors.white,
         foregroundColor: Colors.black,
         actions: [
-          TextButton(
-            onPressed: () {
-              Navigator.of(context).pushReplacement(
-                MaterialPageRoute(builder: (context) => const MainScreen()),
-              );
-            },
-            child: const Text('건너뛰기', style: TextStyle(color: Colors.black)),
-          ),
+          if (widget.showSkipButton)
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pushReplacement(
+                  MaterialPageRoute(builder: (context) => const MainScreen()),
+                );
+              },
+              child: const Text('건너뛰기', style: TextStyle(color: Colors.black)),
+            ),
         ],
       ),
       body: Container(

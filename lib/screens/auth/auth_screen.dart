@@ -51,9 +51,10 @@ class _AuthScreenState extends State<AuthScreen> {
             email: _emailController.text,
             password: _passwordController.text,
           );
+
           Navigator.of(context).pushReplacement(
             MaterialPageRoute(
-              builder: (ctx) => const PetRegistrationScreen(),
+              builder: (ctx) => const PetRegistrationScreen(showSkipButton: true),
             ),
           );
           await FirebaseFirestore.instance
@@ -65,6 +66,8 @@ class _AuthScreenState extends State<AuthScreen> {
             'gender': _gender,
             'birthdate': _birthController.text,
           });
+
+          await _addDefaultCategories(userCredentials.user!.uid); // 기본 카테고리 추가
         }
       } on FirebaseAuthException catch (error) {
         ScaffoldMessenger.of(context).clearSnackBars();
@@ -74,6 +77,32 @@ class _AuthScreenState extends State<AuthScreen> {
           ),
         );
       }
+    }
+  }
+
+  //카테고리 추가 코드
+  Future<void> _addDefaultCategories(String userId) async {
+    final CollectionReference categoriesRef = FirebaseFirestore.instance
+        .collection('users')
+        .doc(userId)
+        .collection('categories');
+    final List<Map<String, dynamic>> defaultCategories = [
+      {
+        'name': '일정',
+        'color': Colors.grey.value,
+      },
+      {
+        'name': '접종',
+        'color': Colors.blue.value,
+      },
+      {
+        'name': '내원',
+        'color': Colors.green.value,
+      },
+    ];
+
+    for (final category in defaultCategories) {
+      await categoriesRef.add(category);
     }
   }
 
@@ -110,9 +139,11 @@ class _AuthScreenState extends State<AuthScreen> {
             'email': user.email ?? 'Unknown',
           });
 
+          await _addDefaultCategories(user.uid);
+
           Navigator.of(context).pushReplacement(
             MaterialPageRoute(
-              builder: (ctx) => const PetRegistrationScreen(),
+              builder: (ctx) => const PetRegistrationScreen(showSkipButton: true),
             ),
           );
         }
