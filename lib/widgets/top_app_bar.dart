@@ -39,7 +39,6 @@ class _TopAppBarState extends State<TopAppBar> {
 //   List<Pet> _pets = [];
 //   Pet? _selectedPet;
 
-
   @override
   void initState() {
     super.initState();
@@ -76,7 +75,6 @@ class _TopAppBarState extends State<TopAppBar> {
     return AppBar(
       title: (widget.selectedIndex == 0 || widget.selectedIndex == 1)
           ? _buildDropdownMenu(widget.selectedIndex)
-
           : Text(
               AppConstants.appBarTitles[widget.selectedIndex],
               style: const TextStyle(
@@ -133,6 +131,8 @@ class _TopAppBarState extends State<TopAppBar> {
       ],
     );
   }
+}
+
 class CommonPet {
   final String id;
   final String name;
