@@ -77,7 +77,7 @@ class _TopAppBarState extends State<TopAppBar> {
             ),
       backgroundColor: Colors.grey[50],
       actions: [
-        if (widget.selectedIndex == 0 || widget.selectedIndex == 1)
+        if (widget.selectedIndex == 1)
           IconButton(
             icon: const Icon(Icons.loyalty),
             onPressed: () => showScheduleTypeDialog(context),
