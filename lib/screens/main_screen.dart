@@ -15,12 +15,11 @@ import 'calendar/calendar_screen.dart';
 import 'home_screen.dart';
 import 'package:mncare/screens/pet_doctor/pet_doctor_list.dart' as PetDoctor;
 import 'calendar/schedule_info.dart';
-import 'no_pet_screen.dart';
 import 'tracking/tracking_info.dart' as PetTracking;
-
+import 'no_pet_screen.dart';
 
 class MainScreen extends StatefulWidget {
-  const MainScreen({Key? key}) : super(key: key);
+  const MainScreen({super.key});
 
   @override
   _MainScreenState createState() => _MainScreenState();
@@ -31,24 +30,17 @@ class _MainScreenState extends State<MainScreen> {
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
   final CalendarScreenController _calendarScreenController =
       CalendarScreenController(CalendarController());
-
-  bool _hasPets = false;
   final TrackingScreenController _trackingScreenController =
       TrackingScreenController();
   List<CommonPet> _pets = [];
   CommonPet? _selectedPet;
-
-// 트래킹 머지 전 펫
-//   List<Pet> _pets = [];
-//   Pet? _selectedPet;
-
+  bool _hasPets = false;
 
   @override
   void initState() {
     super.initState();
     _calendarScreenController.addListener(_updateState);
     _fetchPets();
-    _checkForPets();
   }
 
   Future<void> _fetchPets() async {
@@ -61,57 +53,29 @@ class _MainScreenState extends State<MainScreen> {
           .get();
 
       setState(() {
-
         _pets = querySnapshot.docs
-            .map((doc) => Pet(id: doc.id, name: doc['petName']))
+            .map((doc) => CommonPet(id: doc.id, name: doc['petName']))
             .toList();
-        if (_pets.isNotEmpty) {
+        _hasPets = _pets.isNotEmpty;
+        if (_hasPets) {
           _selectedPet = _pets.first;
-          _calendarScreenController.setSelectedPet(_selectedPet);
-
-
-        // Initializing the selected pet
-        if (querySnapshot.docs.isNotEmpty) {
-          _selectedPet = CommonPet(
-              id: querySnapshot.docs.first.id,
-              name: querySnapshot.docs.first['petName']);
-
+          _updateSelectedPet(_selectedPet);
         }
       });
-      // // Setting the initial pet for each controller 고려
-      // if (_selectedPet != null) {
-      //   _calendarScreenController.setSelectedPet(
-      //     Pet(id: _selectedPet!.id, name: _selectedPet!.name),
-      //   );
-      //   _trackingScreenController.setSelectedPet(
-      //     PetTracking.Pet(id: _selectedPet!.id, name: _selectedPet!.name),
-      //   );
-      // }
-// 트래킹 머지 전 펫
-//         _pets = querySnapshot.docs
-//             .map((doc) => Pet(id: doc.id, name: doc['petName']))
-//             .toList();
-//         if (_pets.isNotEmpty) {
-//           _selectedPet = null;
-//           //_calendarScreenController.setSelectedPet(_selectedPet);
-//         }
-//       });
     }
   }
 
-  Future<void> _checkForPets() async {
-    User? user = FirebaseAuth.instance.currentUser;
-    if (user != null) {
-      QuerySnapshot petsSnapshot = await FirebaseFirestore.instance
-          .collection('users')
-          .doc(user.uid)
-          .collection('pets')
-          .limit(1)
-          .get();
-
-      setState(() {
-        _hasPets = petsSnapshot.docs.isNotEmpty;
-      });
+  void _updateSelectedPet(CommonPet? pet) {
+    if (pet != null) {
+      _calendarScreenController.setSelectedPet(
+        Pet(id: pet.id, name: pet.name),
+      );
+      _trackingScreenController.setSelectedPet(
+        PetTracking.Pet(id: pet.id, name: pet.name),
+      );
+    } else {
+      _calendarScreenController.setSelectedPet(null);
+      _trackingScreenController.setSelectedPet(null);
     }
   }
 
@@ -129,6 +93,9 @@ class _MainScreenState extends State<MainScreen> {
   }
 
   void _onItemTapped(int index) {
+    if (index == 1) {
+      _calendarScreenController.resetToToday();
+    }
     setState(() {
       _selectedIndex = index;
     });
@@ -145,50 +112,24 @@ class _MainScreenState extends State<MainScreen> {
       appBar: TopAppBar(
         selectedIndex: _selectedIndex,
         onMenuPressed: _openEndDrawer,
-
         currentPet: _selectedPet,
         onPetSelected: (CommonPet? pet) {
-
           setState(() {
             _selectedPet = pet;
           });
-          if (_selectedPet != null) {
-            _calendarScreenController.setSelectedPet(
-              Pet(id: _selectedPet!.id, name: _selectedPet!.name),
-            );
-            _trackingScreenController.setSelectedPet(
-              PetTracking.Pet(id: _selectedPet!.id, name: _selectedPet!.name),
-            );
-          } else {
-            _calendarScreenController
-                .setSelectedPet(null); // 필요에 따라 null을 넘길 수 있음
-            _trackingScreenController.setSelectedPet(null);
-          }
-
-          // 필수로 필요한 것들에 대해서만? 나머지는 필요한가? 얘는 나머지 정보고 필요할 수 있음 . 다른곳에서 초기화하던가.
-
-          // 트래킹 머지 전 펫
-//         onPetSelected: (pet) {
-//           setState(() {
-//             _selectedPet = pet;
-//           });
-//           _calendarScreenController.setSelectedPet(pet);
-
+          _updateSelectedPet(pet);
         },
-        currentPet: _selectedPet,
         hasPets: _hasPets,
       ),
       body: IndexedStack(
         index: _selectedIndex,
         children: [
-
-          _hasPets ? const TrackingScreen() : const NoPetScreen(title: 'tracking'),
+          _hasPets
+              ? TrackingScreen(controller: _trackingScreenController)
+              : const NoPetScreen(title: 'tracking'),
           _hasPets
               ? CalendarScreen(controller: _calendarScreenController)
-
-          TrackingScreen(controller: _trackingScreenController),
-          CalendarScreen(controller: _calendarScreenController),
-
+              : const NoPetScreen(title: 'calendar'),
           const HomeScreen(),
           _hasPets
               ? const PetDoctor.PetDoctorList()
