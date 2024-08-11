@@ -34,8 +34,9 @@ class _SetIntakeGoalsState extends State<SetIntakeGoals> {
     return '';
   }
 
-  void _showRecommendedIntakeInfo() {
+  void _showRecommendedWaterIntakeInfo() {
     showModalBottomSheet(
+      backgroundColor: Colors.white,
       context: context,
       builder: (BuildContext context) {
         return Container(
@@ -45,24 +46,27 @@ class _SetIntakeGoalsState extends State<SetIntakeGoals> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               const Text(
-                '적정 음수량 안내',
+                '권장 음수량 안내',
                 style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
               ),
               const SizedBox(height: 20),
               Container(
-                padding: const EdgeInsets.all(10),
+                width: double.infinity,
+                padding: const EdgeInsets.all(15),
                 decoration: BoxDecoration(
                   color: Colors.grey[200],
                   borderRadius: BorderRadius.circular(10),
                 ),
-                child: const Text(
-                  '[하루 적정 음수량 = 몸무게(kg) X 20~70ml]',
-                  style: TextStyle(fontWeight: FontWeight.bold),
+                child: const Center(
+                  child: Text(
+                    '[하루 적정 음수량 = 몸무게(kg) X 20~70ml]',
+                    style: TextStyle(fontWeight: FontWeight.bold),
+                  ),
                 ),
               ),
               const SizedBox(height: 10),
               const Text(
-                '4.5kg 머루에겐 90~315ml를 권장해요',
+                '4.5kg 머루에겐 90~315ml를 권장해요', // 위의 식 활용해서 데이터 가져와서 ${data}로 문자열에 집어넣게 수정
                 style:
                     TextStyle(color: Colors.red, fontWeight: FontWeight.bold),
               ),
@@ -73,8 +77,79 @@ class _SetIntakeGoalsState extends State<SetIntakeGoals> {
               ),
               const SizedBox(height: 10),
               const Text(
-                '혹시 아이의 몸무게에 변화가 있다면 [기록 > 몸무게 > 새로운 기록 추가하기] 에서 추가해주세요.',
+                '혹시 아이의 몸무게에 변화가 있다면 마이 페이지의 반려동물 정보 수정에서 정보를 수정해주세요.',
                 style: TextStyle(fontSize: 12),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  void _showRecommendedFoodIntakeInfo() {
+    showModalBottomSheet(
+      backgroundColor: Colors.white,
+      context: context,
+      isScrollControlled: true,
+      builder: (BuildContext context) {
+        return Container(
+          padding: const EdgeInsets.all(20),
+          child: const Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                '권장 사료량 안내',
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+              ),
+              SizedBox(height: 20),
+              Text(
+                '권장 사료량은 건식 사료를 기준으로 현재의 나이, 몸무게, 중성화 여부를 고려해 안내하고 있어요. 다만 반려동물마다 대사량, 활동량이 다르기 때문에 체중이 늘어나는지 줄어드는지에 따라 사료량을 적절히 조절하면서 급여하는 게 좋아요.',
+                style: TextStyle(fontSize: 15),
+              ),
+              Divider(
+                color: Colors.grey,
+                thickness: 0.5,
+                height: 40,
+              ),
+              Text(
+                '성장기 아이',
+                style: TextStyle(
+                  fontSize: 15,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              SizedBox(height: 5),
+              Text(
+                '자라나는 성장 시기에는 꾸준히 체중이 늘어나야 해요. 체중이 유지되거나 오히려 줄었다면 근육, 뼈 등이 제대로 성장할 수 없기 때문에 꼭 사료량을 늘려 급여해주세요.',
+                style: TextStyle(fontSize: 15),
+              ),
+              SizedBox(height: 20),
+              Text(
+                '성장기가 막 끝난 아이 (10~12개월)',
+                style: TextStyle(
+                  fontSize: 15,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              SizedBox(height: 5),
+              Text(
+                '성장기가 끝나면 자연스럽게 먹는 양이 줄어요. 급여량이 줄어도 체중이 유지된다면 정상. 체중이 오히려 줄어들었다면 아이의 건강 이상을 의심해 봐야 해요.',
+                style: TextStyle(fontSize: 15),
+              ),
+              SizedBox(height: 20),
+              Text(
+                '성견/성묘인 아이 (12개월 이후)',
+                style: TextStyle(
+                  fontSize: 15,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              SizedBox(height: 5),
+              Text(
+                '매우 야위었거나 비만이 아니라면 체중이 일정하게 유지되는 것이 좋아요. 혹시 아이가 공복에 노란색 토를 자주 한다면 공복시간이 긴 탓일 수 있으니 급여 횟수를 조금 늘리고, 변이 묽다면 사료량을 줄여보세요. 그래도 증상이 호전되지 않는다면 병원 상담을 추천해요.',
+                style: TextStyle(fontSize: 15),
               ),
             ],
           ),
@@ -135,11 +210,18 @@ class _SetIntakeGoalsState extends State<SetIntakeGoals> {
                                   '권장 사료량: 140g/일', // 이거 해당 동물 데이터로 계산해서 값 보여주게 수정
                                   style: TextStyle(
                                       color: Colors.blue, fontSize: 14)),
-                            IconButton(
-                              icon: const Icon(Icons.info_outline,
-                                  color: Colors.blue, size: 18),
-                              onPressed: _showRecommendedIntakeInfo,
-                            ),
+                            if (widget.title == '물')
+                              IconButton(
+                                icon: const Icon(Icons.info_outline,
+                                    color: Colors.blue, size: 18),
+                                onPressed: _showRecommendedWaterIntakeInfo,
+                              ),
+                            if (widget.title == '사료')
+                              IconButton(
+                                icon: const Icon(Icons.info_outline,
+                                    color: Colors.blue, size: 18),
+                                onPressed: _showRecommendedFoodIntakeInfo,
+                              ),
                           ],
                         ),
                       ],
