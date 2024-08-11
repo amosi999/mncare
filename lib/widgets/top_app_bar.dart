@@ -9,9 +9,13 @@ import '../screens/calendar/schedule_type_dialog.dart';
 class TopAppBar extends StatefulWidget implements PreferredSizeWidget {
   final int selectedIndex;
   final VoidCallback onMenuPressed;
-  final Function(Pet?) onPetSelected;
-  final Pet? currentPet;
   final bool hasPets;
+  final Function(CommonPet?) onPetSelected; // Pet?로 변경하여 null을 전달할 수 있도록 함
+  final CommonPet? currentPet; // 현재 선택된 펫
+//   final Function(Pet?) onPetSelected; // Pet?로 변경하여 null을 전달할 수 있도록 함
+//   final Pet? currentPet; // 현재 선택된 펫
+  //  final List<Pet> pets; // 추가된 부분: 펫 목록 // 일단 보류
+
 
   const TopAppBar({
     Key? key,
@@ -31,8 +35,11 @@ class TopAppBar extends StatefulWidget implements PreferredSizeWidget {
 
 class _TopAppBarState extends State<TopAppBar> {
   final User? user = FirebaseAuth.instance.currentUser;
-  List<Pet> _pets = [];
-  Pet? _selectedPet;
+  List<CommonPet> _pets = [];
+  CommonPet? _selectedPet;
+// 트래킹 머지 전 펫
+//   List<Pet> _pets = [];
+//   Pet? _selectedPet;
 
   @override
   void initState() {
@@ -51,8 +58,13 @@ class _TopAppBarState extends State<TopAppBar> {
 
     setState(() {
       _pets = querySnapshot.docs
-          .map((doc) => Pet(id: doc.id, name: doc.data()['petName'] as String))
+          .map((doc) =>
+              CommonPet(id: doc.id, name: doc.data()['petName'] as String))
           .toList();
+      print('로드 _pets : ${_pets}');
+      // 트래킹 머지 전 펫
+//           .map((doc) => Pet(id: doc.id, name: doc.data()['petName'] as String))
+//           .toList();
       if (_pets.isNotEmpty) {
         _selectedPet = null;
         widget.onPetSelected(_selectedPet);
@@ -88,8 +100,8 @@ class _TopAppBarState extends State<TopAppBar> {
     }
 
     return AppBar(
-      title: widget.selectedIndex == 1
-          ? _buildDropdownMenu()
+      title: (widget.selectedIndex == 0 || widget.selectedIndex == 1)
+          ? _buildDropdownMenu(widget.selectedIndex)
           : Text(
               AppConstants.appBarTitles[widget.selectedIndex],
               style: const TextStyle(
@@ -112,22 +124,33 @@ class _TopAppBarState extends State<TopAppBar> {
     );
   }
 
-  Widget _buildDropdownMenu() {
-    return DropdownButton<Pet>(
+  Widget _buildDropdownMenu(int selectedIndex) {
+    return DropdownButton<CommonPet>(
       value: _selectedPet,
-      onChanged: (Pet? newValue) {
+      onChanged: (CommonPet? newValue) {
+//   Widget _buildDropdownMenu() {
+//     return DropdownButton<Pet>(
+//       value: _selectedPet,
+//       onChanged: (Pet? newValue) {
         setState(() {
           _selectedPet = newValue;
         });
         widget.onPetSelected(newValue);
       },
       items: [
-        const DropdownMenuItem<Pet>(
+        //if (widget.selectedIndex == 1)
+        const DropdownMenuItem<CommonPet>(
           value: null,
           child: Text('전체'),
         ),
-        ..._pets.map<DropdownMenuItem<Pet>>((Pet pet) {
-          return DropdownMenuItem<Pet>(
+        ..._pets.map<DropdownMenuItem<CommonPet>>((CommonPet pet) {
+          return DropdownMenuItem<CommonPet>(
+//         const DropdownMenuItem<Pet>(
+//           value: null,
+//           child: Text('전체'),
+//         ),
+//         ..._pets.map<DropdownMenuItem<Pet>>((Pet pet) {
+//           return DropdownMenuItem<Pet>(
             value: pet,
             child: Text(pet.name),
           );
@@ -135,4 +158,11 @@ class _TopAppBarState extends State<TopAppBar> {
       ],
     );
   }
+}
+
+class CommonPet {
+  final String id;
+  final String name;
+
+  CommonPet({required this.id, required this.name});
 }
