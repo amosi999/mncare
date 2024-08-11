@@ -9,18 +9,18 @@ import '../screens/calendar/schedule_type_dialog.dart';
 class TopAppBar extends StatefulWidget implements PreferredSizeWidget {
   final int selectedIndex;
   final VoidCallback onMenuPressed;
-  final Function(Pet?) onPetSelected; // Pet?로 변경하여 null을 전달할 수 있도록 함
-  final Pet? currentPet; // 현재 선택된 펫
-  //  final List<Pet> pets; // 추가된 부분: 펫 목록 // 일단 보류
+  final Function(Pet?) onPetSelected;
+  final Pet? currentPet;
+  final bool hasPets;
 
   const TopAppBar({
-    super.key,
+    Key? key,
     required this.selectedIndex,
     required this.onMenuPressed,
     required this.onPetSelected,
     required this.currentPet,
-    // required this.pets, // 추가된 부분: 펫 목록
-  });
+    required this.hasPets,
+  }) : super(key: key);
 
   @override
   _TopAppBarState createState() => _TopAppBarState();
@@ -62,6 +62,31 @@ class _TopAppBarState extends State<TopAppBar> {
 
   @override
   Widget build(BuildContext context) {
+    if (!widget.hasPets &&
+        (widget.selectedIndex == 0 ||
+            widget.selectedIndex == 1 ||
+            widget.selectedIndex == 3)) {
+      // NoPetScreen이 표시되는 경우
+      return AppBar(
+        backgroundColor: Colors.grey[50],
+        foregroundColor: Colors.black,
+        elevation: 0,
+        title: Text(
+          AppConstants.appBarTitles[widget.selectedIndex],
+          style: const TextStyle(
+            fontSize: 20,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.menu),
+            onPressed: widget.onMenuPressed,
+          ),
+        ],
+      );
+    }
+
     return AppBar(
       title: widget.selectedIndex == 1
           ? _buildDropdownMenu()
