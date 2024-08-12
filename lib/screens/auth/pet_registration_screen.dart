@@ -7,8 +7,7 @@ import 'package:mncare/screens/main_screen.dart';
 class PetRegistrationScreen extends StatefulWidget {
   final bool showSkipButton;
 
-  const PetRegistrationScreen({Key? key, this.showSkipButton = true})
-      : super(key: key);
+  const PetRegistrationScreen({super.key, this.showSkipButton = true});
 
   @override
   _PetRegistrationScreenState createState() => _PetRegistrationScreenState();
@@ -115,11 +114,20 @@ class _PetRegistrationScreenState extends State<PetRegistrationScreen> {
                   ElevatedButton(
                     onPressed: _submitForm,
                     style: ElevatedButton.styleFrom(
-                      minimumSize: const Size(double.infinity, 50),
-                      backgroundColor: const Color.fromARGB(255, 235, 91, 0),
                       foregroundColor: Colors.white,
+                      backgroundColor: const Color.fromARGB(255, 235, 91, 0),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(25),
+                      ),
+                      minimumSize: const Size(double.infinity, 55),
                     ),
-                    child: const Text('저장'),
+                    child: const Text(
+                      '저장',
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
                   ),
                 ],
               ),
