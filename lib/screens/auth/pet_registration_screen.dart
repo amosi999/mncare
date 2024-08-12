@@ -3,6 +3,8 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:mncare/screens/main_screen.dart';
+import 'package:mncare/utilities/dailyFoodLogic.dart' as dailyFoodLogic;
+import 'package:mncare/utilities/dailyWaterLogic.dart';
 
 class PetRegistrationScreen extends StatefulWidget {
   final bool showSkipButton;
@@ -379,6 +381,26 @@ class _PetRegistrationScreenState extends State<PetRegistrationScreen> {
     if (_formKey.currentState!.validate()) {
       try {
         User? currentUser = FirebaseAuth.instance.currentUser;
+
+        /**트래킹 관련 DB저장 로직 */
+        int defaultFoodKcal = 3500;// 예시로 3500 kcal/kg 사용 임시 값인거임.
+        double dailyFoodAmount = dailyFoodLogic.calculateDailyFood(
+          petType: _petType!,
+          age: dailyFoodLogic.calculateAgeInMonths(_birthController.text),
+          weight: double.parse(_weightController.text),
+          defaultFoodKcal: defaultFoodKcal, 
+          isNeutered: _isNeutered,
+        );
+        int defaultFoodCount = 3;
+        double dailyWaterAmount = calculateDailyWater(
+            petType: _petType!,
+            age: calculateAgeInMonths(_birthController.text),
+            weight: double.parse(_weightController.text),
+            isNeutered: _isNeutered,
+          );
+        int defaultWaterCount = 2;
+
+
         if (currentUser != null) {
           DocumentReference petDocRef = await FirebaseFirestore.instance
               .collection('users')
@@ -396,7 +418,18 @@ class _PetRegistrationScreenState extends State<PetRegistrationScreen> {
                 _otherController.text.isNotEmpty ? _otherController.text : null,
           });
 
-          String petId = petDocRef.id;
+          String petId = petDocRef.id; // 반려동물의 ID 인데 사용함?
+
+          /*좀이따 standard DB 만드는 로직  */
+          // petDocRef 하위에 standard 문서를 만들고, 거기에 defaultFoodGoal 저장
+          await petDocRef.collection('standard').doc('document').set({
+            'defaultFoodGoal': dailyFoodAmount,
+            'defaultFoodCount': defaultFoodCount,
+            'defaultWaterGoal': dailyWaterAmount,
+            'defaultWaterCount': defaultWaterCount,
+            'defaultFoodKcal': defaultFoodKcal,
+          });
+          //의도한 구조가 아니긴함. standard 하위에 바로 defaultFoodGoal이 속성으로 저장되었으면 좋겠음.
 
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(content: Text('반려동물 정보가 성공적으로 저장되었습니다!')),
