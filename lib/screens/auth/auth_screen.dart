@@ -179,7 +179,7 @@ class _AuthScreenState extends State<AuthScreen> {
                     textAlign: TextAlign.start,
                   ),
                   Text(
-                    _isLogin ? '로그인 정보를 알려주세요' : '회원가입 정보를 알려주세요',
+                    _isLogin ? '로그인 정보를 알려주세요' : '사용자의 회원가입 정보를 알려주세요',
                     style: const TextStyle(
                         fontSize: 24, fontWeight: FontWeight.w500),
                     textAlign: TextAlign.start,
