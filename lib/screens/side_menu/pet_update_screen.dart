@@ -115,15 +115,24 @@ class _PetUpdateScreenState extends State<PetUpdateScreen> {
                   const SizedBox(height: 10),
                   _buildTextField(_otherController, '갖고 있는 질환이나 알러지원을 적어주세요',
                       isRequired: false),
-                  const SizedBox(height: 20),
+                  const SizedBox(height: 30),
                   ElevatedButton(
                     onPressed: _submitForm,
                     style: ElevatedButton.styleFrom(
-                      minimumSize: const Size(double.infinity, 50),
-                      backgroundColor: const Color.fromARGB(255, 235, 91, 0),
                       foregroundColor: Colors.white,
+                      backgroundColor: const Color.fromARGB(255, 235, 91, 0),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(25),
+                      ),
+                      minimumSize: const Size(double.infinity, 55),
                     ),
-                    child: const Text('저장'),
+                    child: const Text(
+                      '저장',
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
                   ),
                 ],
               ),
