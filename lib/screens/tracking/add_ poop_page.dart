@@ -234,7 +234,7 @@ class _AddPoopPageState extends State<AddPoopPage> {
   }
 
   Widget _buildCompleteButton() {
-    bool isEnabled = _selectedShape.isNotEmpty && _selectedColor.isEmpty;
+    bool isEnabled = _selectedShape.isNotEmpty && _selectedColor.isNotEmpty;
     return ElevatedButton(
       onPressed: isEnabled
           ? () {

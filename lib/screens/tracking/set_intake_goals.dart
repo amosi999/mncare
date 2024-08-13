@@ -7,6 +7,8 @@ import 'package:mncare/screens/tracking/tracking_screen_controller.dart';
 import 'package:mncare/utilities/dailyWaterLogic.dart';
 import 'package:mncare/utilities/dailyFoodLogic.dart' as FoodLogic;
 
+//asd
+
 class SetIntakeGoals extends StatefulWidget {
   final String title;
   final TrackingScreenController controller;
@@ -162,7 +164,9 @@ class _SetIntakeGoalsState extends State<SetIntakeGoals> {
     print('트래킹 showRecommendedWaterInfo호출');
     final pet = widget.controller.selectedPet;
 
+  void _showRecommendedWaterIntakeInfo() {
     showModalBottomSheet(
+      backgroundColor: Colors.white,
       context: context,
       builder: (BuildContext context) {
         return Container(
@@ -172,27 +176,30 @@ class _SetIntakeGoalsState extends State<SetIntakeGoals> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               const Text(
-                '적정 음수량 안내',
+                '권장 음수량 안내',
                 style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
               ),
               const SizedBox(height: 20),
               Container(
-                padding: const EdgeInsets.all(10),
+                width: double.infinity,
+                padding: const EdgeInsets.all(15),
                 decoration: BoxDecoration(
                   color: Colors.grey[200],
                   borderRadius: BorderRadius.circular(10),
                 ),
+                child: const Center(
                 child: Text(
                   recommendedWaterIntakeText,
                   //'[하루 적정 음수량 = 몸무게(kg) X 20~70ml]',
                   style: const TextStyle(fontWeight: FontWeight.bold),
                 ),
               ),
+                 ),
               const SizedBox(height: 10),
               Text(
                 '${weight}kg ${pet?.name}에겐 ${recommendedWaterIntake}ml를 권장해요',
                 style: const TextStyle(
-                    color: Colors.red, fontWeight: FontWeight.bold),
+                    TextStyle(color: Colors.red, fontWeight: FontWeight.bold),
               ),
               const SizedBox(height: 10),
               const Text(
@@ -201,7 +208,7 @@ class _SetIntakeGoalsState extends State<SetIntakeGoals> {
               ),
               const SizedBox(height: 10),
               const Text(
-                '혹시 아이의 몸무게에 변화가 있다면 [기록 > 몸무게 > 새로운 기록 추가하기] 에서 추가해주세요.',
+                '혹시 아이의 몸무게에 변화가 있다면 마이 페이지의 반려동물 정보 수정에서 정보를 수정해주세요.',
                 style: TextStyle(fontSize: 12),
               ),
             ],
@@ -211,51 +218,70 @@ class _SetIntakeGoalsState extends State<SetIntakeGoals> {
     );
   }
 
-  void _showRecommendedFoodInfo() {
-    print('트래킹 showRecommendedFoodInfo호출');
-    final pet = widget.controller.selectedPet;
-
+//front 수정본
+  void _showRecommendedFoodIntakeInfo() {
     showModalBottomSheet(
+      backgroundColor: Colors.white,
       context: context,
+      isScrollControlled: true,
       builder: (BuildContext context) {
         return Container(
           padding: const EdgeInsets.all(20),
-          child: Column(
+          child: const Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text(
-                '적정 사료량 안내',
+              Text(
+                '권장 사료량 안내',
                 style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
               ),
-              const SizedBox(height: 20),
-              Container(
-                padding: const EdgeInsets.all(10),
-                decoration: BoxDecoration(
-                  color: Colors.grey[200],
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                child: Text(
-                  recommendedFoodIntakeText,
-                  //'[하루 적정 음수량 = 몸무게(kg) X 20~70ml]',
-                  style: const TextStyle(fontWeight: FontWeight.bold),
-                ),
-              ),
-              const SizedBox(height: 10),
+              SizedBox(height: 20),
               Text(
-                '${weight}kg ${pet?.name}에겐 ${recommendedFoodIntake}g를 권장해요',
-                style: const TextStyle(
-                    color: Colors.red, fontWeight: FontWeight.bold),
+                '권장 사료량은 건식 사료를 기준으로 현재의 나이, 몸무게, 중성화 여부를 고려해 안내하고 있어요. 다만 반려동물마다 대사량, 활동량이 다르기 때문에 체중이 늘어나는지 줄어드는지에 따라 사료량을 적절히 조절하면서 급여하는 게 좋아요.',
+                style: TextStyle(fontSize: 15),
               ),
-              const SizedBox(height: 10),
-              const Text(
-                '적정 사료량은 건식 사료를 기준으로 안내하고 있어요. 사료량은 활동량, 나이, 날씨, 급여하는 음식의 형태에 따라 약간의 차이가 발생할 수 있어요.',
-                style: TextStyle(fontSize: 12),
+              Divider(
+                color: Colors.grey,
+                thickness: 0.5,
+                height: 40,
               ),
-              const SizedBox(height: 10),
-              const Text(
-                '혹시 아이의 몸무게에 변화가 있다면 [기록 > 몸무게 > 새로운 기록 추가하기] 에서 추가해주세요.',
-                style: TextStyle(fontSize: 12),
+              Text(
+                '성장기 아이',
+                style: TextStyle(
+                  fontSize: 15,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              SizedBox(height: 5),
+              Text(
+                '자라나는 성장 시기에는 꾸준히 체중이 늘어나야 해요. 체중이 유지되거나 오히려 줄었다면 근육, 뼈 등이 제대로 성장할 수 없기 때문에 꼭 사료량을 늘려 급여해주세요.',
+                style: TextStyle(fontSize: 15),
+              ),
+              SizedBox(height: 20),
+              Text(
+                '성장기가 막 끝난 아이 (10~12개월)',
+                style: TextStyle(
+                  fontSize: 15,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              SizedBox(height: 5),
+              Text(
+                '성장기가 끝나면 자연스럽게 먹는 양이 줄어요. 급여량이 줄어도 체중이 유지된다면 정상. 체중이 오히려 줄어들었다면 아이의 건강 이상을 의심해 봐야 해요.',
+                style: TextStyle(fontSize: 15),
+              ),
+              SizedBox(height: 20),
+              Text(
+                '성견/성묘인 아이 (12개월 이후)',
+                style: TextStyle(
+                  fontSize: 15,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              SizedBox(height: 5),
+              Text(
+                '매우 야위었거나 비만이 아니라면 체중이 일정하게 유지되는 것이 좋아요. 혹시 아이가 공복에 노란색 토를 자주 한다면 공복시간이 긴 탓일 수 있으니 급여 횟수를 조금 늘리고, 변이 묽다면 사료량을 줄여보세요. 그래도 증상이 호전되지 않는다면 병원 상담을 추천해요.',
+                style: TextStyle(fontSize: 15),
               ),
             ],
           ),
@@ -263,6 +289,60 @@ class _SetIntakeGoalsState extends State<SetIntakeGoals> {
       },
     );
   }
+
+// backend  
+//   void _showRecommendedFoodInfo() {
+//     print('트래킹 showRecommendedFoodInfo호출');
+//     final pet = widget.controller.selectedPet;
+
+//     showModalBottomSheet(
+//       context: context,
+//       builder: (BuildContext context) {
+//         return Container(
+//           padding: const EdgeInsets.all(20),
+//           child: Column(
+//             mainAxisSize: MainAxisSize.min,
+//             crossAxisAlignment: CrossAxisAlignment.start,
+//             children: [
+//               const Text(
+//                 '적정 사료량 안내',
+//                 style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+//               ),
+//               const SizedBox(height: 20),
+//               Container(
+//                 padding: const EdgeInsets.all(10),
+//                 decoration: BoxDecoration(
+//                   color: Colors.grey[200],
+//                   borderRadius: BorderRadius.circular(10),
+//                 ),
+//                 child: Text(
+//                   recommendedFoodIntakeText,
+//                   //'[하루 적정 음수량 = 몸무게(kg) X 20~70ml]',
+//                   style: const TextStyle(fontWeight: FontWeight.bold),
+//                 ),
+//               ),
+//               const SizedBox(height: 10),
+//               Text(
+//                 '${weight}kg ${pet?.name}에겐 ${recommendedFoodIntake}g를 권장해요',
+//                 style: const TextStyle(
+//                     color: Colors.red, fontWeight: FontWeight.bold),
+//               ),
+//               const SizedBox(height: 10),
+//               const Text(
+//                 '적정 사료량은 건식 사료를 기준으로 안내하고 있어요. 사료량은 활동량, 나이, 날씨, 급여하는 음식의 형태에 따라 약간의 차이가 발생할 수 있어요.',
+//                 style: TextStyle(fontSize: 12),
+//               ),
+//               const SizedBox(height: 10),
+//               const Text(
+//                 '혹시 아이의 몸무게에 변화가 있다면 [기록 > 몸무게 > 새로운 기록 추가하기] 에서 추가해주세요.',
+//                 style: TextStyle(fontSize: 12),
+//               ),
+//             ],
+//           ),
+//         );
+//       },
+//     );
+//   }
 
   //수정한 목표를 DB에 저장하는 부분.
   Future<void> _saveGoal() async {
@@ -349,10 +429,12 @@ class _SetIntakeGoalsState extends State<SetIntakeGoals> {
                                   '권장 사료량: ${recommendedFoodIntake}g/일', // 이거 해당 동물 데이터로 계산해서 값 보여주게 수정
                                   style: const TextStyle(
                                       color: Colors.blue, fontSize: 14)),
+
                             if (widget.title == '사료')
                               IconButton(
                                 icon: const Icon(Icons.info_outline,
                                     color: Colors.blue, size: 18),
+
                                 onPressed: _showRecommendedFoodInfo,
                               ),
                           ],
@@ -424,18 +506,23 @@ class _SetIntakeGoalsState extends State<SetIntakeGoals> {
                           ),
                         ),
                         const SizedBox(height: 15),
-                        Text(
-                          '1회 기본 양 : ${_dailyFrequency > 0 ? (_dailyIntake / _dailyFrequency).round() : 0}ml씩',
-                          style: const TextStyle(
-                            color: Colors.grey,
-                            fontSize: 14,
+
+                        SizedBox(
+                          width: 220,
+                          child: Text(
+                            '1회 기본 양 : ${_dailyFrequency > 0 ? (_dailyIntake / _dailyFrequency).round() : 0}ml씩',
+                            style: const TextStyle(
+                              color: Colors.grey,
+                              fontSize: 14,
+                            ),
+
                           ),
                         ),
                       ],
                     ),
                     Expanded(
                       child: Padding(
-                          padding: const EdgeInsets.fromLTRB(115, 0, 0, 40),
+                          padding: const EdgeInsets.fromLTRB(2, 0, 0, 40),
                           child: Row(
                             mainAxisAlignment: MainAxisAlignment.end,
                             children: [
