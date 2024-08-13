@@ -291,18 +291,21 @@ class _SetIntakeGoalsState extends State<SetIntakeGoals> {
                           ),
                         ),
                         const SizedBox(height: 15),
-                        Text(
-                          '1회 기본 양 : ${(_dailyIntake / _dailyFrequency).round()}ml씩',
-                          style: const TextStyle(
-                            color: Colors.grey,
-                            fontSize: 14,
+                        SizedBox(
+                          width: 220,
+                          child: Text(
+                            '1회 기본 양 : ${(_dailyIntake / _dailyFrequency).round()}ml씩',
+                            style: const TextStyle(
+                              color: Colors.grey,
+                              fontSize: 14,
+                            ),
                           ),
                         ),
                       ],
                     ),
                     Expanded(
                       child: Padding(
-                          padding: const EdgeInsets.fromLTRB(115, 0, 0, 40),
+                          padding: const EdgeInsets.fromLTRB(2, 0, 0, 40),
                           child: Row(
                             mainAxisAlignment: MainAxisAlignment.end,
                             children: [
