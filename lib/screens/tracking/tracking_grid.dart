@@ -1,12 +1,14 @@
 import 'package:flutter/material.dart';
+import 'package:mncare/screens/tracking/tracking_screen_controller.dart';
 
 import 'add_ poop_page.dart';
 import 'add_vomit_page.dart';
 import 'detail_page.dart';
 
 class TrackingGrid extends StatelessWidget {
-  const TrackingGrid({super.key});
+  final TrackingScreenController controller; // 추가: 컨트롤러 필드
 
+  const TrackingGrid({super.key, required this.controller});
   @override
   Widget build(BuildContext context) {
     return Expanded(
@@ -76,7 +78,10 @@ class TrackingGrid extends StatelessWidget {
                       Navigator.push(
                         context,
                         MaterialPageRoute(
-                          builder: (context) => DetailPage(title: title),
+                          builder: (context) => DetailPage(
+                            title: title,
+                            controller: controller,
+                          ),
                         ),
                       );
                     },
