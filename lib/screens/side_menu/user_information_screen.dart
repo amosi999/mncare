@@ -124,7 +124,8 @@ class _UserInformationScreenState extends State<UserInformationScreen> {
                                 const Text(
                                   '성별',
                                   style: TextStyle(
-                                      fontSize: 15, fontWeight: FontWeight.w600),
+                                      fontSize: 15,
+                                      fontWeight: FontWeight.w600),
                                 ),
                                 const SizedBox(height: 10),
                                 SizedBox(
@@ -141,12 +142,14 @@ class _UserInformationScreenState extends State<UserInformationScreen> {
                                 const Text(
                                   '생년월일',
                                   style: TextStyle(
-                                      fontSize: 15, fontWeight: FontWeight.w600),
+                                      fontSize: 15,
+                                      fontWeight: FontWeight.w600),
                                 ),
                                 const SizedBox(height: 10),
                                 SizedBox(
                                   width: 175,
-                                  child: _buildTextField(birthController, '생년월일',
+                                  child: _buildTextField(
+                                      birthController, '생년월일',
                                       enabled: false),
                                 ),
                               ],
@@ -170,7 +173,26 @@ class _UserInformationScreenState extends State<UserInformationScreen> {
                                 '로그아웃',
                                 style: TextStyle(
                                   color: Colors.grey,
-                                  decoration: TextDecoration.underline,
+                                  decorationColor: Colors.grey,
+                                ),
+                              ),
+                            ),
+                            Padding(
+                              padding: const EdgeInsets.fromLTRB(10, 0, 10, 0),
+                              child: Container(
+                                width: 0.5,
+                                height: 15,
+                                color: Colors.grey,
+                              ),
+                            ),
+                            GestureDetector(
+                              onTap: () {
+                                // 회원 탈퇴 로직
+                              },
+                              child: const Text(
+                                '회원탈퇴',
+                                style: TextStyle(
+                                  color: Colors.grey,
                                   decorationColor: Colors.grey,
                                 ),
                               ),
@@ -218,15 +240,14 @@ class _UserInformationScreenState extends State<UserInformationScreen> {
   }
 
   Widget _buildCompleteButton() {
-    bool isEnabled = nicknameController.text.isNotEmpty && 
-                     (nicknameController.text != _initialNickname);
+    bool isEnabled = nicknameController.text.isNotEmpty &&
+        (nicknameController.text != _initialNickname);
     return ElevatedButton(
       onPressed: isEnabled ? _updateUserInfo : null,
       style: ElevatedButton.styleFrom(
         foregroundColor: Colors.white,
-        backgroundColor: isEnabled 
-            ? const Color.fromARGB(255, 235, 91, 0)
-            : Colors.grey,
+        backgroundColor:
+            isEnabled ? const Color.fromARGB(255, 235, 91, 0) : Colors.grey,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(25),
         ),
