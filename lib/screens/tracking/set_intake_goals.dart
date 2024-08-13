@@ -164,7 +164,6 @@ class _SetIntakeGoalsState extends State<SetIntakeGoals> {
     print('트래킹 showRecommendedWaterInfo호출');
     final pet = widget.controller.selectedPet;
 
-  void _showRecommendedWaterIntakeInfo() {
     showModalBottomSheet(
       backgroundColor: Colors.white,
       context: context,
@@ -187,19 +186,19 @@ class _SetIntakeGoalsState extends State<SetIntakeGoals> {
                   color: Colors.grey[200],
                   borderRadius: BorderRadius.circular(10),
                 ),
-                child: const Center(
-                child: Text(
-                  recommendedWaterIntakeText,
-                  //'[하루 적정 음수량 = 몸무게(kg) X 20~70ml]',
-                  style: const TextStyle(fontWeight: FontWeight.bold),
+                child: Center(
+                  child: Text(
+                    recommendedWaterIntakeText,
+                    //'[하루 적정 음수량 = 몸무게(kg) X 20~70ml]',
+                    style: const TextStyle(fontWeight: FontWeight.bold),
+                  ),
                 ),
               ),
-                 ),
               const SizedBox(height: 10),
               Text(
                 '${weight}kg ${pet?.name}에겐 ${recommendedWaterIntake}ml를 권장해요',
                 style: const TextStyle(
-                    TextStyle(color: Colors.red, fontWeight: FontWeight.bold),
+                    color: Colors.red, fontWeight: FontWeight.bold),
               ),
               const SizedBox(height: 10),
               const Text(
@@ -290,7 +289,7 @@ class _SetIntakeGoalsState extends State<SetIntakeGoals> {
     );
   }
 
-// backend  
+// backend
 //   void _showRecommendedFoodInfo() {
 //     print('트래킹 showRecommendedFoodInfo호출');
 //     final pet = widget.controller.selectedPet;
@@ -429,13 +428,11 @@ class _SetIntakeGoalsState extends State<SetIntakeGoals> {
                                   '권장 사료량: ${recommendedFoodIntake}g/일', // 이거 해당 동물 데이터로 계산해서 값 보여주게 수정
                                   style: const TextStyle(
                                       color: Colors.blue, fontSize: 14)),
-
                             if (widget.title == '사료')
                               IconButton(
                                 icon: const Icon(Icons.info_outline,
                                     color: Colors.blue, size: 18),
-
-                                onPressed: _showRecommendedFoodInfo,
+                                onPressed: _showRecommendedFoodIntakeInfo,
                               ),
                           ],
                         ),
@@ -506,7 +503,6 @@ class _SetIntakeGoalsState extends State<SetIntakeGoals> {
                           ),
                         ),
                         const SizedBox(height: 15),
-
                         SizedBox(
                           width: 220,
                           child: Text(
@@ -515,7 +511,6 @@ class _SetIntakeGoalsState extends State<SetIntakeGoals> {
                               color: Colors.grey,
                               fontSize: 14,
                             ),
-
                           ),
                         ),
                       ],
