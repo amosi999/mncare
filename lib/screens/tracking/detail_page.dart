@@ -85,15 +85,17 @@ class _DetailPageState extends State<DetailPage> {
     }
   }
 
-
   //물 추가시에 업데이트 상태 반영
-  Future<void> _navigateToAddWaterPage() async {
+  Future<void> _navigateToAddWaterPage(int waterCount, int waterGoal) async {
     bool? updated = await Navigator.push(
       context,
       MaterialPageRoute(
         builder: (context) => AddWaterPage(
-            date: widget.controller.selectedDate,
-            petId: widget.controller.selectedPet!.id),
+          date: widget.controller.selectedDate,
+          petId: widget.controller.selectedPet!.id,
+          waterCount: waterCount,
+          waterGoal: waterGoal,
+        ),
       ),
     );
 
@@ -320,7 +322,7 @@ class _DetailPageState extends State<DetailPage> {
               onTap: () {
                 if (widget.title == '물') {
                   if (widget.controller.selectedPet != null) {
-                    _navigateToAddWaterPage(); //
+                    _navigateToAddWaterPage(waterCount, waterGoal); //
                   } else {
                     // selectedPet이 null인 경우 예외 처리
                     ScaffoldMessenger.of(context).showSnackBar(

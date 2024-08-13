@@ -5,17 +5,34 @@ import 'package:flutter/material.dart';
 class AddWaterPage extends StatefulWidget {
   final DateTime date;
   final String petId;
+  final int waterCount;
+  final int waterGoal;
 
-  const AddWaterPage({required this.date, required this.petId, Key? key})
-      : super(key: key);
+  const AddWaterPage({
+    required this.date,
+    required this.petId,
+    required this.waterCount,
+    required this.waterGoal,
+    Key? key,
+  }) : super(key: key);
 
   @override
   _AddWaterPageState createState() => _AddWaterPageState();
 }
 
 class _AddWaterPageState extends State<AddWaterPage> {
-  double _inputVolume = 0;
-  final TextEditingController _inputController = TextEditingController();
+  int _inputVolume = 0;
+
+  late TextEditingController _inputController;
+
+  @override
+  void initState() {
+    super.initState();
+    _inputVolume = (widget.waterGoal / widget.waterCount as num).toInt();
+    _inputController = TextEditingController(
+      text: '$_inputVolume', // 기본값 설정
+    );
+  }
 
   @override
   void dispose() {
@@ -25,13 +42,16 @@ class _AddWaterPageState extends State<AddWaterPage> {
 
   void _updateVolume(String value) {
     setState(() {
-      _inputVolume = double.tryParse(value) ?? 0;
+      _inputVolume = int.tryParse(value) ?? 0;
     });
   }
 
   Future<void> _saveWaterIntake() async {
     if (_inputVolume <= 0) {
       // 잘못된 값 입력 처리
+      print(
+          'inputVolume: $_inputVolume, _inputVolume.type  : ${_inputVolume.runtimeType}');
+
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text("올바른 음수량을 입력하세요.")),
       );
@@ -42,8 +62,6 @@ class _AddWaterPageState extends State<AddWaterPage> {
     if (user == null) return;
 
     String dateStr = widget.date.toIso8601String().split('T').first;
-
-    
 
     final docRef = FirebaseFirestore.instance
         .collection('users')
@@ -103,8 +121,8 @@ class _AddWaterPageState extends State<AddWaterPage> {
                     textAlign: TextAlign.right,
                     keyboardType: TextInputType.number,
                     cursorColor: Colors.black,
-                    decoration: const InputDecoration(
-                      hintText: '0',
+                    decoration: InputDecoration(
+                      //hintText: '$_inputController.text',
                       border: InputBorder.none,
                     ),
                     style: const TextStyle(
