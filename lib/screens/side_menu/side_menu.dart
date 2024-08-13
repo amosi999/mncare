@@ -1,22 +1,64 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:mncare/screens/auth/pet_registration_screen.dart';
 import 'package:mncare/screens/side_menu/pet_update_screen.dart';
 import 'package:mncare/screens/side_menu/setting_screen.dart';
 import 'package:mncare/screens/side_menu/user_information_screen.dart';
 
-class SlideMenu extends StatelessWidget {
+class SlideMenu extends StatefulWidget {
   const SlideMenu({super.key});
 
-  // 테스트용 데이터
-  static const List<String> testData = ['머루', '다래', '뽀돌이', '두부', '베리'];
+  @override
+  _SlideMenuState createState() => _SlideMenuState();
+}
 
-  Widget _buildPetProfile(BuildContext context, String name) {
+class _SlideMenuState extends State<SlideMenu> {
+  List<Map<String, dynamic>> _petList = [];
+  bool _isLoading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadPetList();
+  }
+
+  Future<void> _loadPetList() async {
+    setState(() {
+      _isLoading = true;
+    });
+
+    try {
+      User? currentUser = FirebaseAuth.instance.currentUser;
+      if (currentUser != null) {
+        QuerySnapshot petSnapshot = await FirebaseFirestore.instance
+            .collection('users')
+            .doc(currentUser.uid)
+            .collection('pets')
+            .get();
+
+        setState(() {
+          _petList = petSnapshot.docs
+              .map((doc) => {...doc.data() as Map<String, dynamic>, 'id': doc.id})
+              .toList();
+        });
+      }
+    } catch (e) {
+      print('Error loading pet list: $e');
+    } finally {
+      setState(() {
+        _isLoading = false;
+      });
+    }
+  }
+
+  Widget _buildPetProfile(BuildContext context, Map<String, dynamic> pet) {
     return GestureDetector(
       onTap: () {
         Navigator.push(
           context,
           MaterialPageRoute(
-            builder: (context) => PetUpdateScreen(petName: name),
+            builder: (context) => PetUpdateScreen(petId: pet['id']),
           ),
         );
       },
@@ -32,7 +74,7 @@ class SlideMenu extends StatelessWidget {
           ),
           child: Center(
             child: Text(
-              name,
+              pet['petName'] ?? '',
               overflow: TextOverflow.ellipsis,
               maxLines: 1,
               style: const TextStyle(
@@ -89,7 +131,6 @@ class SlideMenu extends StatelessWidget {
                 style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
               ),
               onTap: () {
-                // 내 정보 페이지로 이동하는 로직
                 Navigator.push(
                   context,
                   MaterialPageRoute(
@@ -113,7 +154,6 @@ class SlideMenu extends StatelessWidget {
               trailing: IconButton(
                 icon: const Icon(Icons.add),
                 onPressed: () {
-                  // 반려동물 추가 페이지로 이동하는 로직
                   Navigator.push(
                     context,
                     MaterialPageRoute(
@@ -133,13 +173,16 @@ class SlideMenu extends StatelessWidget {
             width: double.infinity,
             height: 100,
             padding: const EdgeInsets.fromLTRB(20, 0, 20, 15),
-            child: SingleChildScrollView(
-                scrollDirection: Axis.horizontal,
-                child: Row(
-                  children: testData
-                      .map((name) => _buildPetProfile(context, name))
-                      .toList(),
-                )),
+            child: _isLoading
+                ? const Center(child: CircularProgressIndicator())
+                : SingleChildScrollView(
+                    scrollDirection: Axis.horizontal,
+                    child: Row(
+                      children: _petList
+                          .map((pet) => _buildPetProfile(context, pet))
+                          .toList(),
+                    ),
+                  ),
           ),
           const Padding(
             padding: EdgeInsets.fromLTRB(10, 0, 10, 0),
@@ -164,7 +207,6 @@ class SlideMenu extends StatelessWidget {
                 style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
               ),
               onTap: () {
-                // 설정 페이지로 이동하는 로직
                 Navigator.push(
                   context,
                   MaterialPageRoute(

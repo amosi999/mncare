@@ -5,9 +5,9 @@ import 'package:flutter/services.dart';
 import 'package:mncare/screens/main_screen.dart';
 
 class PetUpdateScreen extends StatefulWidget {
-  final String petName;
+  final String petId;
 
-  const PetUpdateScreen({super.key, required this.petName});
+  const PetUpdateScreen({super.key, required this.petId});
 
   @override
   _PetUpdateScreenState createState() => _PetUpdateScreenState();
@@ -23,6 +23,8 @@ class _PetUpdateScreenState extends State<PetUpdateScreen> {
   TextEditingController _weightController = TextEditingController();
   TextEditingController _birthController = TextEditingController();
   TextEditingController _otherController = TextEditingController();
+
+  bool _isLoading = true;
 
   final List<String> _dogBreeds = [
     '골든 리트리버',
@@ -49,22 +51,61 @@ class _PetUpdateScreenState extends State<PetUpdateScreen> {
     '페르시안',
   ];
 
-  // 여기서 초기값(반려동물의 정보) 가져와서 넣어주게 수정
   @override
   void initState() {
     super.initState();
-    _nameController = TextEditingController(text: widget.petName);
-    _gender = '남아';
-    _isNeutered = true;
-    _petType = '고양이';
-    _breed = '아메리칸 숏헤어';
-    _weightController = TextEditingController(text: '4.5');
-    _birthController = TextEditingController(text: '20200202');
-    _otherController = TextEditingController(text: '너무 귀여움');
+    _loadPetData();
+  }
+
+  Future<void> _loadPetData() async {
+    setState(() {
+      _isLoading = true;
+    });
+
+    try {
+      User? currentUser = FirebaseAuth.instance.currentUser;
+      if (currentUser != null) {
+        DocumentSnapshot petDoc = await FirebaseFirestore.instance
+            .collection('users')
+            .doc(currentUser.uid)
+            .collection('pets')
+            .doc(widget.petId)
+            .get();
+
+        if (petDoc.exists) {
+          Map<String, dynamic> data = petDoc.data() as Map<String, dynamic>;
+          setState(() {
+            _nameController.text = data['petName'] ?? '';
+            _gender = data['petGender'];
+            _isNeutered = data['isNeutered'] ?? true;
+            _petType = data['petType'];
+            _breed = data['petBreed'];
+            _weightController.text = data['petWeight']?.toString() ?? '';
+            _birthController.text = data['petBirthDate'] ?? '';
+            _otherController.text = data['etc'] ?? '';
+          });
+        }
+      }
+    } catch (e) {
+      print('Error loading pet data: $e');
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('펫 정보를 불러오는 데 실패했습니다.')),
+      );
+    } finally {
+      setState(() {
+        _isLoading = false;
+      });
+    }
   }
 
   @override
   Widget build(BuildContext context) {
+    if (_isLoading) {
+      return const Scaffold(
+        body: Center(child: CircularProgressIndicator()),
+      );
+    }
+
     return Scaffold(
       appBar: AppBar(
         title: const Text(
@@ -382,23 +423,27 @@ class _PetUpdateScreenState extends State<PetUpdateScreen> {
         if (value == null || value.isEmpty) {
           return '생년월일을 입력해주세요';
         }
-        // 입력 당일 포함 이전의 날짜가 아니면 입력이 안되게 하는 로직..
+        // 입력 당일 포함 이전의 날짜가 아니면 입력이 안되게 하는 로직
+        DateTime? inputDate = DateTime.tryParse(value);
+        if (inputDate != null && inputDate.isAfter(DateTime.now())) {
+          return '오늘 또는 이전 날짜를 입력해주세요';
+        }
         return null;
       },
     );
   }
 
-  // 여기로직이 아예 새로운 펫을 만들어서 넣는거같은데 기존에 있는걸 수정하는 로직으로 수정해야됨!!!!!!!
   void _submitForm() async {
     if (_formKey.currentState!.validate()) {
       try {
         User? currentUser = FirebaseAuth.instance.currentUser;
         if (currentUser != null) {
-          DocumentReference petDocRef = await FirebaseFirestore.instance
+          await FirebaseFirestore.instance
               .collection('users')
               .doc(currentUser.uid)
               .collection('pets')
-              .add({
+              .doc(widget.petId)
+              .update({
             'petName': _nameController.text,
             'petType': _petType,
             'petBreed': _breed,
@@ -406,26 +451,20 @@ class _PetUpdateScreenState extends State<PetUpdateScreen> {
             'isNeutered': _isNeutered,
             'petWeight': double.parse(_weightController.text),
             'petBirthDate': _birthController.text,
-            'etc':
-                _otherController.text.isNotEmpty ? _otherController.text : null,
+            'etc': _otherController.text.isNotEmpty ? _otherController.text : null,
           });
 
-          String petId = petDocRef.id;
-
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('반려동물 정보가 성공적으로 저장되었습니다!')),
+            const SnackBar(content: Text('반려동물 정보가 성공적으로 업데이트되었습니다!')),
           );
 
-          // 메인 화면으로 이동
-          Navigator.of(context).pushReplacement(
-            MaterialPageRoute(builder: (context) => const MainScreen()),
-          );
+          Navigator.of(context).pop();
         } else {
           throw Exception('로그인된 사용자가 없습니다');
         }
       } catch (error) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('반려동물 정보 저장에 실패했습니다: $error')),
+          SnackBar(content: Text('반려동물 정보 업데이트에 실패했습니다: $error')),
         );
       }
     }
