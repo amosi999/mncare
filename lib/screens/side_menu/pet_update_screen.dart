@@ -109,7 +109,7 @@ class _PetUpdateScreenState extends State<PetUpdateScreen> {
     return Scaffold(
       appBar: AppBar(
         title: const Text(
-          '반려동물',
+          '반려동물 수정',
           style: TextStyle(
             fontSize: 20,
             fontWeight: FontWeight.bold,

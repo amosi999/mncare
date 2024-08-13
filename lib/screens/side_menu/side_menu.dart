@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
@@ -14,40 +15,33 @@ class SlideMenu extends StatefulWidget {
 }
 
 class _SlideMenuState extends State<SlideMenu> {
-  List<Map<String, dynamic>> _petList = [];
-  bool _isLoading = true;
+  late StreamController<List<Map<String, dynamic>>> _petStreamController;
 
   @override
   void initState() {
     super.initState();
+    _petStreamController = StreamController<List<Map<String, dynamic>>>();
     _loadPetList();
   }
 
+  @override
+  void dispose() {
+    _petStreamController.close();
+    super.dispose();
+  }
+
   Future<void> _loadPetList() async {
-    setState(() {
-      _isLoading = true;
-    });
-
-    try {
-      User? currentUser = FirebaseAuth.instance.currentUser;
-      if (currentUser != null) {
-        QuerySnapshot petSnapshot = await FirebaseFirestore.instance
-            .collection('users')
-            .doc(currentUser.uid)
-            .collection('pets')
-            .get();
-
-        setState(() {
-          _petList = petSnapshot.docs
-              .map((doc) => {...doc.data() as Map<String, dynamic>, 'id': doc.id})
-              .toList();
-        });
-      }
-    } catch (e) {
-      print('Error loading pet list: $e');
-    } finally {
-      setState(() {
-        _isLoading = false;
+    User? currentUser = FirebaseAuth.instance.currentUser;
+    if (currentUser != null) {
+      FirebaseFirestore.instance
+          .collection('users')
+          .doc(currentUser.uid)
+          .collection('pets')
+          .snapshots()
+          .listen((snapshot) {
+        List<Map<String, dynamic>> petList =
+            snapshot.docs.map((doc) => {...doc.data(), 'id': doc.id}).toList();
+        _petStreamController.add(petList);
       });
     }
   }
@@ -173,16 +167,25 @@ class _SlideMenuState extends State<SlideMenu> {
             width: double.infinity,
             height: 100,
             padding: const EdgeInsets.fromLTRB(20, 0, 20, 15),
-            child: _isLoading
-                ? const Center(child: CircularProgressIndicator())
-                : SingleChildScrollView(
-                    scrollDirection: Axis.horizontal,
-                    child: Row(
-                      children: _petList
-                          .map((pet) => _buildPetProfile(context, pet))
-                          .toList(),
-                    ),
+            child: StreamBuilder<List<Map<String, dynamic>>>(
+              stream: _petStreamController.stream,
+              builder: (context, snapshot) {
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return const Center(child: CircularProgressIndicator());
+                }
+                if (!snapshot.hasData || snapshot.data!.isEmpty) {
+                  return const Center(child: Text('등록된 반려동물이 없습니다.'));
+                }
+                return SingleChildScrollView(
+                  scrollDirection: Axis.horizontal,
+                  child: Row(
+                    children: snapshot.data!
+                        .map((pet) => _buildPetProfile(context, pet))
+                        .toList(),
                   ),
+                );
+              },
+            ),
           ),
           const Padding(
             padding: EdgeInsets.fromLTRB(10, 0, 10, 0),

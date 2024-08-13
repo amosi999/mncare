@@ -20,12 +20,160 @@ class _UserInformationScreenState extends State<UserInformationScreen> {
 
   bool _isLoading = true;
   String _initialNickname = '';
+  bool _isNicknameChanged = false;
 
   @override
   void initState() {
     super.initState();
     _loadUserData();
+    nicknameController.addListener(_onNicknameChanged);
   }
+
+  @override
+  void dispose() {
+    nicknameController.removeListener(_onNicknameChanged);
+    nicknameController.dispose();
+    emailController.dispose();
+    sexController.dispose();
+    birthController.dispose();
+    super.dispose();
+  }
+
+  void _onNicknameChanged() {
+    setState(() {
+      _isNicknameChanged = nicknameController.text != _initialNickname;
+    });
+  }
+
+  Future<void> _showDeleteConfirmDialog() async {
+    bool? confirmDelete = await showDialog<bool>(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text("회원 탈퇴"),
+          content: const Text("정말로 탈퇴하시겠습니까? 이 작업은 되돌릴 수 없습니다."),
+          actions: <Widget>[
+            TextButton(
+              child: const Text("취소"),
+              onPressed: () => Navigator.of(context).pop(false),
+            ),
+            TextButton(
+              child: const Text("탈퇴"),
+              onPressed: () => Navigator.of(context).pop(true),
+            ),
+          ],
+        );
+      },
+    );
+
+    if (confirmDelete == true) {
+      _showPasswordInputDialog();
+    }
+  }
+
+  Future<void> _showPasswordInputDialog() async {
+    final passwordController = TextEditingController();
+    final formKey = GlobalKey<FormState>();
+
+    bool? confirmed = await showDialog<bool>(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text("비밀번호 확인"),
+          content: Form(
+            key: formKey,
+            child: TextFormField(
+              controller: passwordController,
+              obscureText: true,
+              decoration: const InputDecoration(
+                labelText: '비밀번호',
+                border: OutlineInputBorder(),
+              ),
+              validator: (value) {
+                if (value == null || value.isEmpty) {
+                  return '비밀번호를 입력해주세요';
+                }
+                return null;
+              },
+            ),
+          ),
+          actions: <Widget>[
+            TextButton(
+              child: const Text("취소"),
+              onPressed: () => Navigator.of(context).pop(false),
+            ),
+            TextButton(
+              child: const Text("확인"),
+              onPressed: () {
+                if (formKey.currentState!.validate()) {
+                  Navigator.of(context).pop(true);
+                }
+              },
+            ),
+          ],
+        );
+      },
+    );
+
+    if (confirmed == true) {
+      _deleteAccount(passwordController.text);
+    }
+  }
+
+  Future<void> _deleteAccount(String password) async {
+  try {
+    User? currentUser = FirebaseAuth.instance.currentUser;
+    if (currentUser != null && currentUser.email != null) {
+      // 사용자 재인증
+      AuthCredential credential = EmailAuthProvider.credential(
+        email: currentUser.email!,
+        password: password,
+      );
+      await currentUser.reauthenticateWithCredential(credential);
+
+      // Firestore에서 사용자 관련 모든 데이터 삭제
+      await _deleteUserData(currentUser.uid);
+
+      // Firebase Authentication에서 사용자 삭제
+      await currentUser.delete();
+
+      // 로그인 화면으로 이동
+      Navigator.of(context).pushAndRemoveUntil(
+        MaterialPageRoute(builder: (context) => const AuthScreen()),
+        (Route<dynamic> route) => false,
+      );
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('회원 탈퇴가 완료되었습니다.')),
+      );
+    } else {
+      throw Exception('로그인된 사용자가 없습니다');
+    }
+  } catch (error) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text('회원 탈퇴에 실패했습니다: $error')),
+    );
+  }
+}
+
+Future<void> _deleteUserData(String userId) async {
+  // 사용자 문서 참조
+  DocumentReference userRef = FirebaseFirestore.instance.collection('users').doc(userId);
+
+  // 사용자의 하위 컬렉션들 (예: pets, schedules 등)
+  List<String> subCollections = ['pets', 'schedules', 'categories'];
+
+  // 각 하위 컬렉션의 문서들을 삭제
+  for (String collection in subCollections) {
+    QuerySnapshot snapshots = await userRef.collection(collection).get();
+    for (DocumentSnapshot doc in snapshots.docs) {
+      await doc.reference.delete();
+    }
+  }
+
+  // 마지막으로 사용자 문서 자체를 삭제
+  await userRef.delete();
+}
 
   Future<void> _loadUserData() async {
     setState(() {
@@ -79,7 +227,7 @@ class _UserInformationScreenState extends State<UserInformationScreen> {
           onPressed: () => Navigator.of(context).pop(),
         ),
         title: const Text(
-          '내 정보',
+          '내 정보 수정',
           style: TextStyle(
             fontSize: 20,
             fontWeight: FontWeight.bold,
@@ -185,18 +333,16 @@ class _UserInformationScreenState extends State<UserInformationScreen> {
                                 color: Colors.grey,
                               ),
                             ),
-                            GestureDetector(
-                              onTap: () {
-                                // 회원 탈퇴 로직
-                              },
-                              child: const Text(
-                                '회원탈퇴',
-                                style: TextStyle(
-                                  color: Colors.grey,
-                                  decorationColor: Colors.grey,
-                                ),
-                              ),
-                            ),
+                             GestureDetector(
+      onTap: _showDeleteConfirmDialog,
+      child: const Text(
+        '회원탈퇴',
+        style: TextStyle(
+          color: Colors.grey,
+          decorationColor: Colors.grey,
+        ),
+      ),
+    ),
                           ],
                         ),
                       ],
@@ -236,18 +382,22 @@ class _UserInformationScreenState extends State<UserInformationScreen> {
       style: const TextStyle(
         fontSize: 17,
       ),
+      onChanged: (value) {
+        if (label == '닉네임') {
+          _onNicknameChanged();
+        }
+      },
     );
   }
 
   Widget _buildCompleteButton() {
-    bool isEnabled = nicknameController.text.isNotEmpty &&
-        (nicknameController.text != _initialNickname);
     return ElevatedButton(
-      onPressed: isEnabled ? _updateUserInfo : null,
+      onPressed: _isNicknameChanged ? _updateUserInfo : null,
       style: ElevatedButton.styleFrom(
         foregroundColor: Colors.white,
-        backgroundColor:
-            isEnabled ? const Color.fromARGB(255, 235, 91, 0) : Colors.grey,
+        backgroundColor: _isNicknameChanged
+            ? const Color.fromARGB(255, 235, 91, 0)
+            : Colors.grey,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(25),
         ),
