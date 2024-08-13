@@ -134,7 +134,9 @@ class _MainScreenState extends State<MainScreen> {
           } else {
             _calendarScreenController
                 .setSelectedPet(null); // 필요에 따라 null을 넘길 수 있음
-            _trackingScreenController.setSelectedPet(null);
+            _trackingScreenController.setSelectedPet(
+              PetTracking.Pet(id: _pets.first.id, name: _pets.first.name),
+            );
           }
 
           // 필수로 필요한 것들에 대해서만? 나머지는 필요한가? 얘는 나머지 정보고 필요할 수 있음 . 다른곳에서 초기화하던가.

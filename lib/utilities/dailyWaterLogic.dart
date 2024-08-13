@@ -41,3 +41,28 @@ int calculateAgeInMonths(String birthDate) {
   final age = now.year * 12 + now.month - (birth.year * 12 + birth.month);
   return age;
 }
+
+String getRecommendedWaterIntakeText(String petType, int age, bool isNeutered) {
+  if (petType == "고양이") {
+    // if (age < 12) {
+    //   return '[12개월 이하의 하루 적정 음수량 = 몸무게(kg) X 60ml]';
+    // } else {
+    //   return '[하루 적정 음수량 = 몸무게(kg) X 50ml]';
+    // }
+    return 
+        '[성묘 고양이의 하루 적정 음수량 = 몸무게(kg) X 50ml]'; // 오류 처리, 디폴트
+  } else if (petType == "강아지") {
+    if (age <= 4) {
+      return '[하루 적정 음수량 = 몸무게(kg) X 80ml]';
+    } else if (age <= 12) {
+      return '[하루 적정 음수량 = 몸무게(kg) X 70ml]';
+    } else {
+      if (isNeutered) {
+        return '[하루 적정 음수량 = 몸무게(kg) X 55ml]';
+      } else {
+        return '[하루 적정 음수량 = 몸무게(kg) X 65ml]';
+      }
+    }
+  }
+  return '[하루 적정 음수량 = 몸무게(kg) X ?ml]'; // 오류 처리, 디폴트
+}

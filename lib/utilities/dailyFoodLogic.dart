@@ -6,6 +6,10 @@ double calculateDailyFood({
   required int defaultFoodKcal,
   required bool isNeutered,
 }) {
+  // if (defaultFoodKcal <= 0) {
+  //   throw ArgumentError("사료 칼로리는 0보다 커야 합니다.");
+  // }
+
   double RER; // Resting Energy Requirement (기초 대사량)
   double DER; // Daily Energy Requirement (일일 에너지 요구량)
   double dailyFoodAmount = 0.0; // 하루 사료량(g)
@@ -65,4 +69,35 @@ int calculateAgeInMonths(String birthDate) {
   final now = DateTime.now();
   final age = now.year * 12 + now.month - (birth.year * 12 + birth.month);
   return age;
+}
+
+String getRecommendedFoodIntakeText(String petType, int age, bool isNeutered) {
+  if (petType == "고양이") {
+    if (age < 12) {
+      // 새끼 고양이
+      return '12개월 이하 고양이의 하루 적정 사료량 = (30 x 몸무게(kg) + 70) x 2.5 / 사료 칼로리 (kcal/kg)';
+    } else if (isNeutered) {
+      // 중성화된 성묘
+      return '중성화된 성묘의 하루 적정 사료량 = (30 x 몸무게(kg) + 70) x 1.2 / 사료 칼로리 (kcal/kg)';
+    } else {
+      // 일반 성묘
+      return '성묘 고양이의 하루 적정 사료량 = (30 x 몸무게(kg) + 70) x 1.0 / 사료 칼로리 (kcal/kg)';
+    }
+  } else if (petType == "강아지") {
+    if (age < 4) {
+      // 4개월 미만 강아지
+      return '4개월 이하 강아지의 하루 적정 사료량 = (몸무게(kg) x 30 + 70) x 3.0 / 사료 칼로리 (kcal/kg)';
+    } else if (age < 12) {
+      // 12개월 미만 강아지
+      return '4개월 이상 12개월 미만 강아지의 하루 적정 사료량 = (몸무게(kg) x 30 + 70) x 2.0 / 사료 칼로리 (kcal/kg)';
+    } else if (isNeutered) {
+      // 중성화된 성견
+      return '중성화된 성견의 하루 적정 사료량 = (몸무게(kg) x 30 + 70) x 1.6 / 사료 칼로리 (kcal/kg)';
+    } else {
+      // 일반 성견
+      return '성견의 하루 적정 사료량 = (몸무게(kg) x 30 + 70) x 1.8 / 사료 칼로리 (kcal/kg)';
+    }
+  } else {
+    return '알 수 없는 펫 타입입니다.';
+  }
 }
