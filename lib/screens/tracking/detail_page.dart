@@ -39,11 +39,70 @@ class _DetailPageState extends State<DetailPage> {
   int foodGoal = 0; // waterGoal 초기값을 0으로 설정
   int foodCount = 0;
 
+  User? user = FirebaseAuth.instance.currentUser;
+  // ignore: prefer_typing_uninitialized_variables
+  var trackingDocRef; // trackingDocRef 초기값을 null로 설정 // 현재 트래킹 DB 참조
+  List<dynamic> intakeList = [];
+
   @override
   void initState() {
     super.initState();
     print('트래킹 데이터 로드');
     _loadTrackingData(); // 페이지 초기화 시 트래킹 데이터 로드
+    if (widget.title == '물') {
+      _loadWaterIntake();
+    }
+  }
+
+  Future<void> _loadWaterIntake() async {
+    try {
+      final collectionRef = trackingDocRef.collection('water');
+
+      final querySnapshot = await collectionRef.get();
+
+      if (querySnapshot.docs.isEmpty) {
+        print('물 기록이 없습니다.');
+      } else {
+        print('물 기록을 로드했습니다: ${querySnapshot.docs.length}개');
+      }
+
+      setState(() {
+        intakeList = querySnapshot.docs.map((doc) {
+          return {
+            'id': doc.id,
+            'timestamp': doc['timestamp'], // 타임스탬프
+            'volume': doc['volume'], // 음수량
+          };
+        }).toList(); // as List<dynamic>; // 명시적인 타입 캐스팅은 생략
+        intakeList.sort((a, b) => (a['timestamp'] as Timestamp)
+            .compareTo(b['timestamp'] as Timestamp));
+
+        current = intakeList.fold(
+            0, (sum, item) => sum + (item['volume'] as num).toInt());
+      });
+    } catch (e) {
+      print('물 기록을 로드하는 동안 오류 발생: $e');
+    }
+  }
+
+
+  //물 추가시에 업데이트 상태 반영
+  Future<void> _navigateToAddWaterPage() async {
+    bool? updated = await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => AddWaterPage(
+            date: widget.controller.selectedDate,
+            petId: widget.controller.selectedPet!.id),
+      ),
+    );
+
+    if (updated == true) {
+      await _loadWaterIntake(); // 추가된 데이터를 로드하여 current를 업데이트
+      setState(() {
+        _loadTrackingData(); // 페이지를 다시 로드하여 데이터 업데이트
+      });
+    }
   }
 
   Future<void> _loadTrackingData() async {
@@ -55,16 +114,14 @@ class _DetailPageState extends State<DetailPage> {
         print('선택된 펫이 없습니다.');
         return;
       }
-
-      User? user = FirebaseAuth.instance.currentUser;
       if (user == null) {
         print('사용자가 로그인되어 있지 않습니다.');
         return;
       }
 
-      final trackingDocRef = FirebaseFirestore.instance
+      trackingDocRef = FirebaseFirestore.instance
           .collection('users')
-          .doc(user.uid)
+          .doc(user!.uid)
           .collection('pets')
           .doc(pet.id)
           .collection('tracking')
@@ -262,11 +319,14 @@ class _DetailPageState extends State<DetailPage> {
             child: GestureDetector(
               onTap: () {
                 if (widget.title == '물') {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                        builder: (context) => const AddWaterPage()),
-                  );
+                  if (widget.controller.selectedPet != null) {
+                    _navigateToAddWaterPage(); //
+                  } else {
+                    // selectedPet이 null인 경우 예외 처리
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text("선택된 펫이 없습니다.")),
+                    );
+                  }
                 }
                 if (widget.title == '사료') {
                   Navigator.push(
@@ -329,7 +389,7 @@ class _DetailPageState extends State<DetailPage> {
                 color: const Color.fromARGB(255, 240, 240, 240),
                 borderRadius: BorderRadius.circular(25),
               ),
-              child: trackingExList.isEmpty // 데이터 가져와서 검사하게 수정
+              child: intakeList.isEmpty // 데이터 가져와서 검사하게 수정
                   ? Center(
                       child: Column(
                         mainAxisAlignment: MainAxisAlignment.center,
@@ -352,8 +412,15 @@ class _DetailPageState extends State<DetailPage> {
                       ),
                     )
                   : ListView.builder(
-                      itemCount: trackingExList.length, // 데이터 가져오게 수정
+                      itemCount: intakeList.length, // 데이터 가져오게 수정
                       itemBuilder: (context, index) {
+                        final intake = intakeList[
+                            index]; // intake는 Map<String, dynamic> 타입입니다.
+                        int volume = (intake['volume'] as num)
+                            .toInt(); // 'volume' 키에 해당하는 값을 추출합니다.
+                        final timestamp = intake[
+                            'timestamp']; // 'timestamp' 키에 해당하는 값을 추출합니다.
+
                         return Padding(
                           padding: const EdgeInsets.fromLTRB(0, 12.5, 0, 12.5),
                           child: Container(
@@ -372,7 +439,9 @@ class _DetailPageState extends State<DetailPage> {
                                       width: 20,
                                     ),
                                     Text(
-                                      trackingExList[index], // 데이터 가져와서 띄우게 수정
+                                      '${index + 1}회차', // 회차 번호를 표시
+                                      // intakeList[index]
+                                      //     as String, // 데이터 가져와서 띄우게 수정
                                       style: const TextStyle(
                                           fontSize: 15,
                                           fontWeight: FontWeight.w400),
@@ -382,9 +451,9 @@ class _DetailPageState extends State<DetailPage> {
                                       style: TextStyle(
                                           fontWeight: FontWeight.bold),
                                     ),
-                                    const Text(
-                                      '20', // 데이터 가져와서 띄우게 수정
-                                      style: TextStyle(
+                                    Text(
+                                      '$volume', // 데이터 가져와서 띄우게 수정
+                                      style: const TextStyle(
                                           fontSize: 15,
                                           fontWeight: FontWeight.w400),
                                     ),

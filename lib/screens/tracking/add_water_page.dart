@@ -1,7 +1,13 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 
 class AddWaterPage extends StatefulWidget {
-  const AddWaterPage({super.key});
+  final DateTime date;
+  final String petId;
+
+  const AddWaterPage({required this.date, required this.petId, Key? key})
+      : super(key: key);
 
   @override
   _AddWaterPageState createState() => _AddWaterPageState();
@@ -21,6 +27,40 @@ class _AddWaterPageState extends State<AddWaterPage> {
     setState(() {
       _inputVolume = double.tryParse(value) ?? 0;
     });
+  }
+
+  Future<void> _saveWaterIntake() async {
+    if (_inputVolume <= 0) {
+      // 잘못된 값 입력 처리
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("올바른 음수량을 입력하세요.")),
+      );
+      return;
+    }
+
+    User? user = FirebaseAuth.instance.currentUser;
+    if (user == null) return;
+
+    String dateStr = widget.date.toIso8601String().split('T').first;
+
+    
+
+    final docRef = FirebaseFirestore.instance
+        .collection('users')
+        .doc(user.uid)
+        .collection('pets')
+        .doc(widget.petId)
+        .collection('tracking')
+        .doc(dateStr)
+        .collection('water')
+        .doc(); // 고유 ID로 회차 생성
+
+    await docRef.set({
+      'volume': _inputVolume,
+      'timestamp': FieldValue.serverTimestamp(), // 회차 생성 시간 기록
+    });
+
+    Navigator.of(context).pop(true); // 기록 추가 후 이전 화면으로 돌아가기
   }
 
   @override
@@ -94,14 +134,7 @@ class _AddWaterPageState extends State<AddWaterPage> {
   Widget _buildCompleteButton() {
     bool hasInput = _inputController.text.isNotEmpty;
     return ElevatedButton(
-      onPressed: hasInput
-          ? () {
-              // 기록 추가 로직으로 변경
-              // _inputVolume으로 받은 값을 회차별 DB에 저장하고
-              // pop으로 이전 페이지로 넘어감.
-              print(_inputController.text);
-            }
-          : null,
+      onPressed: hasInput ? _saveWaterIntake : null,
       style: ElevatedButton.styleFrom(
         foregroundColor: Colors.white,
         backgroundColor: hasInput
