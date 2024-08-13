@@ -120,8 +120,8 @@ class _AddWaterPageState extends State<AddWaterPage> {
                     maxLines: 1,
                     textAlign: TextAlign.right,
                     keyboardType: TextInputType.number,
-                    cursorColor: Colors.black,
-                    decoration: InputDecoration(
+                    cursorColor: const Color.fromRGBO(0, 0, 0, 1),
+                    decoration: const InputDecoration(
                       //hintText: '$_inputController.text',
                       border: InputBorder.none,
                     ),

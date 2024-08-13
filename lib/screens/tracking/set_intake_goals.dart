@@ -144,6 +144,7 @@ class _SetIntakeGoalsState extends State<SetIntakeGoals> {
       weight: weight, // 펫의 몸무게
       isNeutered: isNeutered,
     ).toInt();
+
     recommendedFoodIntake = FoodLogic.calculateDailyFood(
       petType: petType, // 예: '고양이' 또는 '강아지'
       age: ageInMonths,
@@ -151,6 +152,7 @@ class _SetIntakeGoalsState extends State<SetIntakeGoals> {
       isNeutered: isNeutered,
       defaultFoodKcal: _foodKcal,
     ).toInt();
+
     print(
         '트래킹 권장 음수량: $recommendedWaterIntake, 권장 사료량: $recommendedFoodIntake');
     recommendedFoodIntakeText = FoodLogic.getRecommendedFoodIntakeText(

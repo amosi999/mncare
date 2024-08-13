@@ -51,6 +51,8 @@ class _DetailPageState extends State<DetailPage> {
     _loadTrackingData(); // 페이지 초기화 시 트래킹 데이터 로드
     if (widget.title == '물') {
       _loadWaterIntake();
+    } else if (widget.title == '사료') {
+      _loadFoodIntake();
     }
   }
 
@@ -85,6 +87,37 @@ class _DetailPageState extends State<DetailPage> {
     }
   }
 
+  Future<void> _loadFoodIntake() async {
+    try {
+      final collectionRef = trackingDocRef.collection('food');
+      final querySnapshot = await collectionRef.get();
+
+      if (querySnapshot.docs.isEmpty) {
+        print('사료 기록이 없습니다.');
+      } else {
+        print('사료 기록을 로드했습니다: ${querySnapshot.docs.length}개');
+      }
+
+      setState(() {
+        intakeList = querySnapshot.docs.map((doc) {
+          return {
+            'id': doc.id,
+            'timestamp': doc['timestamp'], // 타임스탬프
+            'volume': doc['volume'], // 사료량
+          };
+        }).toList();
+
+        intakeList.sort((a, b) => (a['timestamp'] as Timestamp)
+            .compareTo(b['timestamp'] as Timestamp));
+
+        current = intakeList.fold(
+            0, (sum, item) => sum + (item['volume'] as num).toInt());
+      });
+    } catch (e) {
+      print('사료 기록을 로드하는 동안 오류 발생: $e');
+    }
+  }
+
   //물 추가시에 업데이트 상태 반영
   Future<void> _navigateToAddWaterPage(int waterCount, int waterGoal) async {
     bool? updated = await Navigator.push(
@@ -101,6 +134,28 @@ class _DetailPageState extends State<DetailPage> {
 
     if (updated == true) {
       await _loadWaterIntake(); // 추가된 데이터를 로드하여 current를 업데이트
+      setState(() {
+        _loadTrackingData(); // 페이지를 다시 로드하여 데이터 업데이트
+      });
+    }
+  }
+
+  //사료 추가시에 업데이트 상태 반영
+  Future<void> _navigateToAddFoodPage(int foodCount, int foodGoal) async {
+    bool? updated = await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => AddFoodPage(
+          date: widget.controller.selectedDate,
+          petId: widget.controller.selectedPet!.id,
+          foodCount: foodCount,
+          foodGoal: foodGoal,
+        ),
+      ),
+    );
+
+    if (updated == true) {
+      await _loadFoodIntake(); // 추가된 데이터를 로드하여 current를 업데이트
       setState(() {
         _loadTrackingData(); // 페이지를 다시 로드하여 데이터 업데이트
       });
@@ -331,11 +386,13 @@ class _DetailPageState extends State<DetailPage> {
                   }
                 }
                 if (widget.title == '사료') {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                        builder: (context) => const AddFoodPage()),
-                  );
+                  if (widget.controller.selectedPet != null) {
+                    _navigateToAddFoodPage(foodCount, foodGoal); //
+                  } else {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text("선택된 펫이 없습니다.")),
+                    );
+                  }
                 }
                 if (widget.title == '대변') {
                   Navigator.push(
