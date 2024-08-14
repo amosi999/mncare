@@ -56,6 +56,8 @@ class _DetailPageState extends State<DetailPage> {
       _loadFoodIntake();
     } else if (widget.title == '대변') {
       _loadPoopIntake();
+    } else if (widget.title == '구토') {
+      _loadVomitIntake();
     }
   }
 
@@ -151,6 +153,35 @@ class _DetailPageState extends State<DetailPage> {
     }
   }
 
+  Future<void> _loadVomitIntake() async {
+    try {
+      final collectionRef = trackingDocRef.collection('vomit');
+
+      final querySnapshot = await collectionRef.get();
+
+      if (querySnapshot.docs.isEmpty) {
+        print('구토 기록이 없습니다.');
+      } else {
+        print('구토 기록을 로드했습니다: ${querySnapshot.docs.length}개');
+      }
+
+      setState(() {
+        intakeList = querySnapshot.docs.map((doc) {
+          return {
+            'id': doc.id,
+            'timestamp': doc['timestamp'],
+            'shape': doc['shape'],
+            'memo': doc['memo'],
+          };
+        }).toList();
+        intakeList.sort((a, b) => (a['timestamp'] as Timestamp)
+            .compareTo(b['timestamp'] as Timestamp));
+      });
+    } catch (e) {
+      print('구토 기록을 로드하는 동안 오류 발생: $e');
+    }
+  }
+
   //물 추가시에 업데이트 상태 반영
   Future<void> _navigateToAddWaterPage(int waterCount, int waterGoal) async {
     bool? updated = await Navigator.push(
@@ -208,6 +239,25 @@ class _DetailPageState extends State<DetailPage> {
 
     if (updated == true) {
       await _loadPoopIntake(); // 추가된 데이터를 로드하여 current를 업데이트
+      setState(() {
+        _loadTrackingData(); // 페이지를 다시 로드하여 데이터 업데이트
+      });
+    }
+  }
+
+  Future<void> _navigateToAddVomitPage() async {
+    bool? updated = await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => AddVomitPage(
+          date: widget.controller.selectedDate,
+          petId: widget.controller.selectedPet!.id,
+        ),
+      ),
+    );
+
+    if (updated == true) {
+      await _loadVomitIntake(); // 추가된 데이터를 로드하여 current를 업데이트
       setState(() {
         _loadTrackingData(); // 페이지를 다시 로드하여 데이터 업데이트
       });
@@ -456,11 +506,13 @@ class _DetailPageState extends State<DetailPage> {
                   }
                 }
                 if (widget.title == '구토') {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                        builder: (context) => const AddVomitPage()),
-                  );
+                  if (widget.controller.selectedPet != null) {
+                    _navigateToAddVomitPage();
+                  } else {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text("선택된 펫이 없습니다.")),
+                    );
+                  }
                 }
               }, // 기록 추가 로직으로 수정
               child: Container(

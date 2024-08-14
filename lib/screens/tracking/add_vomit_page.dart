@@ -1,7 +1,16 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 
 class AddVomitPage extends StatefulWidget {
-  const AddVomitPage({super.key});
+  final DateTime date;
+  final String petId;
+
+  const AddVomitPage({
+    required this.date,
+    required this.petId,
+    Key? key,
+  }) : super(key: key);
 
   @override
   _AddVomitPageState createState() => _AddVomitPageState();
@@ -15,6 +24,38 @@ class _AddVomitPageState extends State<AddVomitPage> {
   void dispose() {
     _memoController.dispose();
     super.dispose();
+  }
+
+  Future<void> _saveVomitRecord() async {
+    if (_selectedType.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("구토의 형태 및 색상을 선택해주세요.")),
+      );
+      return;
+    }
+
+    User? user = FirebaseAuth.instance.currentUser;
+    if (user == null) return;
+
+    String dateStr = widget.date.toIso8601String().split('T').first;
+
+    final vomitDocRef = FirebaseFirestore.instance
+        .collection('users')
+        .doc(user.uid)
+        .collection('pets')
+        .doc(widget.petId)
+        .collection('tracking')
+        .doc(dateStr)
+        .collection('vomit')
+        .doc(); // 고유 ID로 회차 생성
+
+    await vomitDocRef.set({
+      'shape': _selectedType,
+      'memo': _memoController.text,
+      'timestamp': FieldValue.serverTimestamp(), // 회차 생성 시간 기록
+    });
+
+    Navigator.of(context).pop(true); // 기록 추가 후 이전 화면으로 돌아가기
   }
 
   @override
@@ -160,13 +201,7 @@ class _AddVomitPageState extends State<AddVomitPage> {
   Widget _buildCompleteButton() {
     bool isEnabled = _selectedType.isNotEmpty;
     return ElevatedButton(
-      onPressed: isEnabled
-          ? () {
-              // 데이터 추가 로직으로 수정
-              print('Type: $_selectedType\nMemo: ${_memoController.text}');
-              Navigator.of(context).pop();
-            }
-          : null,
+      onPressed: isEnabled ? _saveVomitRecord : null,
       style: ElevatedButton.styleFrom(
         foregroundColor: Colors.white,
         backgroundColor: isEnabled
