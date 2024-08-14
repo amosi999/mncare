@@ -159,9 +159,7 @@ class _PetUpdateScreenState extends State<PetUpdateScreen> {
                   Row(
                     children: [
                       ElevatedButton(
-                        onPressed: () {
-                          // 반려동물 삭제 로직
-                        },
+                        onPressed: _showDeleteConfirmation,
                         style: ElevatedButton.styleFrom(
                           foregroundColor: Colors.white,
                           backgroundColor: Colors.grey,
@@ -457,6 +455,59 @@ class _PetUpdateScreenState extends State<PetUpdateScreen> {
       },
     );
   }
+
+  void _showDeleteConfirmation() {
+  showDialog(
+    context: context,
+    builder: (BuildContext context) {
+      return AlertDialog(
+        title: const Text("반려동물 삭제"),
+        content: const Text("정말로 이 반려동물 정보를 삭제하시겠습니까?"),
+        actions: <Widget>[
+          TextButton(
+            child: const Text("취소"),
+            onPressed: () {
+              Navigator.of(context).pop();
+            },
+          ),
+          TextButton(
+            child: const Text("삭제"),
+            onPressed: () {
+              Navigator.of(context).pop();
+              _deletePet();
+            },
+          ),
+        ],
+      );
+    },
+  );
+}
+
+Future<void> _deletePet() async {
+  try {
+    User? currentUser = FirebaseAuth.instance.currentUser;
+    if (currentUser != null) {
+      await FirebaseFirestore.instance
+          .collection('users')
+          .doc(currentUser.uid)
+          .collection('pets')
+          .doc(widget.petId)
+          .delete();
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('반려동물 정보가 성공적으로 삭제되었습니다.')),
+      );
+
+      Navigator.of(context).pop(); // 이전 화면으로 돌아가기
+    } else {
+      throw Exception('로그인된 사용자가 없습니다');
+    }
+  } catch (error) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text('반려동물 정보 삭제에 실패했습니다: $error')),
+    );
+  }
+}
 
   void _submitForm() async {
     if (_formKey.currentState!.validate()) {
