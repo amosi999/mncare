@@ -1,7 +1,16 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 
 class AddPoopPage extends StatefulWidget {
-  const AddPoopPage({super.key});
+  final DateTime date;
+  final String petId;
+
+  const AddPoopPage({
+    required this.date,
+    required this.petId,
+    Key? key,
+  }) : super(key: key);
 
   @override
   _AddPoopPageState createState() => _AddPoopPageState();
@@ -16,6 +25,42 @@ class _AddPoopPageState extends State<AddPoopPage> {
   void dispose() {
     _memoController.dispose();
     super.dispose();
+  }
+
+  Future<void> _savePoopRecord() async {
+    if (_selectedShape.isEmpty || _selectedColor.isEmpty) {
+      // 선택되지 않은 항목이 있을 경우 처리
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("형태와 색을 모두 선택해주세요.")),
+      );
+      return;
+    }
+
+    User? user = FirebaseAuth.instance.currentUser;
+    if (user == null) return;
+
+    String dateStr = widget.date.toIso8601String().split('T').first;
+
+    final docRef = FirebaseFirestore.instance
+        .collection('users')
+        .doc(user.uid)
+        .collection('pets')
+        .doc(widget.petId)
+        .collection('tracking')
+        .doc(dateStr)
+        .collection('poop')
+        .doc(); // 고유 ID로 회차 생성
+
+    await docRef.set({
+      'shape': _selectedShape,
+      'color': _selectedColor,
+      'memo': _memoController.text,
+      'timestamp': FieldValue.serverTimestamp(), // 기록 시간 저장
+    });
+print('저장성공');
+print(docRef);
+
+    Navigator.of(context).pop(true); // 기록 추가 후 이전 화면으로 돌아가기
   }
 
   @override
@@ -236,14 +281,7 @@ class _AddPoopPageState extends State<AddPoopPage> {
   Widget _buildCompleteButton() {
     bool isEnabled = _selectedShape.isNotEmpty && _selectedColor.isNotEmpty;
     return ElevatedButton(
-      onPressed: isEnabled
-          ? () {
-              // 데이터 추가 로직으로 수정
-              print(
-                  'Shape: $_selectedShape\nColor: $_selectedColor\nMemo: ${_memoController.text}');
-              Navigator.of(context).pop();
-            }
-          : null,
+      onPressed: isEnabled ? _savePoopRecord : null,
       style: ElevatedButton.styleFrom(
         foregroundColor: Colors.white,
         backgroundColor: isEnabled

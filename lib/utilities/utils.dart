@@ -1,6 +1,7 @@
 // utils.dart
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter/material.dart';
 
 Future<void> saveWaterIntake({
   required DateTime date,
@@ -81,4 +82,26 @@ Future<void> saveFoodIntake({
   });
 
   print("사료량 기록이 성공적으로 저장되었습니다. Volume: $volume g");
+}
+
+Color getColorFromString(String color) {
+  print('색상 $color');
+  switch (color.toLowerCase()) {
+    case 'brown':
+      return Colors.brown;
+    case 'black':
+      return Colors.black;
+    case 'red':
+      return Colors.red;
+    case 'orange':
+      return Colors.orange;
+    case 'grey':
+      return Colors.grey;
+    case 'yellow':
+      return Colors.yellow;
+    case 'green':
+      return Colors.green;
+    default:
+      return Colors.white; // 기본 색상
+  }
 }

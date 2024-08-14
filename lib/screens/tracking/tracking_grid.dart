@@ -67,7 +67,11 @@ class TrackingGrid extends StatelessWidget {
         } else if (title == '대변') {
           Navigator.push(
             context,
-            MaterialPageRoute(builder: (context) => const AddPoopPage()),
+            MaterialPageRoute(
+                builder: (context) => AddPoopPage(
+                      date: controller.selectedDate,
+                      petId: controller.selectedPet!.id,
+                    )),
           );
         } else if (title == '구토') {
           Navigator.push(

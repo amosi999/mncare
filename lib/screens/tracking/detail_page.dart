@@ -7,6 +7,7 @@ import 'package:mncare/screens/tracking/add_vomit_page.dart';
 import 'package:mncare/screens/tracking/add_water_page.dart';
 import 'package:mncare/screens/tracking/set_intake_goals.dart';
 import 'package:mncare/screens/tracking/tracking_screen_controller.dart';
+import 'package:mncare/utilities/utils.dart';
 
 import 'tracking_info.dart';
 
@@ -53,6 +54,8 @@ class _DetailPageState extends State<DetailPage> {
       _loadWaterIntake();
     } else if (widget.title == '사료') {
       _loadFoodIntake();
+    } else if (widget.title == '대변') {
+      _loadPoopIntake();
     }
   }
 
@@ -118,6 +121,36 @@ class _DetailPageState extends State<DetailPage> {
     }
   }
 
+  Future<void> _loadPoopIntake() async {
+    try {
+      final collectionRef = trackingDocRef.collection('poop');
+
+      final querySnapshot = await collectionRef.get();
+
+      if (querySnapshot.docs.isEmpty) {
+        print('대변 기록이 없습니다.');
+      } else {
+        print('대변 기록을 로드했습니다: ${querySnapshot.docs.length}개');
+      }
+
+      setState(() {
+        intakeList = querySnapshot.docs.map((doc) {
+          return {
+            'id': doc.id,
+            'timestamp': doc['timestamp'], // 타임스탬프
+            'shape': doc['shape'], // 대변 형태
+            'color': doc['color'], // 대변 색상
+            'memo': doc['memo'], // 메모
+          };
+        }).toList();
+        intakeList.sort((a, b) => (a['timestamp'] as Timestamp)
+            .compareTo(b['timestamp'] as Timestamp));
+      });
+    } catch (e) {
+      print('대변 기록을 로드하는 동안 오류 발생: $e');
+    }
+  }
+
   //물 추가시에 업데이트 상태 반영
   Future<void> _navigateToAddWaterPage(int waterCount, int waterGoal) async {
     bool? updated = await Navigator.push(
@@ -156,6 +189,25 @@ class _DetailPageState extends State<DetailPage> {
 
     if (updated == true) {
       await _loadFoodIntake(); // 추가된 데이터를 로드하여 current를 업데이트
+      setState(() {
+        _loadTrackingData(); // 페이지를 다시 로드하여 데이터 업데이트
+      });
+    }
+  }
+
+  Future<void> _navigateToAddPoopPage() async {
+    bool? updated = await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => AddPoopPage(
+          date: widget.controller.selectedDate,
+          petId: widget.controller.selectedPet!.id,
+        ),
+      ),
+    );
+
+    if (updated == true) {
+      await _loadPoopIntake(); // 추가된 데이터를 로드하여 current를 업데이트
       setState(() {
         _loadTrackingData(); // 페이지를 다시 로드하여 데이터 업데이트
       });
@@ -395,11 +447,13 @@ class _DetailPageState extends State<DetailPage> {
                   }
                 }
                 if (widget.title == '대변') {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                        builder: (context) => const AddPoopPage()),
-                  );
+                  if (widget.controller.selectedPet != null) {
+                    _navigateToAddPoopPage();
+                  } else {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text("선택된 펫이 없습니다.")),
+                    );
+                  }
                 }
                 if (widget.title == '구토') {
                   Navigator.push(
@@ -475,8 +529,11 @@ class _DetailPageState extends State<DetailPage> {
                       itemBuilder: (context, index) {
                         final intake = intakeList[
                             index]; // intake는 Map<String, dynamic> 타입입니다.
-                        int volume = (intake['volume'] as num)
-                            .toInt(); // 'volume' 키에 해당하는 값을 추출합니다.
+                        int volume = 0;
+                        if (widget.title == '물' || widget.title == '사료') {
+                          volume = (intake['volume'] as num)
+                              .toInt(); // 'volume' 키에 해당하는 값을 추출합니다.
+                        }
                         final timestamp = intake[
                             'timestamp']; // 'timestamp' 키에 해당하는 값을 추출합니다.
 
@@ -497,25 +554,45 @@ class _DetailPageState extends State<DetailPage> {
                                     const SizedBox(
                                       width: 20,
                                     ),
-                                    Text(
-                                      '${index + 1}회차', // 회차 번호를 표시
-                                      // intakeList[index]
-                                      //     as String, // 데이터 가져와서 띄우게 수정
-                                      style: const TextStyle(
-                                          fontSize: 15,
-                                          fontWeight: FontWeight.w400),
-                                    ),
+                                    if (widget.title == '물' ||
+                                        widget.title == '사료')
+                                      Text(
+                                        '${index + 1}회차', // 회차
+                                        style: const TextStyle(
+                                            fontSize: 15,
+                                            fontWeight: FontWeight.w400),
+                                      ),
+                                    if (widget.title == '구토' ||
+                                        widget.title == '대변')
+                                      Text(
+                                        '${intake['shape']}', //대변의 경우 모양
+                                        style: const TextStyle(
+                                            fontSize: 15,
+                                            fontWeight: FontWeight.w400),
+                                      ),
                                     const Text(
                                       '  ·  ',
                                       style: TextStyle(
                                           fontWeight: FontWeight.bold),
                                     ),
-                                    Text(
-                                      '$volume', // 데이터 가져와서 띄우게 수정
-                                      style: const TextStyle(
-                                          fontSize: 15,
-                                          fontWeight: FontWeight.w400),
-                                    ),
+                                    if (widget.title == '물' ||
+                                        widget.title == '사료')
+                                      Text(
+                                        '$volume', // 데이터 가져와서 띄우게 수정
+                                        style: const TextStyle(
+                                            fontSize: 15,
+                                            fontWeight: FontWeight.w400),
+                                      ),
+                                    if (widget.title == '대변')
+                                      Container(
+                                        width: 20, // 원형의 크기
+                                        height: 20,
+                                        decoration: BoxDecoration(
+                                          color: getColorFromString(intake[
+                                              'color']), // 색상을 문자열에서 가져와서 사용
+                                          shape: BoxShape.circle,
+                                        ),
+                                      ),
                                     if (widget.title == '물')
                                       const Text(
                                         'ml',
