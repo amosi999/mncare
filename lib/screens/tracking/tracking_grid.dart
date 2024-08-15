@@ -1,8 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:mncare/screens/tracking/tracking_screen_controller.dart';
 import 'package:mncare/utilities/utils.dart';
-import 'add_water_page.dart';
-import 'add_food_page.dart';
+
 import 'add_ poop_page.dart';
 import 'add_vomit_page.dart';
 import 'detail_page.dart';
@@ -18,10 +17,11 @@ class TrackingGrid extends StatelessWidget {
         padding: const EdgeInsets.fromLTRB(15, 0, 15, 0),
         child: ListView(
           children: [
+            // volume에 (현재기록량 / 목표량) 해서 소수점 한자릿수로 넣어주기 (0.0 ~ 1.0 범위)
             const SizedBox(height: 15),
-            _buildTrackingItem(context, '물'),
+            _buildTrackingItem(context, '물', volume: 0.4),
             const SizedBox(height: 15),
-            _buildTrackingItem(context, '사료'),
+            _buildTrackingItem(context, '사료', volume: 0.6),
             const SizedBox(height: 15),
             _buildTrackingItem(context, '대변'),
             const SizedBox(height: 15),
@@ -33,7 +33,60 @@ class TrackingGrid extends StatelessWidget {
     );
   }
 
-  Widget _buildTrackingItem(BuildContext context, String title) {
+  Widget _buildTrackingItem(BuildContext context, String title,
+      {double? volume}) {
+    double getStart() {
+      if (volume != null) {
+        if (volume == 0 || volume == 1) {
+          return volume;
+        } else {
+          return volume - 0.1;
+        }
+      }
+      return 0;
+    }
+
+    double getEnd() {
+      if (volume != null) {
+        if (volume == 0 || volume == 1) {
+          return volume;
+        } else {
+          return volume + 0.1;
+        }
+      }
+      return 0;
+    }
+
+    BoxDecoration getDecoration(String title) {
+      switch (title) {
+        case '물':
+          return BoxDecoration(
+            gradient: LinearGradient(
+              colors: const [Color.fromARGB(255, 81, 156, 231), Colors.white],
+              stops: [getStart(), getEnd()],
+              begin: Alignment.centerLeft,
+              end: Alignment.centerRight,
+            ),
+            borderRadius: BorderRadius.circular(25),
+          );
+        case '사료':
+          return BoxDecoration(
+            gradient: LinearGradient(
+              colors: const [Color.fromARGB(255, 117, 88, 66), Colors.white],
+              stops: [getStart(), getEnd()],
+              begin: Alignment.centerLeft,
+              end: Alignment.centerRight,
+            ),
+            borderRadius: BorderRadius.circular(25),
+          );
+        default:
+          return BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(25),
+          );
+      }
+    }
+
     return GestureDetector(
       onTap: () async {
         if (title == '물') {
@@ -87,10 +140,7 @@ class TrackingGrid extends StatelessWidget {
       child: Container(
         width: double.infinity,
         height: 160,
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(25),
-        ),
+        decoration: getDecoration(title),
         child: Padding(
           padding: const EdgeInsets.fromLTRB(25, 10, 10, 20),
           child: Column(
@@ -122,7 +172,13 @@ class TrackingGrid extends StatelessWidget {
                     ),
                   ),
                 ],
-              )
+              ),
+              if (title == '물' || title == '사료')
+                const Icon(
+                  Icons.add,
+                  color: Color.fromARGB(50, 0, 0, 0),
+                  size: 50,
+                )
             ],
           ),
         ),
