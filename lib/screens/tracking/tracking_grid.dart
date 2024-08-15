@@ -23,10 +23,13 @@ class TrackingGrid extends StatelessWidget {
             const SizedBox(height: 15),
             _buildTrackingItem(context, '사료', volume: 0.6),
             const SizedBox(height: 15),
-            _buildTrackingItem(context, '대변'),
-            const SizedBox(height: 15),
-            _buildTrackingItem(context, '구토'),
-            const SizedBox(height: 15),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                _buildTrackingItem(context, '대변'),
+                _buildTrackingItem(context, '구토'),
+              ],
+            ),
           ],
         ),
       ),
@@ -47,7 +50,7 @@ class TrackingGrid extends StatelessWidget {
         case '물':
           return BoxDecoration(
             gradient: LinearGradient(
-              colors: const [Color.fromARGB(255, 81, 156, 231), Colors.white],
+              colors: const [Color.fromARGB(255, 80, 155, 229), Colors.white],
               stops: [getVolume(), getVolume()],
               begin: Alignment.centerLeft,
               end: Alignment.centerRight,
@@ -57,7 +60,7 @@ class TrackingGrid extends StatelessWidget {
         case '사료':
           return BoxDecoration(
             gradient: LinearGradient(
-              colors: const [Color.fromARGB(255, 117, 88, 66), Colors.white],
+              colors: const [Color.fromARGB(255, 124, 89, 61), Colors.white],
               stops: [getVolume(), getVolume()],
               begin: Alignment.centerLeft,
               end: Alignment.centerRight,
@@ -123,7 +126,7 @@ class TrackingGrid extends StatelessWidget {
         }
       },
       child: Container(
-        width: double.infinity,
+        width: title == '물' || title == '사료' ? double.infinity : 182,
         height: 160,
         decoration: getDecoration(title),
         child: Padding(
@@ -166,27 +169,21 @@ class TrackingGrid extends StatelessWidget {
                 ),
               if (title == '대변')
                 Row(
-                  mainAxisAlignment: MainAxisAlignment.end,
+                  mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     SizedBox(
                       height: 80,
                       child: Image.asset('assets/images/poop.png'),
                     ),
-                    const SizedBox(
-                      width: 50,
-                    ),
                   ],
                 ),
               if (title == '구토')
                 Row(
-                  mainAxisAlignment: MainAxisAlignment.end,
+                  mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     SizedBox(
                       height: 80,
                       child: Image.asset('assets/images/vomit.png'),
-                    ),
-                    const SizedBox(
-                      width: 50,
                     ),
                   ],
                 ),
