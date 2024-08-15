@@ -23,7 +23,8 @@ class TrackingScreenController extends ChangeNotifier {
   }
 
   Future<void> _initializeTrackingDataIfNeeded() async {
-    if (_selectedPet == null) return;
+    print('펫 정보 초기화 ${_selectedPet?.name}' ); 
+   //if (_selectedPet == null) return;
 
     User? user = FirebaseAuth.instance.currentUser;
     if (user == null) return;

@@ -42,6 +42,7 @@ class _MainScreenState extends State<MainScreen> {
   void initState() {
     super.initState();
     _calendarScreenController.addListener(_updateState);
+    //_trackingScreenController.addListener(_updateState)
     _fetchPets();
   }
 
@@ -55,32 +56,14 @@ class _MainScreenState extends State<MainScreen> {
           .get();
 
       setState(() {
+        _pets = querySnapshot.docs
+            .map((doc) => CommonPet(id: doc.id, name: doc['petName']))
+            .toList();
 
-        // Initializing the selected pet
-        if (querySnapshot.docs.isNotEmpty) {
-          _selectedPet = CommonPet(
-              id: querySnapshot.docs.first.id,
-              name: querySnapshot.docs.first['petName']);
+        if (_pets.isNotEmpty) {
+          _selectedPet = _pets.first;
         }
       });
-      // // Setting the initial pet for each controller 고려
-      // if (_selectedPet != null) {
-      //   _calendarScreenController.setSelectedPet(
-      //     Pet(id: _selectedPet!.id, name: _selectedPet!.name),
-      //   );
-      //   _trackingScreenController.setSelectedPet(
-      //     PetTracking.Pet(id: _selectedPet!.id, name: _selectedPet!.name),
-      //   );
-      // }
-// 트래킹 머지 전 펫
-//         _pets = querySnapshot.docs
-//             .map((doc) => Pet(id: doc.id, name: doc['petName']))
-//             .toList();
-//         if (_pets.isNotEmpty) {
-//           _selectedPet = null;
-//           //_calendarScreenController.setSelectedPet(_selectedPet);
-//         }
-//       });
     }
   }
 
@@ -103,6 +86,18 @@ class _MainScreenState extends State<MainScreen> {
     if (index == 1) {
       _calendarScreenController.resetToToday();
     }
+
+    print('index: $index, _selectedPet: $_selectedPet, _pets: $_pets');
+    if (index == 0 && _selectedPet == null && _pets.isNotEmpty) {
+      setState(() {
+        _selectedPet = _pets.first;
+      });
+
+      _trackingScreenController.setSelectedPet(
+        PetTracking.Pet(id: _selectedPet!.id, name: _selectedPet!.name),
+      );
+    }
+
     setState(() {
       _selectedIndex = index;
     });
@@ -125,6 +120,7 @@ class _MainScreenState extends State<MainScreen> {
             _selectedPet = pet;
           });
           if (_selectedPet != null) {
+            print('selected pet: ${_selectedPet!.name}');
             _calendarScreenController.setSelectedPet(
               Pet(id: _selectedPet!.id, name: _selectedPet!.name),
             );
@@ -132,22 +128,15 @@ class _MainScreenState extends State<MainScreen> {
               PetTracking.Pet(id: _selectedPet!.id, name: _selectedPet!.name),
             );
           } else {
+            print('null pet');
+            print('null pet selected pet: ${_selectedPet?.name}, ${_pets?.first.name}');
+            //pets가 비어있어서 여기서 오류남
             _calendarScreenController
                 .setSelectedPet(null); // 필요에 따라 null을 넘길 수 있음
             _trackingScreenController.setSelectedPet(
               PetTracking.Pet(id: _pets.first.id, name: _pets.first.name),
             );
           }
-
-          // 필수로 필요한 것들에 대해서만? 나머지는 필요한가? 얘는 나머지 정보고 필요할 수 있음 . 다른곳에서 초기화하던가.
-
-          // 트래킹 머지 전 펫
-//         onPetSelected: (pet) {
-//           setState(() {
-//             _selectedPet = pet;
-//           });
-//           _calendarScreenController.setSelectedPet(pet);
-
         },
       ),
       body: IndexedStack(
