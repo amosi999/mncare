@@ -163,7 +163,33 @@ class TrackingGrid extends StatelessWidget {
                   Icons.add,
                   color: Color.fromARGB(50, 0, 0, 0),
                   size: 50,
-                )
+                ),
+              if (title == '대변')
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.end,
+                  children: [
+                    SizedBox(
+                      height: 80,
+                      child: Image.asset('assets/images/poop.png'),
+                    ),
+                    const SizedBox(
+                      width: 50,
+                    ),
+                  ],
+                ),
+              if (title == '구토')
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.end,
+                  children: [
+                    SizedBox(
+                      height: 80,
+                      child: Image.asset('assets/images/vomit.png'),
+                    ),
+                    const SizedBox(
+                      width: 50,
+                    ),
+                  ],
+                ),
             ],
           ),
         ),
