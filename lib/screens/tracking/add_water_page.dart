@@ -7,12 +7,15 @@ class AddWaterPage extends StatefulWidget {
   final String petId;
   final int waterCount;
   final int waterGoal;
+  final Map<String, dynamic>?
+      existingRecord; // Add this parameter to accept existing data
 
   const AddWaterPage({
     required this.date,
     required this.petId,
     required this.waterCount,
     required this.waterGoal,
+    this.existingRecord,
     Key? key,
   }) : super(key: key);
 
@@ -22,13 +25,18 @@ class AddWaterPage extends StatefulWidget {
 
 class _AddWaterPageState extends State<AddWaterPage> {
   int _inputVolume = 0;
-
+  String? recordId;
   late TextEditingController _inputController;
 
   @override
   void initState() {
     super.initState();
-    _inputVolume = (widget.waterGoal / widget.waterCount as num).toInt();
+    if (widget.existingRecord != null) {
+      _inputVolume = widget.existingRecord!['volume'];
+      recordId = widget.existingRecord!['id']; // Track the ID
+    } else {
+      _inputVolume = (widget.waterGoal / widget.waterCount as num).toInt();
+    }
     _inputController = TextEditingController(
       text: '$_inputVolume', // 기본값 설정
     );
@@ -46,14 +54,8 @@ class _AddWaterPageState extends State<AddWaterPage> {
     });
   }
 
- 
-
   Future<void> _saveWaterIntake() async {
     if (_inputVolume <= 0) {
-      // 잘못된 값 입력 처리
-      print(
-          'inputVolume: $_inputVolume, _inputVolume.type  : ${_inputVolume.runtimeType}');
-
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text("올바른 음수량을 입력하세요.")),
       );
@@ -73,11 +75,24 @@ class _AddWaterPageState extends State<AddWaterPage> {
         .collection('tracking')
         .doc(dateStr)
         .collection('water')
-        .doc(); // 고유 ID로 회차 생성
+        .doc(recordId ??
+            FirebaseFirestore.instance
+                .collection('dummy')
+                .doc()
+                .id); // 고유 ID로 회차 생성하거나, 기존 로그 수정
+
+    Timestamp? existingTimestamp; //기존으 타입 스탬프 저장.
+    if (recordId != null) {
+      final existingDoc = await docRef.get();
+      if (existingDoc.exists) {
+        existingTimestamp = existingDoc['timestamp'];
+      }
+    }
 
     await docRef.set({
       'volume': _inputVolume,
-      'timestamp': FieldValue.serverTimestamp(), // 회차 생성 시간 기록
+      'timestamp':
+          existingTimestamp ?? FieldValue.serverTimestamp(), // 회차 생성 시간 기록
     });
 
     Navigator.of(context).pop(true); // 기록 추가 후 이전 화면으로 돌아가기

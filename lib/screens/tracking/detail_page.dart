@@ -712,8 +712,44 @@ class _DetailPageState extends State<DetailPage> {
                                       color: Colors.grey,
                                     ),
                                     IconButton(
-                                      onPressed:
-                                          () {}, // 기록 수정 로직으로 수정 이거는 기록 추가 화면 띄우는 대신 데이터를 여기서 가지고 있는 데이터로 넣어주면 될듯
+                                      onPressed: () async {
+                                        // Navigate to the Add page with existing data
+                                        var wasUpdated = false;
+                                        if (widget.title == '물') {
+                                          wasUpdated = await Navigator.push(
+                                            context,
+                                            MaterialPageRoute(
+                                              builder: (context) =>
+                                                  AddWaterPage(
+                                                date: widget
+                                                    .controller.selectedDate,
+                                                petId: widget
+                                                    .controller.selectedPet!.id,
+                                                waterCount: waterCount,
+                                                waterGoal: waterGoal,
+                                                existingRecord:
+                                                    intake, // Pass the existing data here
+                                              ),
+                                            ),
+                                          );
+                                        }
+
+                                        if (wasUpdated == true) {
+                                          // Optionally refresh the UI or reload the data after editing
+                                          setState(() {
+                                            if (widget.title == '물') {
+                                              _loadWaterIntake(); // Assuming you have a function to reload the data
+                                            }
+                                          });
+
+                                          ScaffoldMessenger.of(context)
+                                              .showSnackBar(
+                                            const SnackBar(
+                                                content: Text(
+                                                    "Record updated successfully.")),
+                                          );
+                                        }
+                                      },
                                       icon: const Icon(Icons.edit),
                                       color: Colors.grey,
                                     ),
