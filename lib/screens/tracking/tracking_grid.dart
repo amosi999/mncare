@@ -26,7 +26,25 @@ class _TrackingGridState extends State<TrackingGrid> {
   @override
   void initState() {
     super.initState();
+    widget.controller.addListener(_onControllerChanged);
     _loadTrackingData(); // 초기화 시 트래킹 데이터를 로드합니다.
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _loadTrackingData(); // 위젯이 다시 화면에 나타날 때 트래킹 데이터를 로드합니다.
+  }
+
+  @override
+  void dispose() {
+    widget.controller.removeListener(_onControllerChanged);
+    super.dispose();
+  }
+
+  void _onControllerChanged() {
+    // 컨트롤러의 변경이 감지되면 데이터를 다시 로드
+    _loadTrackingData();
   }
 
   Future<void> _loadTrackingData() async {
@@ -287,7 +305,7 @@ class _TrackingGridState extends State<TrackingGrid> {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
               content: Text('물 1회차가 추가되었습니다.'),
-              duration: Duration(seconds: 1), // 알림이 2초 동안 표시됩니다.
+              //duration: Duration(seconds: 1), // 알림이 2초 동안 표시됩니다.
             ),
           );
           print('물 추가');
@@ -302,7 +320,7 @@ class _TrackingGridState extends State<TrackingGrid> {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
               content: Text('사료 1회차가 추가되었습니다.'),
-              duration: Duration(seconds: 1), // 알림이 2초 동안 표시됩니다.
+              //duration: Duration(seconds: 0.2), // 알림이 2초 동안 표시됩니다.
             ),
           );
           print('사료 추가');
