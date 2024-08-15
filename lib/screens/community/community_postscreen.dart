@@ -1,20 +1,22 @@
-import 'package:flutter/material.dart';
-import 'package:image_picker/image_picker.dart';
 import 'dart:io';
-import 'package:firebase_core/firebase_core.dart';
-import 'package:firebase_storage/firebase_storage.dart';
+
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_storage/firebase_storage.dart';
+import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:path/path.dart' as path;
 
 class CommunityPostScreen extends StatefulWidget {
   final String initialBoard;
 
-  const CommunityPostScreen({Key? key, this.initialBoard = 'normal'}) : super(key: key);
+  const CommunityPostScreen({super.key, this.initialBoard = 'normal'});
 
   @override
   _CommunityPostScreenState createState() => _CommunityPostScreenState();
 }
+
 class _CommunityPostScreenState extends State<CommunityPostScreen> {
   File? _image;
   final ImagePicker _picker = ImagePicker();
@@ -119,8 +121,16 @@ class _CommunityPostScreenState extends State<CommunityPostScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Colors.white,
       appBar: AppBar(
-        title: const Text('새 게시글 작성'),
+        backgroundColor: Colors.white,
+        title: const Text(
+          '새 게시글 작성',
+          style: TextStyle(
+            fontSize: 20,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16.0),
@@ -166,10 +176,26 @@ class _CommunityPostScreenState extends State<CommunityPostScreen> {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color.fromARGB(255, 255, 178, 0),
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.fromLTRB(30, 12.5, 30, 12.5),
+                  ),
                   onPressed: _pickImage,
-                  child: const Text('이미지 선택'),
+                  child: const Text(
+                    '이미지 선택',
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
                 ),
                 ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color.fromARGB(255, 235, 91, 0),
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.fromLTRB(30, 12.5, 30, 12.5),
+                  ),
                   onPressed: _isUploading ? null : _submit,
                   child: _isUploading
                       ? const SizedBox(
@@ -177,7 +203,13 @@ class _CommunityPostScreenState extends State<CommunityPostScreen> {
                           height: 20,
                           child: CircularProgressIndicator(strokeWidth: 2),
                         )
-                      : const Text('게시글 업로드'),
+                      : const Text(
+                          '게시글 업로드',
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
                 ),
               ],
             ),
