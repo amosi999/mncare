@@ -372,7 +372,10 @@ class _TrackingGridState extends State<TrackingGrid> {
                             controller: widget.controller,
                           ),
                         ),
-                      );
+                      ).then((_) {
+                        // DetailPage에서 돌아온 후 데이터 새로고침
+                        _loadTrackingData();
+                      });
                     },
                     icon: const Icon(
                       Icons.chevron_right,
