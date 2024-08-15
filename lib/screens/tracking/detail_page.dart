@@ -694,10 +694,9 @@ class _DetailPageState extends State<DetailPage> {
                                               content: Text(
                                                   "Record deleted successfully.")),
                                         );
-                                        // 데이터를 다시 로드하여 current 값을 업데이트
+
                                         await _loadTrackingData();
 
-                                        // 물, 사료, 대변, 구토에 따른 데이터를 다시 로드
                                         if (engTitle == 'water') {
                                           await _loadWaterIntake();
                                         } else if (engTitle == 'food') {
@@ -711,6 +710,7 @@ class _DetailPageState extends State<DetailPage> {
                                       icon: const Icon(Icons.delete),
                                       color: Colors.grey,
                                     ),
+                                    //회차 수정 로직
                                     IconButton(
                                       onPressed: () async {
                                         // Navigate to the Add page with existing data
@@ -732,13 +732,61 @@ class _DetailPageState extends State<DetailPage> {
                                               ),
                                             ),
                                           );
+                                        } else if (widget.title == '사료') {
+                                          wasUpdated = await Navigator.push(
+                                            context,
+                                            MaterialPageRoute(
+                                              builder: (context) => AddFoodPage(
+                                                date: widget
+                                                    .controller.selectedDate,
+                                                petId: widget
+                                                    .controller.selectedPet!.id,
+                                                foodCount: foodCount,
+                                                foodGoal: foodGoal,
+                                                existingRecord:
+                                                    intake, // Pass the existing data here
+                                              ),
+                                            ),
+                                          );
+                                        } else if (widget.title == '대변') {
+                                          wasUpdated = await Navigator.push(
+                                            context,
+                                            MaterialPageRoute(
+                                              builder: (context) => AddPoopPage(
+                                                date: widget
+                                                    .controller.selectedDate,
+                                                petId: widget
+                                                    .controller.selectedPet!.id,
+                                                //existingRecord:intake, // Pass the existing data here
+                                              ),
+                                            ),
+                                          );
+                                        } else if (widget.title == '구토') {
+                                          wasUpdated = await Navigator.push(
+                                            context,
+                                            MaterialPageRoute(
+                                              builder: (context) =>
+                                                  AddVomitPage(
+                                                date: widget
+                                                    .controller.selectedDate,
+                                                petId: widget
+                                                    .controller.selectedPet!.id,
+                                                //existingRecord:intake, // Pass the existing data here
+                                              ),
+                                            ),
+                                          );
                                         }
 
                                         if (wasUpdated == true) {
-                                          // Optionally refresh the UI or reload the data after editing
                                           setState(() {
                                             if (widget.title == '물') {
-                                              _loadWaterIntake(); // Assuming you have a function to reload the data
+                                              _loadWaterIntake();
+                                            } else if (widget.title == '사료') {
+                                              _loadFoodIntake();
+                                            } else if (widget.title == '대변') {
+                                              _loadPoopIntake();
+                                            } else if (widget.title == '구토') {
+                                              _loadVomitIntake();
                                             }
                                           });
 

@@ -7,8 +7,7 @@ class AddWaterPage extends StatefulWidget {
   final String petId;
   final int waterCount;
   final int waterGoal;
-  final Map<String, dynamic>?
-      existingRecord; // Add this parameter to accept existing data
+  final Map<String, dynamic>? existingRecord;
 
   const AddWaterPage({
     required this.date,
@@ -25,7 +24,7 @@ class AddWaterPage extends StatefulWidget {
 
 class _AddWaterPageState extends State<AddWaterPage> {
   int _inputVolume = 0;
-  String? recordId;
+  String? _recordId;
   late TextEditingController _inputController;
 
   @override
@@ -33,7 +32,7 @@ class _AddWaterPageState extends State<AddWaterPage> {
     super.initState();
     if (widget.existingRecord != null) {
       _inputVolume = widget.existingRecord!['volume'];
-      recordId = widget.existingRecord!['id']; // Track the ID
+      _recordId = widget.existingRecord!['id']; // Track the ID
     } else {
       _inputVolume = (widget.waterGoal / widget.waterCount as num).toInt();
     }
@@ -57,7 +56,7 @@ class _AddWaterPageState extends State<AddWaterPage> {
   Future<void> _saveWaterIntake() async {
     if (_inputVolume <= 0) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("올바른 음수량을 입력하세요.")),
+        const SnackBar(content: Text("올바른 음수량을 입력하세요.")),
       );
       return;
     }
@@ -75,26 +74,33 @@ class _AddWaterPageState extends State<AddWaterPage> {
         .collection('tracking')
         .doc(dateStr)
         .collection('water')
-        .doc(recordId ??
+        .doc(_recordId ??
             FirebaseFirestore.instance
                 .collection('dummy')
                 .doc()
                 .id); // 고유 ID로 회차 생성하거나, 기존 로그 수정
 
-    Timestamp? existingTimestamp; //기존으 타입 스탬프 저장.
-    if (recordId != null) {
-      final existingDoc = await docRef.get();
-      if (existingDoc.exists) {
-        existingTimestamp = existingDoc['timestamp'];
-      }
-    }
+    // Timestamp? existingTimestamp; //기존으 타입 스탬프 저장.
+    // if (_recordId != null) {
+    //   final existingDoc = await docRef.get();
+    //   if (existingDoc.exists) {
+    //     existingTimestamp = existingDoc['timestamp'];
+    //   }
+    // }
+
+    // await docRef.set({
+    //   'volume': _inputVolume,
+    //   'timestamp':
+    //       existingTimestamp ?? FieldValue.serverTimestamp(), // 회차 생성 시간 기록
+    // });
 
     await docRef.set({
       'volume': _inputVolume,
-      'timestamp':
-          existingTimestamp ?? FieldValue.serverTimestamp(), // 회차 생성 시간 기록
+      'timestamp': _recordId == null
+          ? FieldValue.serverTimestamp()
+          : widget.existingRecord!['timestamp'],
     });
-
+    
     Navigator.of(context).pop(true); // 기록 추가 후 이전 화면으로 돌아가기
   }
 

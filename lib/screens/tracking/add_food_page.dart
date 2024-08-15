@@ -7,12 +7,14 @@ class AddFoodPage extends StatefulWidget {
   final String petId;
   final int foodCount;
   final int foodGoal;
+  final Map<String, dynamic>? existingRecord;
 
   const AddFoodPage({
     required this.date,
     required this.petId,
     required this.foodCount,
     required this.foodGoal,
+    this.existingRecord,
     Key? key,
   }) : super(key: key);
 
@@ -22,12 +24,18 @@ class AddFoodPage extends StatefulWidget {
 
 class _AddFoodPageState extends State<AddFoodPage> {
   int _inputVolume = 0;
+  String? _recordId;
   late TextEditingController _inputController;
 
   @override
   void initState() {
     super.initState();
-    _inputVolume = (widget.foodGoal / widget.foodCount as num).toInt();
+    if (widget.existingRecord != null) {
+      _inputVolume = widget.existingRecord!['volume'] as int;
+      _recordId = widget.existingRecord!['id'] as String;
+    } else {
+      _inputVolume = (widget.foodGoal / widget.foodCount as num).toInt();
+    }
     _inputController = TextEditingController(
       text: '$_inputVolume', // 기본값 설정
     );
@@ -48,11 +56,8 @@ class _AddFoodPageState extends State<AddFoodPage> {
   Future<void> _saveFoodIntake() async {
     if (_inputVolume <= 0) {
       // 잘못된 값 입력 처리
-      print(
-          'inputVolume: $_inputVolume, _inputVolume.type  : ${_inputVolume.runtimeType}');
-
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("올바른 사료량을 입력하세요.")),
+        const SnackBar(content: Text("올바른 사료량을 입력하세요.")),
       );
       return;
     }
@@ -70,11 +75,16 @@ class _AddFoodPageState extends State<AddFoodPage> {
         .collection('tracking')
         .doc(dateStr)
         .collection('food')
-        .doc(); // 고유 ID로 회차 생성
-
-    await docRef.set({
+        .doc(_recordId ??
+            FirebaseFirestore.instance
+                .collection('dummy')
+                .doc()
+                .id); // 고유 ID로 회차 생성하거나, 기존 로그 수정
+await docRef.set({
       'volume': _inputVolume,
-      'timestamp': FieldValue.serverTimestamp(), // 회차 생성 시간 기록
+      'timestamp': _recordId == null 
+          ? FieldValue.serverTimestamp() 
+          : widget.existingRecord!['timestamp'],
     });
 
     Navigator.of(context).pop(true); // 기록 추가 후 이전 화면으로 돌아가기
