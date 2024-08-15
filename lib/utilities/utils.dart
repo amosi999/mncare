@@ -40,6 +40,16 @@ Future<void> saveWaterIntake({
     'timestamp': FieldValue.serverTimestamp(), // 회차 생성 시간 기록
   });
 
+
+  // currentWater 업데이트 로직
+  final allDocsSnapshot = await trackingDocRef.collection('water').get();
+  int currentWater = allDocsSnapshot.docs.fold(0, (sum, doc) {
+    return sum + (doc['volume'] as int);
+  });
+
+  // currentWater를 Firestore의 tracking 문서에 저장
+  await trackingDocRef.update({'currentWater': currentWater});
+  
   print("음수량 기록이 성공적으로 저장되었습니다. Volume: $volume ml");
 }
 

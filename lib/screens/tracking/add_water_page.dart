@@ -66,33 +66,18 @@ class _AddWaterPageState extends State<AddWaterPage> {
 
     String dateStr = widget.date.toIso8601String().split('T').first;
 
-    final docRef = FirebaseFirestore.instance
+    final trackingDocRef = FirebaseFirestore.instance
         .collection('users')
         .doc(user.uid)
         .collection('pets')
         .doc(widget.petId)
         .collection('tracking')
-        .doc(dateStr)
-        .collection('water')
-        .doc(_recordId ??
-            FirebaseFirestore.instance
-                .collection('dummy')
-                .doc()
-                .id); // 고유 ID로 회차 생성하거나, 기존 로그 수정
+        .doc(dateStr);
 
-    // Timestamp? existingTimestamp; //기존으 타입 스탬프 저장.
-    // if (_recordId != null) {
-    //   final existingDoc = await docRef.get();
-    //   if (existingDoc.exists) {
-    //     existingTimestamp = existingDoc['timestamp'];
-    //   }
-    // }
+    final waterCollectionRef = trackingDocRef.collection('water');
 
-    // await docRef.set({
-    //   'volume': _inputVolume,
-    //   'timestamp':
-    //       existingTimestamp ?? FieldValue.serverTimestamp(), // 회차 생성 시간 기록
-    // });
+    final docRef = waterCollectionRef.doc(
+        _recordId ?? FirebaseFirestore.instance.collection('dummy').doc().id);
 
     await docRef.set({
       'volume': _inputVolume,
@@ -100,7 +85,16 @@ class _AddWaterPageState extends State<AddWaterPage> {
           ? FieldValue.serverTimestamp()
           : widget.existingRecord!['timestamp'],
     });
-    
+
+    // currentWater 업데이트 로직
+    final allDocsSnapshot = await waterCollectionRef.get();
+    int currentWater = allDocsSnapshot.docs.fold(0, (sum, doc) {
+      return sum + (doc['volume'] as int);
+    });
+
+    // currentWater를 Firestore의 tracking 문서에 저장
+    await trackingDocRef.update({'currentWater': currentWater});
+
     Navigator.of(context).pop(true); // 기록 추가 후 이전 화면으로 돌아가기
   }
 

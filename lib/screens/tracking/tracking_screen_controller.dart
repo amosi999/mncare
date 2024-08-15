@@ -23,8 +23,8 @@ class TrackingScreenController extends ChangeNotifier {
   }
 
   Future<void> _initializeTrackingDataIfNeeded() async {
-    print('펫 정보 초기화 ${_selectedPet?.name}' ); 
-   //if (_selectedPet == null) return;
+    print('펫 정보 초기화 ${_selectedPet?.name}');
+    //if (_selectedPet == null) return;
 
     User? user = FirebaseAuth.instance.currentUser;
     if (user == null) return;
@@ -47,6 +47,7 @@ class TrackingScreenController extends ChangeNotifier {
         'foodKcal': await _getDefaultFromStandard('defaultFoodKcal'),
         'waterGoal': await _getDefaultFromStandard('defaultWaterGoal'),
         'waterCount': await _getDefaultFromStandard('defaultWaterCount'),
+        'currentWater': 0,
       });
     }
   }
@@ -67,6 +68,4 @@ class TrackingScreenController extends ChangeNotifier {
 
     return standardDoc.exists ? standardDoc[field] : null;
   }
-
-  
 }
