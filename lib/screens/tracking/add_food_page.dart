@@ -80,10 +80,10 @@ class _AddFoodPageState extends State<AddFoodPage> {
                 .collection('dummy')
                 .doc()
                 .id); // 고유 ID로 회차 생성하거나, 기존 로그 수정
-await docRef.set({
+    await docRef.set({
       'volume': _inputVolume,
-      'timestamp': _recordId == null 
-          ? FieldValue.serverTimestamp() 
+      'timestamp': _recordId == null
+          ? FieldValue.serverTimestamp()
           : widget.existingRecord!['timestamp'],
     });
 

@@ -635,11 +635,12 @@ class _DetailPageState extends State<DetailPage> {
                                             fontSize: 15,
                                             fontWeight: FontWeight.w400),
                                       ),
-                                    const Text(
-                                      '  ·  ',
-                                      style: TextStyle(
-                                          fontWeight: FontWeight.bold),
-                                    ),
+                                    if (!(widget.title == '구토'))
+                                      const Text(
+                                        '  ·  ',
+                                        style: TextStyle(
+                                            fontWeight: FontWeight.bold),
+                                      ),
                                     if (widget.title == '물' ||
                                         widget.title == '사료')
                                       Text(
@@ -713,7 +714,6 @@ class _DetailPageState extends State<DetailPage> {
                                     //회차 수정 로직
                                     IconButton(
                                       onPressed: () async {
-                                        // Navigate to the Add page with existing data
                                         var wasUpdated = false;
                                         if (widget.title == '물') {
                                           wasUpdated = await Navigator.push(
@@ -727,8 +727,7 @@ class _DetailPageState extends State<DetailPage> {
                                                     .controller.selectedPet!.id,
                                                 waterCount: waterCount,
                                                 waterGoal: waterGoal,
-                                                existingRecord:
-                                                    intake, // Pass the existing data here
+                                                existingRecord: intake,
                                               ),
                                             ),
                                           );
@@ -743,8 +742,7 @@ class _DetailPageState extends State<DetailPage> {
                                                     .controller.selectedPet!.id,
                                                 foodCount: foodCount,
                                                 foodGoal: foodGoal,
-                                                existingRecord:
-                                                    intake, // Pass the existing data here
+                                                existingRecord: intake,
                                               ),
                                             ),
                                           );
@@ -757,7 +755,7 @@ class _DetailPageState extends State<DetailPage> {
                                                     .controller.selectedDate,
                                                 petId: widget
                                                     .controller.selectedPet!.id,
-                                                //existingRecord:intake, // Pass the existing data here
+                                                existingRecord: intake,
                                               ),
                                             ),
                                           );
@@ -771,7 +769,7 @@ class _DetailPageState extends State<DetailPage> {
                                                     .controller.selectedDate,
                                                 petId: widget
                                                     .controller.selectedPet!.id,
-                                                //existingRecord:intake, // Pass the existing data here
+                                                existingRecord: intake,
                                               ),
                                             ),
                                           );

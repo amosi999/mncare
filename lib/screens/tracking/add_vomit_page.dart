@@ -5,10 +5,12 @@ import 'package:flutter/material.dart';
 class AddVomitPage extends StatefulWidget {
   final DateTime date;
   final String petId;
+  final Map<String, dynamic>? existingRecord; // 기존 기록을 받을 수 있도록 수정
 
   const AddVomitPage({
     required this.date,
     required this.petId,
+    this.existingRecord,
     super.key,
   });
 
@@ -18,7 +20,18 @@ class AddVomitPage extends StatefulWidget {
 
 class _AddVomitPageState extends State<AddVomitPage> {
   String _selectedType = '';
+  String? _recordId;
   final TextEditingController _memoController = TextEditingController();
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.existingRecord != null) {
+      _selectedType = widget.existingRecord!['shape'];
+      _memoController.text = widget.existingRecord!['memo'] ?? '';
+      _recordId = widget.existingRecord!['id'];
+    }
+  }
 
   @override
   void dispose() {
@@ -47,12 +60,18 @@ class _AddVomitPageState extends State<AddVomitPage> {
         .collection('tracking')
         .doc(dateStr)
         .collection('vomit')
-        .doc(); // 고유 ID로 회차 생성
+        .doc(_recordId ??
+            FirebaseFirestore.instance
+                .collection('dummy')
+                .doc()
+                .id); // ID가 있으면 수정, 없으면 새로 생성
 
     await vomitDocRef.set({
       'shape': _selectedType,
       'memo': _memoController.text,
-      'timestamp': FieldValue.serverTimestamp(), // 회차 생성 시간 기록
+      'timestamp': _recordId == null
+          ? FieldValue.serverTimestamp() // 새 기록의 경우 타임스탬프 생성
+          : widget.existingRecord!['timestamp'], // 기존 기록 유지
     });
 
     Navigator.of(context).pop(true); // 기록 추가 후 이전 화면으로 돌아가기

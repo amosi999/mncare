@@ -5,10 +5,12 @@ import 'package:flutter/material.dart';
 class AddPoopPage extends StatefulWidget {
   final DateTime date;
   final String petId;
+  final Map<String, dynamic>? existingRecord;
 
   const AddPoopPage({
     required this.date,
     required this.petId,
+    this.existingRecord,
     super.key,
   });
 
@@ -19,7 +21,24 @@ class AddPoopPage extends StatefulWidget {
 class _AddPoopPageState extends State<AddPoopPage> {
   String _selectedShape = '';
   String _selectedColor = '';
-  final TextEditingController _memoController = TextEditingController();
+  String? _memo;
+  String? _recordId;
+  // final TextEditingController _memoController = TextEditingController();
+  late TextEditingController _memoController;
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.existingRecord != null) {
+    
+      _selectedShape = widget.existingRecord!['shape'];
+      _selectedColor = widget.existingRecord!['color'];
+      _memo = widget.existingRecord!['memo'];
+      _recordId = widget.existingRecord!['id']; // 기존 기록의 ID를 추적합니다.
+      print('기존 기록 ID: $_recordId');
+    }
+    _memoController = TextEditingController(text: _memo);
+  }
 
   @override
   void dispose() {
@@ -49,14 +68,21 @@ class _AddPoopPageState extends State<AddPoopPage> {
         .collection('tracking')
         .doc(dateStr)
         .collection('poop')
-        .doc(); // 고유 ID로 회차 생성
+        .doc(_recordId ??
+            FirebaseFirestore.instance
+                .collection('dummy')
+                .doc()
+                .id); // ID가 있으면 수정, 없으면 새로 생성
 
     await docRef.set({
       'shape': _selectedShape,
       'color': _selectedColor,
       'memo': _memoController.text,
-      'timestamp': FieldValue.serverTimestamp(), // 기록 시간 저장
+      'timestamp': _recordId == null
+          ? FieldValue.serverTimestamp() // 새 기록의 경우 타임스탬프 생성
+          : widget.existingRecord!['timestamp'], // 기존 기록 유지
     });
+
     print('저장성공');
     print(docRef);
 
