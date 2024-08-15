@@ -31,20 +31,13 @@ class _TrackingGridState extends State<TrackingGrid> {
   }
 
   @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
-    _loadTrackingData(); // 위젯이 다시 화면에 나타날 때 트래킹 데이터를 로드합니다.
-  }
-
-  @override
   void dispose() {
     widget.controller.removeListener(_onControllerChanged);
     super.dispose();
   }
 
   void _onControllerChanged() {
-    // 컨트롤러의 변경이 감지되면 데이터를 다시 로드
-    _loadTrackingData();
+        _loadTrackingData();
   }
 
   Future<void> _loadTrackingData() async {
