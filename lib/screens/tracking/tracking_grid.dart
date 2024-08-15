@@ -1,8 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:mncare/screens/tracking/tracking_screen_controller.dart';
 import 'package:mncare/utilities/utils.dart';
-import 'add_water_page.dart';
-import 'add_food_page.dart';
+
 import 'add_ poop_page.dart';
 import 'add_vomit_page.dart';
 import 'detail_page.dart';
@@ -18,22 +17,64 @@ class TrackingGrid extends StatelessWidget {
         padding: const EdgeInsets.fromLTRB(15, 0, 15, 0),
         child: ListView(
           children: [
+            // volume에 (현재기록량 / 목표량) 해서 소수점 한자릿수로 넣어주기 (0.0 ~ 1.0 범위)
             const SizedBox(height: 15),
-            _buildTrackingItem(context, '물'),
+            _buildTrackingItem(context, '물', volume: 0.4),
             const SizedBox(height: 15),
-            _buildTrackingItem(context, '사료'),
+            _buildTrackingItem(context, '사료', volume: 0.6),
             const SizedBox(height: 15),
-            _buildTrackingItem(context, '대변'),
-            const SizedBox(height: 15),
-            _buildTrackingItem(context, '구토'),
-            const SizedBox(height: 15),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                _buildTrackingItem(context, '대변'),
+                _buildTrackingItem(context, '구토'),
+              ],
+            ),
           ],
         ),
       ),
     );
   }
 
-  Widget _buildTrackingItem(BuildContext context, String title) {
+  Widget _buildTrackingItem(BuildContext context, String title,
+      {double? volume}) {
+    double getVolume() {
+      if (volume != null) {
+        return volume;
+      }
+      return 0;
+    }
+
+    BoxDecoration getDecoration(String title) {
+      switch (title) {
+        case '물':
+          return BoxDecoration(
+            gradient: LinearGradient(
+              colors: const [Color.fromARGB(255, 80, 155, 229), Colors.white],
+              stops: [getVolume(), getVolume()],
+              begin: Alignment.centerLeft,
+              end: Alignment.centerRight,
+            ),
+            borderRadius: BorderRadius.circular(25),
+          );
+        case '사료':
+          return BoxDecoration(
+            gradient: LinearGradient(
+              colors: const [Color.fromARGB(255, 124, 89, 61), Colors.white],
+              stops: [getVolume(), getVolume()],
+              begin: Alignment.centerLeft,
+              end: Alignment.centerRight,
+            ),
+            borderRadius: BorderRadius.circular(25),
+          );
+        default:
+          return BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(25),
+          );
+      }
+    }
+
     return GestureDetector(
       onTap: () async {
         if (title == '물') {
@@ -85,12 +126,9 @@ class TrackingGrid extends StatelessWidget {
         }
       },
       child: Container(
-        width: double.infinity,
+        width: title == '물' || title == '사료' ? double.infinity : 182,
         height: 160,
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(25),
-        ),
+        decoration: getDecoration(title),
         child: Padding(
           padding: const EdgeInsets.fromLTRB(25, 10, 10, 20),
           child: Column(
@@ -122,7 +160,33 @@ class TrackingGrid extends StatelessWidget {
                     ),
                   ),
                 ],
-              )
+              ),
+              if (title == '물' || title == '사료')
+                const Icon(
+                  Icons.add,
+                  color: Color.fromARGB(50, 0, 0, 0),
+                  size: 50,
+                ),
+              if (title == '대변')
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    SizedBox(
+                      height: 80,
+                      child: Image.asset('assets/images/poop.png'),
+                    ),
+                  ],
+                ),
+              if (title == '구토')
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    SizedBox(
+                      height: 80,
+                      child: Image.asset('assets/images/vomit.png'),
+                    ),
+                  ],
+                ),
             ],
           ),
         ),

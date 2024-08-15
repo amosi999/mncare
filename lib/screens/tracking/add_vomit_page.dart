@@ -9,8 +9,8 @@ class AddVomitPage extends StatefulWidget {
   const AddVomitPage({
     required this.date,
     required this.petId,
-    Key? key,
-  }) : super(key: key);
+    super.key,
+  });
 
   @override
   _AddVomitPageState createState() => _AddVomitPageState();
@@ -153,6 +153,42 @@ class _AddVomitPageState extends State<AddVomitPage> {
 
   Widget _buildShapeSelection(String shape) {
     bool isSelected = _selectedType == shape;
+
+    Image getImage() {
+      // _buildShapeSelection('무색'),
+      // _buildShapeSelection('거품 섞인 무색'),
+      // _buildShapeSelection('거품과 음식물'),
+      // _buildShapeSelection('노란색'),
+      // _buildShapeSelection('잎사귀 섞인 녹색'),
+      // _buildShapeSelection('분홍색'),
+      // _buildShapeSelection('짙은 갈색'),
+      // _buildShapeSelection('녹색'),
+      // _buildShapeSelection('이물질 섞인'),
+      // _buildShapeSelection('붉은색'),
+      switch (shape) {
+        case '무색':
+          return Image.asset('assets/images/vomit1.png');
+        case '거품 섞인 무색':
+          return Image.asset('assets/images/vomit2.png');
+        case '거품과 음식물':
+          return Image.asset('assets/images/vomit3.png');
+        case '노란색':
+          return Image.asset('assets/images/vomit4.png');
+        case '잎사귀 섞인 녹색':
+          return Image.asset('assets/images/vomit5.png');
+        case '분홍색':
+          return Image.asset('assets/images/vomit6.png');
+        case '짙은 갈색':
+          return Image.asset('assets/images/vomit7.png');
+        case '녹색':
+          return Image.asset('assets/images/vomit8.png');
+        case '이물질 섞인':
+          return Image.asset('assets/images/vomit9.png');
+        default:
+          return Image.asset('assets/images/vomit10.png');
+      }
+    }
+
     return GestureDetector(
       onTap: () {
         setState(() {
@@ -176,13 +212,7 @@ class _AddVomitPageState extends State<AddVomitPage> {
               borderRadius: BorderRadius.circular(15),
             ),
             child: Center(
-              child: Text(
-                '그림으로 대체',
-                style: TextStyle(
-                  color: isSelected ? Colors.black : Colors.black,
-                  fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-                ),
-              ),
+              child: getImage(),
             ),
           ),
           Text(
