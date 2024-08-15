@@ -9,8 +9,8 @@ class AddPoopPage extends StatefulWidget {
   const AddPoopPage({
     required this.date,
     required this.petId,
-    Key? key,
-  }) : super(key: key);
+    super.key,
+  });
 
   @override
   _AddPoopPageState createState() => _AddPoopPageState();
@@ -57,8 +57,8 @@ class _AddPoopPageState extends State<AddPoopPage> {
       'memo': _memoController.text,
       'timestamp': FieldValue.serverTimestamp(), // 기록 시간 저장
     });
-print('저장성공');
-print(docRef);
+    print('저장성공');
+    print(docRef);
 
     Navigator.of(context).pop(true); // 기록 추가 후 이전 화면으로 돌아가기
   }
@@ -163,6 +163,36 @@ print(docRef);
 
   Widget _buildShapeSelection(String shape) {
     bool isSelected = _selectedShape == shape;
+
+    Image getImage() {
+      // _buildShapeSelection('적당한 단단함'),
+      // _buildShapeSelection('촉촉한 작은 통나무'),
+      // _buildShapeSelection('딱딱한 토끼'),
+      // _buildShapeSelection('질척거리는 통나무'),
+      // _buildShapeSelection('촉촉한 무더기'),
+      // _buildShapeSelection('질감 있는 흙'),
+      // _buildShapeSelection('질감 없는 물'),
+      // _buildShapeSelection('대변 안 봄'),
+      switch (shape) {
+        case '적당한 단단함':
+          return Image.asset('assets/images/poop1.png');
+        case '촉촉한 작은 통나무':
+          return Image.asset('assets/images/poop2.png');
+        case '딱딱한 토끼':
+          return Image.asset('assets/images/poop3.png');
+        case '질척거리는 통나무':
+          return Image.asset('assets/images/poop4.png');
+        case '촉촉한 무더기':
+          return Image.asset('assets/images/poop5.png');
+        case '질감 있는 흙':
+          return Image.asset('assets/images/poop6.png');
+        case '질감 없는 물':
+          return Image.asset('assets/images/poop7.png');
+        default:
+          return Image.asset('assets/images/poop8.png');
+      }
+    }
+
     return GestureDetector(
       onTap: () {
         setState(() {
@@ -186,13 +216,7 @@ print(docRef);
               borderRadius: BorderRadius.circular(15),
             ),
             child: Center(
-              child: Text(
-                '그림으로 대체',
-                style: TextStyle(
-                  color: isSelected ? Colors.black : Colors.black,
-                  fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-                ),
-              ),
+              child: getImage(),
             ),
           ),
           Text(
