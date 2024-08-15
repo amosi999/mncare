@@ -1,10 +1,13 @@
-import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'community_postscreen.dart';
+import 'package:flutter/material.dart';
+
 import 'community_postdetailscreen.dart';
+import 'community_postscreen.dart';
 import 'post.dart';
 
 class CommunityQuestion extends StatefulWidget {
+  const CommunityQuestion({super.key});
+
   @override
   _CommunityQuestionState createState() => _CommunityQuestionState();
 }
@@ -24,12 +27,13 @@ class _CommunityQuestionState extends State<CommunityQuestion> {
   }
 
   void _addNewPost() {
-  Navigator.of(context).push(
-    MaterialPageRoute(
-      builder: (context) => const  CommunityPostScreen(initialBoard: 'question'),
-    ),
-  );
-}
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (context) =>
+            const CommunityPostScreen(initialBoard: 'question'),
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -54,6 +58,7 @@ class _CommunityQuestionState extends State<CommunityQuestion> {
             itemCount: posts.length,
             itemBuilder: (context, index) {
               return Card(
+                color: Colors.white,
                 elevation: 1,
                 margin: const EdgeInsets.symmetric(vertical: 4, horizontal: 8),
                 child: ListTile(
@@ -91,21 +96,21 @@ class _CommunityQuestionState extends State<CommunityQuestion> {
         },
       ),
       floatingActionButton: SizedBox(
-  width: 48,
-  height: 48,
-  child: FloatingActionButton(
-    heroTag: 'addPost3',
-    onPressed: _addNewPost,
-    backgroundColor: const Color.fromARGB(255, 235, 91, 0),
-    shape: const CircleBorder(),
-    elevation: 1,
-    tooltip: '새 게시물 작성',
-    child: const Icon(
-      Icons.add,
-      color: Colors.white,
-    ),
-  ),
-),
+        width: 48,
+        height: 48,
+        child: FloatingActionButton(
+          heroTag: 'addPost3',
+          onPressed: _addNewPost,
+          backgroundColor: const Color.fromARGB(255, 235, 91, 0),
+          shape: const CircleBorder(),
+          elevation: 1,
+          tooltip: '새 게시물 작성',
+          child: const Icon(
+            Icons.add,
+            color: Colors.white,
+          ),
+        ),
+      ),
     );
   }
 }
