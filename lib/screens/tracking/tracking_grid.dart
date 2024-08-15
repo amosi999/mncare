@@ -35,24 +35,9 @@ class TrackingGrid extends StatelessWidget {
 
   Widget _buildTrackingItem(BuildContext context, String title,
       {double? volume}) {
-    double getStart() {
+    double getVolume() {
       if (volume != null) {
-        if (volume == 0 || volume == 1) {
-          return volume;
-        } else {
-          return volume - 0.1;
-        }
-      }
-      return 0;
-    }
-
-    double getEnd() {
-      if (volume != null) {
-        if (volume == 0 || volume == 1) {
-          return volume;
-        } else {
-          return volume + 0.1;
-        }
+        return volume;
       }
       return 0;
     }
@@ -63,7 +48,7 @@ class TrackingGrid extends StatelessWidget {
           return BoxDecoration(
             gradient: LinearGradient(
               colors: const [Color.fromARGB(255, 81, 156, 231), Colors.white],
-              stops: [getStart(), getEnd()],
+              stops: [getVolume(), getVolume()],
               begin: Alignment.centerLeft,
               end: Alignment.centerRight,
             ),
@@ -73,7 +58,7 @@ class TrackingGrid extends StatelessWidget {
           return BoxDecoration(
             gradient: LinearGradient(
               colors: const [Color.fromARGB(255, 117, 88, 66), Colors.white],
-              stops: [getStart(), getEnd()],
+              stops: [getVolume(), getVolume()],
               begin: Alignment.centerLeft,
               end: Alignment.centerRight,
             ),
