@@ -39,6 +39,7 @@ class _DetailPageState extends State<DetailPage> {
   int waterCount = 0;
   int foodGoal = 0; // waterGoal 초기값을 0으로 설정
   int foodCount = 0;
+  late String engTitle;
 
   User? user = FirebaseAuth.instance.currentUser;
   // ignore: prefer_typing_uninitialized_variables
@@ -48,6 +49,18 @@ class _DetailPageState extends State<DetailPage> {
   @override
   void initState() {
     super.initState();
+
+    if (widget.title == "물") {
+      engTitle = "water";
+    } else if (widget.title == "사료") {
+      engTitle = "food";
+    } else if (widget.title == "대변") {
+      engTitle = "poop";
+    } else if (widget.title == "구토") {
+      engTitle = "vomit";
+    } else {
+      engTitle = ""; // 필요한 경우 기본값 설정
+    }
     print('트래킹 데이터 로드');
     _loadTrackingData(); // 페이지 초기화 시 트래킹 데이터 로드
     if (widget.title == '물') {
@@ -664,7 +677,37 @@ class _DetailPageState extends State<DetailPage> {
                                 Row(
                                   children: [
                                     IconButton(
-                                      onPressed: () {}, // 기록 삭제 로직으로 수정
+                                      onPressed: () async {
+                                        await trackingDocRef
+                                            .collection(
+                                                engTitle) // Adjust as needed
+                                            .doc(intake['id'])
+                                            .delete();
+
+                                        setState(() {
+                                          intakeList.removeAt(index);
+                                        });
+
+                                        ScaffoldMessenger.of(context)
+                                            .showSnackBar(
+                                          const SnackBar(
+                                              content: Text(
+                                                  "Record deleted successfully.")),
+                                        );
+                                        // 데이터를 다시 로드하여 current 값을 업데이트
+                                        await _loadTrackingData();
+
+                                        // 물, 사료, 대변, 구토에 따른 데이터를 다시 로드
+                                        if (engTitle == 'water') {
+                                          await _loadWaterIntake();
+                                        } else if (engTitle == 'food') {
+                                          await _loadFoodIntake();
+                                        } else if (engTitle == 'poop') {
+                                          await _loadPoopIntake();
+                                        } else if (engTitle == 'vomit') {
+                                          await _loadVomitIntake();
+                                        }
+                                      },
                                       icon: const Icon(Icons.delete),
                                       color: Colors.grey,
                                     ),

@@ -129,7 +129,7 @@ class _MainScreenState extends State<MainScreen> {
             );
           } else {
             print('null pet');
-            print('null pet selected pet: ${_selectedPet?.name}, ${_pets?.first.name}');
+         //   print('null pet selected pet: ${_selectedPet?.name}, ${_pets?.first.name}');
             //pets가 비어있어서 여기서 오류남
             _calendarScreenController
                 .setSelectedPet(null); // 필요에 따라 null을 넘길 수 있음

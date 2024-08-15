@@ -67,4 +67,6 @@ class TrackingScreenController extends ChangeNotifier {
 
     return standardDoc.exists ? standardDoc[field] : null;
   }
+
+  
 }
