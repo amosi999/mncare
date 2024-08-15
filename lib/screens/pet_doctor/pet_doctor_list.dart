@@ -71,7 +71,8 @@ class _PetDoctorListState extends State<PetDoctorList> {
           .snapshots()
           .map((snapshot) {
         return snapshot.docs
-            .map((doc) => Pet(id: doc.id, name: doc['petName'] ?? 'Unknown Pet'))
+            .map(
+                (doc) => Pet(id: doc.id, name: doc['petName'] ?? 'Unknown Pet'))
             .toList();
       });
     }
@@ -190,7 +191,8 @@ class _PetDoctorListState extends State<PetDoctorList> {
           return StreamBuilder<List<PetImage>>(
             stream: _getPetImagesStream(),
             builder: (context, petImagesSnapshot) {
-              if (petImagesSnapshot.connectionState == ConnectionState.waiting) {
+              if (petImagesSnapshot.connectionState ==
+                  ConnectionState.waiting) {
                 return const Center(child: CircularProgressIndicator());
               }
 
@@ -241,7 +243,8 @@ class _PetDoctorListState extends State<PetDoctorList> {
                   Expanded(
                     child: ToggleList(
                       divider: const SizedBox(height: 8),
-                      toggleAnimationDuration: const Duration(milliseconds: 300),
+                      toggleAnimationDuration:
+                          const Duration(milliseconds: 300),
                       scrollPosition: AutoScrollPosition.begin,
                       children: filteredImages.map((petImage) {
                         return ToggleListItem(
@@ -251,22 +254,28 @@ class _PetDoctorListState extends State<PetDoctorList> {
                             child: Row(
                               children: [
                                 CircleAvatar(
-                                  backgroundImage: NetworkImage(petImage.imageUrl),
+                                  backgroundImage:
+                                      NetworkImage(petImage.imageUrl),
                                   radius: 25,
                                 ),
                                 const SizedBox(width: 16),
                                 Expanded(
                                   child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
                                     children: [
                                       Text(
                                         DateFormat('yyyy-MM-dd HH:mm')
                                             .format(petImage.createdDate),
-                                        style: Theme.of(context).textTheme.titleMedium,
+                                        style: Theme.of(context)
+                                            .textTheme
+                                            .titleMedium,
                                       ),
                                       Text(
                                         petImage.petName,
-                                        style: Theme.of(context).textTheme.bodyMedium,
+                                        style: Theme.of(context)
+                                            .textTheme
+                                            .bodyMedium,
                                       ),
                                     ],
                                   ),
@@ -308,18 +317,29 @@ class _PetDoctorListState extends State<PetDoctorList> {
           );
         },
       ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () async {
-          await Navigator.of(context).push(
-            MaterialPageRoute(
-              builder: (ctx) => PetDoctorScreen(
-                onImageUploaded: _refreshData,
+      floatingActionButton: SizedBox(
+        width: 48,
+        height: 48,
+        child: FloatingActionButton(
+          heroTag: 'addPost1',
+          onPressed: () async {
+            await Navigator.of(context).push(
+              MaterialPageRoute(
+                builder: (ctx) => PetDoctorScreen(
+                  onImageUploaded: _refreshData,
+                ),
               ),
-            ),
-          );
-          _refreshData();
-        },
-        child: const Icon(Icons.add),
+            );
+            _refreshData();
+          },
+          backgroundColor: const Color.fromARGB(255, 235, 91, 0),
+          shape: const CircleBorder(),
+          elevation: 1,
+          child: const Icon(
+            Icons.add,
+            color: Colors.white,
+          ),
+        ),
       ),
     );
   }
@@ -420,14 +440,22 @@ class PetImageDetailView extends StatelessWidget {
 
   String _getSymptomName(int classNumber) {
     switch (classNumber) {
-      case 1: return '구진 플라크';
-      case 2: return '비듬 각질 상피성잔고리';
-      case 3: return '태선화 과다 색소 침착';
-      case 4: return '농포 여드름';
-      case 5: return '미란 궤양';
-      case 6: return '결절 종괴';
-      case 7: return '무증상';
-      default: return '알 수 없음';
+      case 1:
+        return '구진 플라크';
+      case 2:
+        return '비듬 각질 상피성잔고리';
+      case 3:
+        return '태선화 과다 색소 침착';
+      case 4:
+        return '농포 여드름';
+      case 5:
+        return '미란 궤양';
+      case 6:
+        return '결절 종괴';
+      case 7:
+        return '무증상';
+      default:
+        return '알 수 없음';
     }
   }
 
