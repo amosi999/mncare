@@ -248,13 +248,22 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget _buildCountInfoCard(ColorScheme colorScheme, String petId) {
-  return StreamBuilder<DocumentSnapshot>(
-    stream: FirebaseFirestore.instance
-        .collection('users')
-        .doc(FirebaseAuth.instance.currentUser!.uid)
-        .collection('pets')
-        .doc(petId)
-        .snapshots(),
+  final now = DateTime.now();
+  final today = DateFormat('yyyy-MM-dd').format(now);
+
+  return StreamBuilder<Map<String, int>>(
+    stream: Rx.combineLatest4(
+      _getCollectionCount(petId, today, 'water'),
+      _getCollectionCount(petId, today, 'food'),
+      _getCollectionCount(petId, today, 'poop'),
+      _getCollectionCount(petId, today, 'vomit'),
+      (water, food, poop, vomit) => {
+        'water': water,
+        'food': food,
+        'poop': poop,
+        'vomit': vomit,
+      },
+    ),
     builder: (context, snapshot) {
       if (snapshot.connectionState == ConnectionState.waiting) {
         return const Center(child: CircularProgressIndicator());
@@ -264,12 +273,7 @@ class _HomeScreenState extends State<HomeScreen> {
         return Center(child: Text('Error: ${snapshot.error}'));
       }
 
-      if (!snapshot.hasData || !snapshot.data!.exists) {
-        return const Center(child: Text('반려동물 정보를 찾을 수 없습니다.'));
-      }
-
-      var petData = snapshot.data!.data() as Map<String, dynamic>;
-      var counts = petData['counts'] as Map<String, dynamic>? ?? {
+      final counts = snapshot.data ?? {
         'water': 0,
         'food': 0,
         'poop': 0,
@@ -305,10 +309,10 @@ class _HomeScreenState extends State<HomeScreen> {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceAround,
               children: [
-                _buildCountItem(colorScheme, '물', counts['water'] ?? 0, Icons.water_drop),
-                _buildCountItem(colorScheme, '사료', counts['food'] ?? 0, Icons.restaurant),
-                _buildCountItem(colorScheme, '대변', counts['poop'] ?? 0, Icons.recycling),
-                _buildCountItem(colorScheme, '구토', counts['vomit'] ?? 0, Icons.sick),
+                _buildCountItem(colorScheme, '물', counts['water']!, Icons.water_drop),
+                _buildCountItem(colorScheme, '사료', counts['food']!, Icons.restaurant),
+                _buildCountItem(colorScheme, '대변', counts['poop']!, Icons.recycling),
+                _buildCountItem(colorScheme, '구토', counts['vomit']!, Icons.sick),
               ],
             ),
           ],
@@ -316,6 +320,19 @@ class _HomeScreenState extends State<HomeScreen> {
       );
     },
   );
+}
+
+Stream<int> _getCollectionCount(String petId, String date, String collectionName) {
+  return FirebaseFirestore.instance
+      .collection('users')
+      .doc(FirebaseAuth.instance.currentUser!.uid)
+      .collection('pets')
+      .doc(petId)
+      .collection('tracking')
+      .doc(date)
+      .collection(collectionName)
+      .snapshots()
+      .map((snapshot) => snapshot.docs.length);
 }
 
 Widget _buildCountItem(ColorScheme colorScheme, String label, int count, IconData icon) {
