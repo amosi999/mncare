@@ -59,7 +59,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     const SizedBox(height: 16),
                     _buildCountInfoCard(colorScheme, selectedPetId!),
                     const SizedBox(height: 16),
-                    _buildCareSchedule(colorScheme),
+                    _buildCareSchedule(colorScheme, selectedPetId!),
                   ],
                 ),
               ),
@@ -248,218 +248,291 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget _buildCountInfoCard(ColorScheme colorScheme, String petId) {
-  final now = DateTime.now();
-  final today = DateFormat('yyyy-MM-dd').format(now);
+    final now = DateTime.now();
+    final today = DateFormat('yyyy-MM-dd').format(now);
 
-  return StreamBuilder<Map<String, int>>(
-    stream: Rx.combineLatest4(
-      _getCollectionCount(petId, today, 'water'),
-      _getCollectionCount(petId, today, 'food'),
-      _getCollectionCount(petId, today, 'poop'),
-      _getCollectionCount(petId, today, 'vomit'),
-      (water, food, poop, vomit) => {
-        'water': water,
-        'food': food,
-        'poop': poop,
-        'vomit': vomit,
-      },
-    ),
-    builder: (context, snapshot) {
-      if (snapshot.connectionState == ConnectionState.waiting) {
-        return const Center(child: CircularProgressIndicator());
-      }
-
-      if (snapshot.hasError) {
-        return Center(child: Text('Error: ${snapshot.error}'));
-      }
-
-      final counts = snapshot.data ?? {
-        'water': 0,
-        'food': 0,
-        'poop': 0,
-        'vomit': 0,
-      };
-
-      return Container(
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: colorScheme.surface,
-          borderRadius: BorderRadius.circular(16),
-          boxShadow: [
-            BoxShadow(
-              color: colorScheme.shadow.withOpacity(0.1),
-              spreadRadius: 1,
-              blurRadius: 3,
-              offset: const Offset(0, 1),
-            ),
-          ],
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              '오늘의 기록',
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-                color: colorScheme.onSurface,
-              ),
-            ),
-            const SizedBox(height: 16),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceAround,
-              children: [
-                _buildCountItem(colorScheme, '물', counts['water']!, Icons.water_drop),
-                _buildCountItem(colorScheme, '사료', counts['food']!, Icons.restaurant),
-                _buildCountItem(colorScheme, '대변', counts['poop']!, Icons.recycling),
-                _buildCountItem(colorScheme, '구토', counts['vomit']!, Icons.sick),
-              ],
-            ),
-          ],
-        ),
-      );
-    },
-  );
-}
-
-Stream<int> _getCollectionCount(String petId, String date, String collectionName) {
-  return FirebaseFirestore.instance
-      .collection('users')
-      .doc(FirebaseAuth.instance.currentUser!.uid)
-      .collection('pets')
-      .doc(petId)
-      .collection('tracking')
-      .doc(date)
-      .collection(collectionName)
-      .snapshots()
-      .map((snapshot) => snapshot.docs.length);
-}
-
-Widget _buildCountItem(ColorScheme colorScheme, String label, int count, IconData icon) {
-  return Column(
-    children: [
-      Icon(icon, color: colorScheme.primary, size: 24),
-      const SizedBox(height: 8),
-      Text(
-        label,
-        style: TextStyle(color: colorScheme.onSurfaceVariant),
+    return StreamBuilder<Map<String, int>>(
+      stream: Rx.combineLatest4(
+        _getCollectionCount(petId, today, 'water'),
+        _getCollectionCount(petId, today, 'food'),
+        _getCollectionCount(petId, today, 'poop'),
+        _getCollectionCount(petId, today, 'vomit'),
+        (water, food, poop, vomit) => {
+          'water': water,
+          'food': food,
+          'poop': poop,
+          'vomit': vomit,
+        },
       ),
-      const SizedBox(height: 4),
-      Text(
-        count.toString(),
-        style: TextStyle(
-          fontSize: 18,
-          fontWeight: FontWeight.bold,
-          color: colorScheme.onSurface,
-        ),
-      ),
-    ],
-  );
-}
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const Center(child: CircularProgressIndicator());
+        }
 
-  Widget _buildCareSchedule(ColorScheme colorScheme) {
-  return StreamBuilder<List<ScheduleInfo>>(
-    stream: _getUpcomingSchedulesStream(),
-    builder: (context, snapshot) {
-      if (snapshot.connectionState == ConnectionState.waiting) {
-        return const Center(child: CircularProgressIndicator());
-      }
-      if (snapshot.hasError) {
-        return Text('Error: ${snapshot.error}');
-      }
-      final schedules = snapshot.data ?? [];
-      return Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: Text(
-              '다가오는 일정',
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: colorScheme.onBackground),
-            ),
-          ),
-          if (schedules.isEmpty)
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
-              child: Text(
-                '없음',
-                style: TextStyle(fontSize: 16, color: colorScheme.onSurfaceVariant),
-              ),
-            )
-          else
-            ...schedules.map((schedule) => _buildScheduleCard(colorScheme, schedule)).toList(),
-        ],
-      );
-    },
-  );
-}
+        if (snapshot.hasError) {
+          return Center(child: Text('Error: ${snapshot.error}'));
+        }
 
-  Widget _buildScheduleCard(ColorScheme colorScheme, ScheduleInfo schedule) {
-  final daysLeft = _calculateDaysLeft(schedule.date);
-  String dDayText = daysLeft == 0 ? 'D-day' : 'D-$daysLeft';
+        final counts = snapshot.data ??
+            {
+              'water': 0,
+              'food': 0,
+              'poop': 0,
+              'vomit': 0,
+            };
 
-  return Card(
-    margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-    elevation: 2,
-    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-    child: Padding(
-      padding: const EdgeInsets.all(16),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Container(
-            width: 4,
-            height: 50,
-            decoration: BoxDecoration(
-              color: schedule.type.color,
-              borderRadius: BorderRadius.circular(2),
-            ),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  schedule.title,
-                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: colorScheme.onSurface),
-                ),
-                Text(
-                  '${schedule.type.name} - ${DateFormat('yyyy/MM/dd').format(schedule.date)}',
-                  style: TextStyle(fontSize: 14, color: colorScheme.onSurfaceVariant),
-                ),
-                if (schedule.description != null && schedule.description!.isNotEmpty)
-                  Text(
-                    schedule.description!,
-                    style: TextStyle(fontSize: 14, color: colorScheme.onSurfaceVariant),
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-              ],
-            ),
-          ),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.end,
-            children: [
-              Text(
-                dDayText,
-                style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.bold,
-                  color: daysLeft == 0 ? Colors.red : colorScheme.primary,
-                ),
-              ),
-              Text(
-                schedule.owner.name,
-                style: TextStyle(fontSize: 14, color: colorScheme.onSurfaceVariant),
+        return Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: colorScheme.surface,
+            borderRadius: BorderRadius.circular(16),
+            boxShadow: [
+              BoxShadow(
+                color: colorScheme.shadow.withOpacity(0.1),
+                spreadRadius: 1,
+                blurRadius: 3,
+                offset: const Offset(0, 1),
               ),
             ],
           ),
-        ],
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                '오늘의 기록',
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  color: colorScheme.onSurface,
+                ),
+              ),
+              const SizedBox(height: 16),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceAround,
+                children: [
+                  _buildCountItem(
+                      colorScheme, '물', counts['water']!, Icons.water_drop),
+                  _buildCountItem(
+                      colorScheme, '사료', counts['food']!, Icons.restaurant),
+                  _buildCountItem(
+                      colorScheme, '대변', counts['poop']!, Icons.recycling),
+                  _buildCountItem(
+                      colorScheme, '구토', counts['vomit']!, Icons.sick),
+                ],
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  Stream<int> _getCollectionCount(
+      String petId, String date, String collectionName) {
+    return FirebaseFirestore.instance
+        .collection('users')
+        .doc(FirebaseAuth.instance.currentUser!.uid)
+        .collection('pets')
+        .doc(petId)
+        .collection('tracking')
+        .doc(date)
+        .collection(collectionName)
+        .snapshots()
+        .map((snapshot) => snapshot.docs.length);
+  }
+
+  Widget _buildCountItem(
+      ColorScheme colorScheme, String label, int count, IconData icon) {
+    return Column(
+      children: [
+        Icon(icon, color: colorScheme.primary, size: 24),
+        const SizedBox(height: 8),
+        Text(
+          label,
+          style: TextStyle(color: colorScheme.onSurfaceVariant),
+        ),
+        const SizedBox(height: 4),
+        Text(
+          count.toString(),
+          style: TextStyle(
+            fontSize: 18,
+            fontWeight: FontWeight.bold,
+            color: colorScheme.onSurface,
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildCareSchedule(ColorScheme colorScheme, String petId) {
+    return StreamBuilder<List<ScheduleInfo>>(
+      stream: _getUpcomingSchedulesStream(petId),
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const Center(child: CircularProgressIndicator());
+        }
+        if (snapshot.hasError) {
+          return Text('Error: ${snapshot.error}');
+        }
+        final schedules = snapshot.data ?? [];
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: Text(
+                '다가오는 일정',
+                style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                    color: colorScheme.onBackground),
+              ),
+            ),
+            if (schedules.isEmpty)
+              Padding(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+                child: Text(
+                  '없음',
+                  style: TextStyle(
+                      fontSize: 16, color: colorScheme.onSurfaceVariant),
+                ),
+              )
+            else
+              ...schedules
+                  .map((schedule) => _buildScheduleCard(colorScheme, schedule))
+                  .toList(),
+          ],
+        );
+      },
+    );
+  }
+
+  Widget _buildScheduleCard(ColorScheme colorScheme, ScheduleInfo schedule) {
+    final daysLeft = _calculateDaysLeft(schedule.date);
+    String dDayText = daysLeft == 0 ? 'D-day' : 'D-$daysLeft';
+
+    return Card(
+      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      elevation: 2,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Container(
+              width: 4,
+              height: 50,
+              decoration: BoxDecoration(
+                color: schedule.type.color,
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    schedule.title,
+                    style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                        color: colorScheme.onSurface),
+                  ),
+                  Text(
+                    '${schedule.type.name} - ${DateFormat('yyyy/MM/dd').format(schedule.date)}',
+                    style: TextStyle(
+                        fontSize: 14, color: colorScheme.onSurfaceVariant),
+                  ),
+                  if (schedule.description != null &&
+                      schedule.description!.isNotEmpty)
+                    Text(
+                      schedule.description!,
+                      style: TextStyle(
+                          fontSize: 14, color: colorScheme.onSurfaceVariant),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                ],
+              ),
+            ),
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: [
+                Text(
+                  dDayText,
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                    color: daysLeft == 0 ? Colors.red : colorScheme.primary,
+                  ),
+                ),
+                Text(
+                  schedule.owner.name,
+                  style: TextStyle(
+                      fontSize: 14, color: colorScheme.onSurfaceVariant),
+                ),
+              ],
+            ),
+          ],
+        ),
       ),
-    ),
-  );
-}
+    );
+  }
+
+  Stream<List<ScheduleInfo>> _getUpcomingSchedulesStream(String petId) {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) return Stream.value([]);
+
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+
+    return FirebaseFirestore.instance
+        .collection('users')
+        .doc(user.uid)
+        .collection('pets')
+        .doc(petId)
+        .snapshots()
+        .switchMap((petDoc) {
+      final petName = petDoc.data()?['petName'] ?? '';
+
+      return FirebaseFirestore.instance
+          .collection('users')
+          .doc(user.uid)
+          .collection('pets')
+          .doc(petId)
+          .collection('appointments')
+          .where('date', isGreaterThanOrEqualTo: today.toIso8601String())
+          .orderBy('date')
+          .snapshots()
+          .map((snapshot) {
+        return snapshot.docs.map((doc) {
+          final data = doc.data();
+          return ScheduleInfo(
+            id: doc.id,
+            owner: Pet(id: petId, name: petName),
+            type: ScheduleTypeInfo(
+                data['type'], Color(data['typeColor'] ?? 0xFF000000)),
+            title: data['title'] as String,
+            date: DateTime.parse(data['date'] as String),
+            isAllDay: data['isAllDay'] as bool,
+            startTime: data['startTime'] != null
+                ? TimeOfDay.fromDateTime(
+                    DateTime.parse(data['startTime'] as String))
+                : null,
+            endTime: data['endTime'] != null
+                ? TimeOfDay.fromDateTime(
+                    DateTime.parse(data['endTime'] as String))
+                : null,
+            description: data['description'] as String?,
+          );
+        }).toList();
+      });
+    });
+  }
+
   Widget _buildBottomButton(
       String label, IconData icon, ColorScheme colorScheme) {
     return Column(
@@ -482,65 +555,9 @@ Widget _buildCountItem(ColorScheme colorScheme, String label, int count, IconDat
     return '$age살';
   }
 
-  Stream<List<ScheduleInfo>> _getUpcomingSchedulesStream() {
-  final user = FirebaseAuth.instance.currentUser;
-  if (user == null) return Stream.value([]);
-
-  final now = DateTime.now();
-  final today = DateTime(now.year, now.month, now.day);
-
-  return FirebaseFirestore.instance
-      .collection('users')
-      .doc(user.uid)
-      .collection('pets')
-      .snapshots()
-      .switchMap((petsSnapshot) {
-    List<Stream<List<ScheduleInfo>>> petStreams = petsSnapshot.docs.map((petDoc) {
-      final petId = petDoc.id;
-      final petName = petDoc['petName'];
-
-      return FirebaseFirestore.instance
-          .collection('users')
-          .doc(user.uid)
-          .collection('pets')
-          .doc(petId)
-          .collection('appointments')
-          .where('date', isGreaterThanOrEqualTo: today.toIso8601String())
-          .orderBy('date')
-          .snapshots()
-          .map((snapshot) {
-        return snapshot.docs.map((doc) {
-          final data = doc.data();
-          return ScheduleInfo(
-            id: doc.id,
-            owner: Pet(id: petId, name: petName),
-            type: ScheduleTypeInfo(data['type'], Color(data['typeColor'] ?? 0xFF000000)),
-            title: data['title'] as String,
-            date: DateTime.parse(data['date'] as String),
-            isAllDay: data['isAllDay'] as bool,
-            startTime: data['startTime'] != null 
-                ? TimeOfDay.fromDateTime(DateTime.parse(data['startTime'] as String))
-                : null,
-            endTime: data['endTime'] != null 
-                ? TimeOfDay.fromDateTime(DateTime.parse(data['endTime'] as String))
-                : null,
-            description: data['description'] as String?,
-          );
-        }).toList();
-      });
-    }).toList();
-
-    return Rx.combineLatest(petStreams, (List<List<ScheduleInfo>> listOfLists) {
-      List<ScheduleInfo> allSchedules = listOfLists.expand((list) => list).toList();
-      allSchedules.sort((a, b) => a.date.compareTo(b.date));
-      return allSchedules.take(2).toList();
-    });
-  });
-}
-
   int _calculateDaysLeft(DateTime scheduleDate) {
-  final now = DateTime.now();
-  final difference = scheduleDate.difference(now);
-  return difference.inDays + 1;
-}
+    final now = DateTime.now();
+    final difference = scheduleDate.difference(now);
+    return difference.inDays + 1;
+  }
 }
