@@ -1,15 +1,45 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 
 class AddWaterPage extends StatefulWidget {
-  const AddWaterPage({super.key});
+  final DateTime date;
+  final String petId;
+  final int waterCount;
+  final int waterGoal;
+  final Map<String, dynamic>? existingRecord;
+
+  const AddWaterPage({
+    required this.date,
+    required this.petId,
+    required this.waterCount,
+    required this.waterGoal,
+    this.existingRecord,
+    Key? key,
+  }) : super(key: key);
 
   @override
   _AddWaterPageState createState() => _AddWaterPageState();
 }
 
 class _AddWaterPageState extends State<AddWaterPage> {
-  double _inputVolume = 0;
-  final TextEditingController _inputController = TextEditingController();
+  int _inputVolume = 0;
+  String? _recordId;
+  late TextEditingController _inputController;
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.existingRecord != null) {
+      _inputVolume = widget.existingRecord!['volume'];
+      _recordId = widget.existingRecord!['id']; // Track the ID
+    } else {
+      _inputVolume = (widget.waterGoal / widget.waterCount as num).toInt();
+    }
+    _inputController = TextEditingController(
+      text: '$_inputVolume', // 기본값 설정
+    );
+  }
 
   @override
   void dispose() {
@@ -19,8 +49,53 @@ class _AddWaterPageState extends State<AddWaterPage> {
 
   void _updateVolume(String value) {
     setState(() {
-      _inputVolume = double.tryParse(value) ?? 0;
+      _inputVolume = int.tryParse(value) ?? 0;
     });
+  }
+
+  Future<void> _saveWaterIntake() async {
+    if (_inputVolume <= 0) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("올바른 음수량을 입력하세요.")),
+      );
+      return;
+    }
+
+    User? user = FirebaseAuth.instance.currentUser;
+    if (user == null) return;
+
+    String dateStr = widget.date.toIso8601String().split('T').first;
+
+    final trackingDocRef = FirebaseFirestore.instance
+        .collection('users')
+        .doc(user.uid)
+        .collection('pets')
+        .doc(widget.petId)
+        .collection('tracking')
+        .doc(dateStr);
+
+    final waterCollectionRef = trackingDocRef.collection('water');
+
+    final docRef = waterCollectionRef.doc(
+        _recordId ?? FirebaseFirestore.instance.collection('dummy').doc().id);
+
+    await docRef.set({
+      'volume': _inputVolume,
+      'timestamp': _recordId == null
+          ? FieldValue.serverTimestamp()
+          : widget.existingRecord!['timestamp'],
+    });
+
+    // currentWater 업데이트 로직
+    final allDocsSnapshot = await waterCollectionRef.get();
+    int currentWater = allDocsSnapshot.docs.fold(0, (sum, doc) {
+      return sum + (doc['volume'] as int);
+    });
+
+    // currentWater를 Firestore의 tracking 문서에 저장
+    await trackingDocRef.update({'currentWater': currentWater});
+
+    Navigator.of(context).pop(true); // 기록 추가 후 이전 화면으로 돌아가기
   }
 
   @override
@@ -62,9 +137,9 @@ class _AddWaterPageState extends State<AddWaterPage> {
                     maxLines: 1,
                     textAlign: TextAlign.right,
                     keyboardType: TextInputType.number,
-                    cursorColor: Colors.black,
+                    cursorColor: const Color.fromRGBO(0, 0, 0, 1),
                     decoration: const InputDecoration(
-                      hintText: '0',
+                      //hintText: '$_inputController.text',
                       border: InputBorder.none,
                     ),
                     style: const TextStyle(
@@ -94,14 +169,7 @@ class _AddWaterPageState extends State<AddWaterPage> {
   Widget _buildCompleteButton() {
     bool hasInput = _inputController.text.isNotEmpty;
     return ElevatedButton(
-      onPressed: hasInput
-          ? () {
-              // 기록 추가 로직으로 변경
-              // _inputVolume으로 받은 값을 회차별 DB에 저장하고
-              // pop으로 이전 페이지로 넘어감.
-              print(_inputController.text);
-            }
-          : null,
+      onPressed: hasInput ? _saveWaterIntake : null,
       style: ElevatedButton.styleFrom(
         foregroundColor: Colors.white,
         backgroundColor: hasInput
