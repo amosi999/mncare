@@ -62,11 +62,11 @@ class _MainScreenState extends State<MainScreen> {
       //     _selectedPet = _pets.first;
       //   }
       // });
-// =======
+
         _hasPets = _pets.isNotEmpty;
         if (_hasPets) {
           _selectedPet = _pets.first;
-          //_updateSelectedPet(_selectedPet);
+          // _updateSelectedPet(_selectedPet);
         }
       });
 //     }
@@ -83,7 +83,7 @@ class _MainScreenState extends State<MainScreen> {
 //     } else {
 //       _calendarScreenController.setSelectedPet(null);
 //       _trackingScreenController.setSelectedPet(null);
-// >>>>>>> develop
+
     }
   }
 
