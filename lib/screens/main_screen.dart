@@ -40,7 +40,6 @@ class _MainScreenState extends State<MainScreen> {
   void initState() {
     super.initState();
     _calendarScreenController.addListener(_updateState);
-    //_trackingScreenController.addListener(_updateState)
     _fetchPets();
   }
 
@@ -59,17 +58,17 @@ class _MainScreenState extends State<MainScreen> {
             .toList();
 // <<<<<<< tracking
 
-        if (_pets.isNotEmpty) {
+      //   if (_pets.isNotEmpty) {
+      //     _selectedPet = _pets.first;
+      //   }
+      // });
+// =======
+        _hasPets = _pets.isNotEmpty;
+        if (_hasPets) {
           _selectedPet = _pets.first;
+          //_updateSelectedPet(_selectedPet);
         }
       });
-// =======
-//         _hasPets = _pets.isNotEmpty;
-//         if (_hasPets) {
-//           _selectedPet = _pets.first;
-//           _updateSelectedPet(_selectedPet);
-//         }
-//       });
 //     }
 //   }
 
