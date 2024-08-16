@@ -8,7 +8,7 @@ import 'package:mncare/screens/community/community_tab.dart';
 import 'package:syncfusion_flutter_calendar/calendar.dart';
 
 import '../widgets/bottom_bar.dart';
-import '../widgets/side_menu.dart';
+import 'side_menu/side_menu.dart';
 import '../widgets/top_app_bar.dart';
 import 'calendar/calendar_controller.dart';
 import 'calendar/calendar_screen.dart';
@@ -16,6 +16,7 @@ import 'home_screen.dart';
 import 'package:mncare/screens/pet_doctor/pet_doctor_list.dart' as PetDoctor;
 import 'calendar/schedule_info.dart';
 import 'tracking/tracking_info.dart' as PetTracking;
+import 'no_pet_screen.dart';
 
 class MainScreen extends StatefulWidget {
   const MainScreen({super.key});
@@ -33,10 +34,7 @@ class _MainScreenState extends State<MainScreen> {
       TrackingScreenController();
   List<CommonPet> _pets = [];
   CommonPet? _selectedPet;
-
-// 트래킹 머지 전 펫
-//   List<Pet> _pets = [];
-//   Pet? _selectedPet;
+  bool _hasPets = false;
 
   @override
   void initState() {
@@ -59,19 +57,40 @@ class _MainScreenState extends State<MainScreen> {
         _pets = querySnapshot.docs
             .map((doc) => CommonPet(id: doc.id, name: doc['petName']))
             .toList();
+// <<<<<<< tracking
 
         if (_pets.isNotEmpty) {
           _selectedPet = _pets.first;
         }
       });
+// =======
+//         _hasPets = _pets.isNotEmpty;
+//         if (_hasPets) {
+//           _selectedPet = _pets.first;
+//           _updateSelectedPet(_selectedPet);
+//         }
+//       });
+//     }
+//   }
+
+//   void _updateSelectedPet(CommonPet? pet) {
+//     if (pet != null) {
+//       _calendarScreenController.setSelectedPet(
+//         Pet(id: pet.id, name: pet.name),
+//       );
+//       _trackingScreenController.setSelectedPet(
+//         PetTracking.Pet(id: pet.id, name: pet.name),
+//       );
+//     } else {
+//       _calendarScreenController.setSelectedPet(null);
+//       _trackingScreenController.setSelectedPet(null);
+// >>>>>>> develop
     }
   }
 
   void _updateState() {
     if (mounted) {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        setState(() {});
-      });
+      setState(() {});
     }
   }
 
@@ -119,6 +138,7 @@ class _MainScreenState extends State<MainScreen> {
           setState(() {
             _selectedPet = pet;
           });
+// <<<<<<< tracking
           if (_selectedPet != null) {
             print('selected pet: ${_selectedPet!.name}');
             _calendarScreenController.setSelectedPet(
@@ -137,15 +157,25 @@ class _MainScreenState extends State<MainScreen> {
               PetTracking.Pet(id: _pets.first.id, name: _pets.first.name),
             );
           }
+// =======
+//           _updateSelectedPet(pet);
+// >>>>>>> develop
         },
+        hasPets: _hasPets,
       ),
       body: IndexedStack(
         index: _selectedIndex,
         children: [
-          TrackingScreen(controller: _trackingScreenController),
-          CalendarScreen(controller: _calendarScreenController),
+          _hasPets
+              ? TrackingScreen(controller: _trackingScreenController)
+              : const NoPetScreen(title: 'tracking'),
+          _hasPets
+              ? CalendarScreen(controller: _calendarScreenController)
+              : const NoPetScreen(title: 'calendar'),
           const HomeScreen(),
-          const PetDoctor.PetDoctorList(),
+          _hasPets
+              ? const PetDoctor.PetDoctorList()
+              : const NoPetScreen(title: 'pet_doctor'),
           const CommunityScreen(),
         ],
       ),

@@ -7,6 +7,9 @@ import 'package:firebase_storage/firebase_storage.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:path/path.dart' as path;
+import 'package:http/http.dart' as http;
+import 'dart:convert';
+import 'package:mncare/screens/pet_doctor/pet_doctor_result.dart';
 
 class Pet {
   final String id;
@@ -15,13 +18,14 @@ class Pet {
 }
 
 class PetDoctorScreen extends StatefulWidget {
-  final Function? onImageUploaded;  // 새로운 콜백 함수 추가
+  final Function? onImageUploaded;
 
   const PetDoctorScreen({Key? key, this.onImageUploaded}) : super(key: key);
 
   @override
   State<StatefulWidget> createState() => _PetDoctorScreenState();
 }
+
 class _PetDoctorScreenState extends State<PetDoctorScreen> {
   CameraController? _controller;
   Future<void>? _initializeControllerFuture;
@@ -106,66 +110,37 @@ class _PetDoctorScreenState extends State<PetDoctorScreen> {
     }
   }
 
-  Future<void> _submit() async {
-    if (_image == null || _selectedPet == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('이미지나 선택된 펫이 없습니다.')),
-      );
-      return;
-    }
+  Future<Map<String, dynamic>> getPrediction(File imageFile) async {
+    var request = http.MultipartRequest('POST', Uri.parse('http://192.168.0.9:6245/predict'));
+    request.files.add(await http.MultipartFile.fromPath('file', imageFile.path));
 
-    setState(() {
-      _isUploading = true;
-    });
-
-    try {
-      final user = FirebaseAuth.instance.currentUser;
-      if (user == null) {
-        throw Exception('User not logged in');
-      }
-
-      final fileName = path.basename(_image!.path);
-      final storageRef = FirebaseStorage.instance.ref()
-          .child('petDoctor/${user.uid}/${_selectedPet!.name}/$fileName');
-      
-      await storageRef.putFile(_image!);
-      
-      final downloadUrl = await storageRef.getDownloadURL();
-      
-      // Firestore에 데이터 저장
-      await FirebaseFirestore.instance
-          .collection('users')
-          .doc(user.uid)
-          .collection('pets')
-          .doc(_selectedPet!.id)
-          .collection('petDoctor')
-          .add({
-        'img_url': downloadUrl,
-        'createdDate': FieldValue.serverTimestamp(),
-      });
-      
-      print('파일 업로드 및 데이터 저장 완료: $downloadUrl');
-      
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('이미지가 성공적으로 업로드되고 저장되었습니다!')),
-      );
-      if (widget.onImageUploaded != null) {
-        widget.onImageUploaded!();
-      }
-
-      // 업로드 성공 후 이전 화면으로 돌아가기
-      Navigator.of(context).pop();
-    } catch (e) {
-      print('이미지 업로드 및 데이터 저장 중 오류 발생: $e');
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('이미지 업로드 및 데이터 저장 중 오류가 발생했습니다.')),
-      );
-    } finally {
-      setState(() {
-        _isUploading = false;
-      });
+    var response = await request.send();
+    if (response.statusCode == 200) {
+      var responseData = await response.stream.bytesToString();
+      return json.decode(responseData);
+    } else {
+      throw Exception('Failed to get prediction');
     }
   }
+
+  Future<void> _submit() async {
+  if (_image == null || _selectedPet == null) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('이미지나 선택된 펫이 없습니다.')),
+    );
+    return;
+  }
+
+  Navigator.of(context).push(
+    MaterialPageRoute(
+      builder: (context) => PetDoctorResult(
+        imageFile: _image!,
+        petId: _selectedPet!.id,
+        petName: _selectedPet!.name,
+      ),
+    ),
+  );
+}
 
   @override
   Widget build(BuildContext context) {

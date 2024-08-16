@@ -1,7 +1,7 @@
-import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_storage/firebase_storage.dart';
+import 'package:flutter/material.dart';
 
 class PostDetailScreen extends StatefulWidget {
   final String postId;
@@ -13,7 +13,7 @@ class PostDetailScreen extends StatefulWidget {
   final String userId; // 게시물 작성자의 userId 추가
 
   const PostDetailScreen({
-    Key? key,
+    super.key,
     required this.postId,
     required this.title,
     required this.content,
@@ -21,7 +21,7 @@ class PostDetailScreen extends StatefulWidget {
     required this.createdAt,
     this.imageUrl,
     required this.userId, // userId 추가
-  }) : super(key: key);
+  });
 
   @override
   _PostDetailScreenState createState() => _PostDetailScreenState();
@@ -38,18 +38,26 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
     final currentUser = FirebaseAuth.instance.currentUser;
 
     return Scaffold(
+      backgroundColor: Colors.white,
       appBar: AppBar(
-        title: Text('게시물 상세'),
+        backgroundColor: Colors.white,
+        title: const Text(
+          '게시물 상세',
+          style: TextStyle(
+            fontSize: 20,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
         actions: [
           if (currentUser != null && currentUser.uid == widget.userId)
             IconButton(
-              icon: Icon(Icons.delete),
+              icon: const Icon(Icons.delete),
               onPressed: _deletePost,
             ),
         ],
       ),
       body: SingleChildScrollView(
-        padding: EdgeInsets.all(16.0),
+        padding: const EdgeInsets.all(16.0),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -57,33 +65,33 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
               widget.title,
               style: textTheme.titleLarge,
             ),
-            SizedBox(height: 8.0),
+            const SizedBox(height: 8.0),
             Text(
               '${widget.author} | ${widget.createdAt.toString().substring(0, 16)}',
               style: textTheme.bodySmall,
             ),
-            SizedBox(height: 16.0),
+            const SizedBox(height: 16.0),
             if (widget.imageUrl != null)
-              Container(
+              SizedBox(
                 height: 200,
                 width: double.infinity,
                 child: Image.network(
                   widget.imageUrl!,
                   fit: BoxFit.cover,
                   errorBuilder: (context, error, stackTrace) =>
-                      Center(child: Text('이미지를 불러올 수 없습니다.')),
+                      const Center(child: Text('이미지를 불러올 수 없습니다.')),
                 ),
               ),
-            SizedBox(height: 16.0),
+            const SizedBox(height: 16.0),
             Text(
               widget.content,
               style: textTheme.bodyMedium,
             ),
-            SizedBox(height: 24.0),
+            const SizedBox(height: 24.0),
             Divider(thickness: 1, color: Colors.grey[300]),
-            SizedBox(height: 16.0),
+            const SizedBox(height: 16.0),
             Container(
-              padding: EdgeInsets.all(16.0),
+              padding: const EdgeInsets.all(16.0),
               decoration: BoxDecoration(
                 color: Colors.grey[100],
                 borderRadius: BorderRadius.circular(8.0),
@@ -94,9 +102,9 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
                   Text('댓글',
                       style: textTheme.titleMedium
                           ?.copyWith(fontWeight: FontWeight.bold)),
-                  SizedBox(height: 16.0),
+                  const SizedBox(height: 16.0),
                   _buildCommentInput(),
-                  SizedBox(height: 16.0),
+                  const SizedBox(height: 16.0),
                   _buildCommentList(),
                 ],
               ),
@@ -119,16 +127,16 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
           .snapshots(),
       builder: (context, snapshot) {
         if (snapshot.hasError) {
-          return Text('오류가 발생했습니다');
+          return const Text('오류가 발생했습니다');
         }
 
         if (snapshot.connectionState == ConnectionState.waiting) {
-          return CircularProgressIndicator();
+          return const CircularProgressIndicator();
         }
 
         return ListView(
           shrinkWrap: true,
-          physics: NeverScrollableScrollPhysics(),
+          physics: const NeverScrollableScrollPhysics(),
           children: snapshot.data!.docs.map((DocumentSnapshot document) {
             Map<String, dynamic> data = document.data() as Map<String, dynamic>;
             return ListTile(
@@ -168,8 +176,16 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
         ),
         const SizedBox(width: 8.0),
         ElevatedButton(
+          style: ElevatedButton.styleFrom(
+            backgroundColor: const Color.fromARGB(255, 235, 91, 0),
+            foregroundColor: Colors.white,
+            padding: const EdgeInsets.fromLTRB(25, 15, 25, 15),
+          ),
           onPressed: _submitComment,
-          child: const Text('작성'),
+          child: const Text(
+            '작성',
+            style: TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
+          ),
         ),
       ],
     );
@@ -270,7 +286,7 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
 
         // 성공 메시지 표시
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('게시물과 관련 데이터가 삭제되었습니다.')),
+          const SnackBar(content: Text('게시물과 관련 데이터가 삭제되었습니다.')),
         );
 
         // 이전 화면으로 돌아가기
@@ -296,7 +312,7 @@ class _PostDetailScreenState extends State<PostDetailScreen> {
           .delete();
 
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('댓글이 삭제되었습니다.')),
+        const SnackBar(content: Text('댓글이 삭제되었습니다.')),
       );
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(

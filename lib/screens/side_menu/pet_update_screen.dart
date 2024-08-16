@@ -2,29 +2,28 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:mncare/screens/main_screen.dart';
-import 'package:mncare/utilities/dailyFoodLogic.dart' as dailyFoodLogic;
-import 'package:mncare/utilities/dailyWaterLogic.dart';
 
-class PetRegistrationScreen extends StatefulWidget {
-  final bool showSkipButton;
+class PetUpdateScreen extends StatefulWidget {
+  final String petId;
 
-  const PetRegistrationScreen({super.key, this.showSkipButton = true});
+  const PetUpdateScreen({super.key, required this.petId});
 
   @override
-  _PetRegistrationScreenState createState() => _PetRegistrationScreenState();
+  _PetUpdateScreenState createState() => _PetUpdateScreenState();
 }
 
-class _PetRegistrationScreenState extends State<PetRegistrationScreen> {
+class _PetUpdateScreenState extends State<PetUpdateScreen> {
   final _formKey = GlobalKey<FormState>();
-  final _nameController = TextEditingController();
+  final TextEditingController _nameController = TextEditingController();
   String? _gender;
   bool _isNeutered = true;
   String? _petType;
   String? _breed;
-  final _weightController = TextEditingController();
-  final _birthController = TextEditingController();
-  final _otherController = TextEditingController();
+  final TextEditingController _weightController = TextEditingController();
+  final TextEditingController _birthController = TextEditingController();
+  final TextEditingController _otherController = TextEditingController();
+
+  bool _isLoading = true;
 
   final List<String> _dogBreeds = [
     '골든 리트리버',
@@ -52,22 +51,71 @@ class _PetRegistrationScreenState extends State<PetRegistrationScreen> {
   ];
 
   @override
+  void initState() {
+    super.initState();
+    _loadPetData();
+  }
+
+  Future<void> _loadPetData() async {
+    setState(() {
+      _isLoading = true;
+    });
+
+    try {
+      User? currentUser = FirebaseAuth.instance.currentUser;
+      if (currentUser != null) {
+        DocumentSnapshot petDoc = await FirebaseFirestore.instance
+            .collection('users')
+            .doc(currentUser.uid)
+            .collection('pets')
+            .doc(widget.petId)
+            .get();
+
+        if (petDoc.exists) {
+          Map<String, dynamic> data = petDoc.data() as Map<String, dynamic>;
+          setState(() {
+            _nameController.text = data['petName'] ?? '';
+            _gender = data['petGender'];
+            _isNeutered = data['isNeutered'] ?? true;
+            _petType = data['petType'];
+            _breed = data['petBreed'];
+            _weightController.text = data['petWeight']?.toString() ?? '';
+            _birthController.text = data['petBirthDate'] ?? '';
+            _otherController.text = data['etc'] ?? '';
+          });
+        }
+      }
+    } catch (e) {
+      print('Error loading pet data: $e');
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('펫 정보를 불러오는 데 실패했습니다.')),
+      );
+    } finally {
+      setState(() {
+        _isLoading = false;
+      });
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
+    if (_isLoading) {
+      return const Scaffold(
+        body: Center(child: CircularProgressIndicator()),
+      );
+    }
+
     return Scaffold(
       appBar: AppBar(
+        title: const Text(
+          '반려동물 수정',
+          style: TextStyle(
+            fontSize: 20,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
         backgroundColor: Colors.white,
         foregroundColor: Colors.black,
-        actions: [
-          if (widget.showSkipButton)
-            TextButton(
-              onPressed: () {
-                Navigator.of(context).pushReplacement(
-                  MaterialPageRoute(builder: (context) => const MainScreen()),
-                );
-              },
-              child: const Text('건너뛰기', style: TextStyle(color: Colors.black)),
-            ),
-        ],
       ),
       body: Container(
         color: Colors.white,
@@ -79,11 +127,6 @@ class _PetRegistrationScreenState extends State<PetRegistrationScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text(
-                    '함께하고 있는\n반려동물 정보를 알려주세요',
-                    style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
-                  ),
-                  const SizedBox(height: 20),
                   const Text('이름'),
                   const SizedBox(height: 10),
                   _buildTextField(_nameController, '이름'),
@@ -112,24 +155,48 @@ class _PetRegistrationScreenState extends State<PetRegistrationScreen> {
                   const SizedBox(height: 10),
                   _buildTextField(_otherController, '갖고 있는 질환이나 알러지원을 적어주세요',
                       isRequired: false),
-                  const SizedBox(height: 20),
-                  ElevatedButton(
-                    onPressed: _submitForm,
-                    style: ElevatedButton.styleFrom(
-                      foregroundColor: Colors.white,
-                      backgroundColor: const Color.fromARGB(255, 235, 91, 0),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(25),
+                  const SizedBox(height: 30),
+                  Row(
+                    children: [
+                      ElevatedButton(
+                        onPressed: _showDeleteConfirmation,
+                        style: ElevatedButton.styleFrom(
+                          foregroundColor: Colors.white,
+                          backgroundColor: Colors.grey,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(25),
+                          ),
+                          minimumSize: const Size(182, 55),
+                        ),
+                        child: const Text(
+                          '삭제',
+                          style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
                       ),
-                      minimumSize: const Size(double.infinity, 55),
-                    ),
-                    child: const Text(
-                      '저장',
-                      style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.w700,
+                      const SizedBox(width: 15),
+                      ElevatedButton(
+                        onPressed: _submitForm,
+                        style: ElevatedButton.styleFrom(
+                          foregroundColor: Colors.white,
+                          backgroundColor:
+                              const Color.fromARGB(255, 235, 91, 0),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(25),
+                          ),
+                          minimumSize: const Size(182, 55),
+                        ),
+                        child: const Text(
+                          '저장',
+                          style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
                       ),
-                    ),
+                    ],
                   ),
                 ],
               ),
@@ -379,42 +446,80 @@ class _PetRegistrationScreenState extends State<PetRegistrationScreen> {
         if (value == null || value.isEmpty) {
           return '생년월일을 입력해주세요';
         }
-        // 입력 당일 포함 이전의 날짜가 아니면 입력이 안되게 하는 로직..
+        // 입력 당일 포함 이전의 날짜가 아니면 입력이 안되게 하는 로직
+        DateTime? inputDate = DateTime.tryParse(value);
+        if (inputDate != null && inputDate.isAfter(DateTime.now())) {
+          return '오늘 또는 이전 날짜를 입력해주세요';
+        }
         return null;
       },
     );
   }
 
+  void _showDeleteConfirmation() {
+  showDialog(
+    context: context,
+    builder: (BuildContext context) {
+      return AlertDialog(
+        title: const Text("반려동물 삭제"),
+        content: const Text("정말로 이 반려동물 정보를 삭제하시겠습니까?"),
+        actions: <Widget>[
+          TextButton(
+            child: const Text("취소"),
+            onPressed: () {
+              Navigator.of(context).pop();
+            },
+          ),
+          TextButton(
+            child: const Text("삭제"),
+            onPressed: () {
+              Navigator.of(context).pop();
+              _deletePet();
+            },
+          ),
+        ],
+      );
+    },
+  );
+}
+
+Future<void> _deletePet() async {
+  try {
+    User? currentUser = FirebaseAuth.instance.currentUser;
+    if (currentUser != null) {
+      await FirebaseFirestore.instance
+          .collection('users')
+          .doc(currentUser.uid)
+          .collection('pets')
+          .doc(widget.petId)
+          .delete();
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('반려동물 정보가 성공적으로 삭제되었습니다.')),
+      );
+
+      Navigator.of(context).pop(); // 이전 화면으로 돌아가기
+    } else {
+      throw Exception('로그인된 사용자가 없습니다');
+    }
+  } catch (error) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text('반려동물 정보 삭제에 실패했습니다: $error')),
+    );
+  }
+}
+
   void _submitForm() async {
     if (_formKey.currentState!.validate()) {
       try {
         User? currentUser = FirebaseAuth.instance.currentUser;
-
-        /**트래킹 관련 DB저장 로직 */
-        int defaultFoodKcal = 3500;// 예시로 3500 kcal/kg 사용 임시 값인거임.
-        double dailyFoodAmount = dailyFoodLogic.calculateDailyFood(
-          petType: _petType!,
-          age: dailyFoodLogic.calculateAgeInMonths(_birthController.text),
-          weight: double.parse(_weightController.text),
-          defaultFoodKcal: defaultFoodKcal, 
-          isNeutered: _isNeutered,
-        );
-        int defaultFoodCount = 3;
-        double dailyWaterAmount = calculateDailyWater(
-            petType: _petType!,
-            age: calculateAgeInMonths(_birthController.text),
-            weight: double.parse(_weightController.text),
-            isNeutered: _isNeutered,
-          );
-        int defaultWaterCount = 2;
-
-
         if (currentUser != null) {
-          DocumentReference petDocRef = await FirebaseFirestore.instance
+          await FirebaseFirestore.instance
               .collection('users')
               .doc(currentUser.uid)
               .collection('pets')
-              .add({
+              .doc(widget.petId)
+              .update({
             'petName': _nameController.text,
             'petType': _petType,
             'petBreed': _breed,
@@ -426,33 +531,17 @@ class _PetRegistrationScreenState extends State<PetRegistrationScreen> {
                 _otherController.text.isNotEmpty ? _otherController.text : null,
           });
 
-          String petId = petDocRef.id; // 반려동물의 ID 인데 사용함?
-
-          /*좀이따 standard DB 만드는 로직  */
-          // petDocRef 하위에 standard 문서를 만들고, 거기에 defaultFoodGoal 저장
-          await petDocRef.collection('standard').doc('document').set({
-            'defaultFoodGoal': dailyFoodAmount,
-            'defaultFoodCount': defaultFoodCount,
-            'defaultWaterGoal': dailyWaterAmount,
-            'defaultWaterCount': defaultWaterCount,
-            'defaultFoodKcal': defaultFoodKcal,
-          });
-          //의도한 구조가 아니긴함. standard 하위에 바로 defaultFoodGoal이 속성으로 저장되었으면 좋겠음.
-
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('반려동물 정보가 성공적으로 저장되었습니다!')),
+            const SnackBar(content: Text('반려동물 정보가 성공적으로 업데이트되었습니다!')),
           );
 
-          // 메인 화면으로 이동
-          Navigator.of(context).pushReplacement(
-            MaterialPageRoute(builder: (context) => const MainScreen()),
-          );
+          Navigator.of(context).pop();
         } else {
           throw Exception('로그인된 사용자가 없습니다');
         }
       } catch (error) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('반려동물 정보 저장에 실패했습니다: $error')),
+          SnackBar(content: Text('반려동물 정보 업데이트에 실패했습니다: $error')),
         );
       }
     }
