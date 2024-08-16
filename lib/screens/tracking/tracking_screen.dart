@@ -14,7 +14,6 @@ class TrackingScreen extends StatefulWidget {
 }
 
 class _TrackingPageState extends State<TrackingScreen> {
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -29,7 +28,7 @@ class _TrackingPageState extends State<TrackingScreen> {
               });
             },
           ),
-          const TrackingGrid(),
+          TrackingGrid(controller: widget.controller),
         ],
       ),
     );

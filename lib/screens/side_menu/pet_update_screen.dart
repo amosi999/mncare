@@ -2,7 +2,6 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:mncare/screens/main_screen.dart';
 
 class PetUpdateScreen extends StatefulWidget {
   final String petId;
@@ -15,14 +14,14 @@ class PetUpdateScreen extends StatefulWidget {
 
 class _PetUpdateScreenState extends State<PetUpdateScreen> {
   final _formKey = GlobalKey<FormState>();
-  TextEditingController _nameController = TextEditingController();
+  final TextEditingController _nameController = TextEditingController();
   String? _gender;
   bool _isNeutered = true;
   String? _petType;
   String? _breed;
-  TextEditingController _weightController = TextEditingController();
-  TextEditingController _birthController = TextEditingController();
-  TextEditingController _otherController = TextEditingController();
+  final TextEditingController _weightController = TextEditingController();
+  final TextEditingController _birthController = TextEditingController();
+  final TextEditingController _otherController = TextEditingController();
 
   bool _isLoading = true;
 
@@ -157,23 +156,47 @@ class _PetUpdateScreenState extends State<PetUpdateScreen> {
                   _buildTextField(_otherController, '갖고 있는 질환이나 알러지원을 적어주세요',
                       isRequired: false),
                   const SizedBox(height: 30),
-                  ElevatedButton(
-                    onPressed: _submitForm,
-                    style: ElevatedButton.styleFrom(
-                      foregroundColor: Colors.white,
-                      backgroundColor: const Color.fromARGB(255, 235, 91, 0),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(25),
+                  Row(
+                    children: [
+                      ElevatedButton(
+                        onPressed: _showDeleteConfirmation,
+                        style: ElevatedButton.styleFrom(
+                          foregroundColor: Colors.white,
+                          backgroundColor: Colors.grey,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(25),
+                          ),
+                          minimumSize: const Size(182, 55),
+                        ),
+                        child: const Text(
+                          '삭제',
+                          style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
                       ),
-                      minimumSize: const Size(double.infinity, 55),
-                    ),
-                    child: const Text(
-                      '저장',
-                      style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.w700,
+                      const SizedBox(width: 15),
+                      ElevatedButton(
+                        onPressed: _submitForm,
+                        style: ElevatedButton.styleFrom(
+                          foregroundColor: Colors.white,
+                          backgroundColor:
+                              const Color.fromARGB(255, 235, 91, 0),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(25),
+                          ),
+                          minimumSize: const Size(182, 55),
+                        ),
+                        child: const Text(
+                          '저장',
+                          style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
                       ),
-                    ),
+                    ],
                   ),
                 ],
               ),
@@ -433,6 +456,59 @@ class _PetUpdateScreenState extends State<PetUpdateScreen> {
     );
   }
 
+  void _showDeleteConfirmation() {
+  showDialog(
+    context: context,
+    builder: (BuildContext context) {
+      return AlertDialog(
+        title: const Text("반려동물 삭제"),
+        content: const Text("정말로 이 반려동물 정보를 삭제하시겠습니까?"),
+        actions: <Widget>[
+          TextButton(
+            child: const Text("취소"),
+            onPressed: () {
+              Navigator.of(context).pop();
+            },
+          ),
+          TextButton(
+            child: const Text("삭제"),
+            onPressed: () {
+              Navigator.of(context).pop();
+              _deletePet();
+            },
+          ),
+        ],
+      );
+    },
+  );
+}
+
+Future<void> _deletePet() async {
+  try {
+    User? currentUser = FirebaseAuth.instance.currentUser;
+    if (currentUser != null) {
+      await FirebaseFirestore.instance
+          .collection('users')
+          .doc(currentUser.uid)
+          .collection('pets')
+          .doc(widget.petId)
+          .delete();
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('반려동물 정보가 성공적으로 삭제되었습니다.')),
+      );
+
+      Navigator.of(context).pop(); // 이전 화면으로 돌아가기
+    } else {
+      throw Exception('로그인된 사용자가 없습니다');
+    }
+  } catch (error) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text('반려동물 정보 삭제에 실패했습니다: $error')),
+    );
+  }
+}
+
   void _submitForm() async {
     if (_formKey.currentState!.validate()) {
       try {
@@ -451,7 +527,8 @@ class _PetUpdateScreenState extends State<PetUpdateScreen> {
             'isNeutered': _isNeutered,
             'petWeight': double.parse(_weightController.text),
             'petBirthDate': _birthController.text,
-            'etc': _otherController.text.isNotEmpty ? _otherController.text : null,
+            'etc':
+                _otherController.text.isNotEmpty ? _otherController.text : null,
           });
 
           ScaffoldMessenger.of(context).showSnackBar(

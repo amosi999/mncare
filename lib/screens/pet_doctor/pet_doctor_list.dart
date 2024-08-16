@@ -6,7 +6,6 @@ import 'package:mncare/screens/pet_doctor/pet_doctor_screen.dart';
 import 'package:intl/intl.dart';
 import 'package:toggle_list/toggle_list.dart';
 
-// Pet 클래스 정의 (변경 없음)
 class Pet {
   final String id;
   final String name;
@@ -22,13 +21,13 @@ class Pet {
   int get hashCode => id.hashCode;
 }
 
-// PetImage 클래스 정의 (변경 없음)
 class PetImage {
   final String id;
   final String imageUrl;
   final DateTime createdDate;
   final String petId;
   String petName;
+  Map<String, dynamic>? prediction;
 
   PetImage({
     required this.id,
@@ -36,6 +35,7 @@ class PetImage {
     required this.createdDate,
     required this.petId,
     required this.petName,
+    this.prediction,
   });
 
   factory PetImage.fromFirestore(DocumentSnapshot doc, String petId) {
@@ -46,12 +46,13 @@ class PetImage {
       createdDate: (data['createdDate'] as Timestamp).toDate(),
       petId: petId,
       petName: '', // 나중에 설정됨
+      prediction: data['prediction'],
     );
   }
 }
 
 class PetDoctorList extends StatefulWidget {
-  const PetDoctorList({super.key});
+  const PetDoctorList({Key? key}) : super(key: key);
 
   @override
   State<PetDoctorList> createState() => _PetDoctorListState();
@@ -60,7 +61,6 @@ class PetDoctorList extends StatefulWidget {
 class _PetDoctorListState extends State<PetDoctorList> {
   Pet? _selectedPet;
 
-  // 반려동물 목록을 가져오는 Stream
   Stream<List<Pet>> _getPetsStream() {
     final user = FirebaseAuth.instance.currentUser;
     if (user != null) {
@@ -79,7 +79,6 @@ class _PetDoctorListState extends State<PetDoctorList> {
     return Stream.value([]);
   }
 
-  // 모든 반려동물의 이미지를 가져오는 Stream
   Stream<List<PetImage>> _getPetImagesStream() {
     final user = FirebaseAuth.instance.currentUser;
     if (user != null) {
@@ -113,7 +112,6 @@ class _PetDoctorListState extends State<PetDoctorList> {
     return Stream.value([]);
   }
 
-  // 이미지 삭제 함수
   Future<void> _deletePetImage(PetImage petImage) async {
     try {
       final user = FirebaseAuth.instance.currentUser;
@@ -134,9 +132,11 @@ class _PetDoctorListState extends State<PetDoctorList> {
         await storageRef.delete();
 
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-              content: Text('이미지가 Firestore와 Storage에서 성공적으로 삭제되었습니다')),
+          const SnackBar(content: Text('이미지가 성공적으로 삭제되었습니다')),
         );
+
+        // 상태 업데이트를 위해 setState 호출
+        setState(() {});
       }
     } catch (e) {
       print('이미지 삭제 중 오류 발생: $e');
@@ -147,13 +147,9 @@ class _PetDoctorListState extends State<PetDoctorList> {
   }
 
   void _refreshData() {
-    setState(() {
-      // StreamBuilder를 사용하고 있으므로, setState만 호출해도
-      // 스트림이 새로운 데이터를 가져오게 됩니다.
-    });
+    setState(() {});
   }
 
-  // 상세 보기 모달 표시 함수
   void _showDetailView(PetImage petImage) {
     showModalBottomSheet(
       context: context,
@@ -166,7 +162,9 @@ class _PetDoctorListState extends State<PetDoctorList> {
           maxChildSize: 0.95,
           builder: (_, controller) {
             return PetImageDetailView(
-                petImage: petImage, scrollController: controller);
+              petImage: petImage,
+              scrollController: controller,
+            );
           },
         );
       },
@@ -176,12 +174,12 @@ class _PetDoctorListState extends State<PetDoctorList> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color.fromARGB(255, 240, 240, 240),
+      backgroundColor: Theme.of(context).colorScheme.background,
       body: StreamBuilder<List<Pet>>(
         stream: _getPetsStream(),
         builder: (context, petsSnapshot) {
           if (petsSnapshot.connectionState == ConnectionState.waiting) {
-            return Center(child: CircularProgressIndicator());
+            return const Center(child: CircularProgressIndicator());
           }
 
           if (petsSnapshot.hasError) {
@@ -195,7 +193,7 @@ class _PetDoctorListState extends State<PetDoctorList> {
             builder: (context, petImagesSnapshot) {
               if (petImagesSnapshot.connectionState ==
                   ConnectionState.waiting) {
-                return Center(child: CircularProgressIndicator());
+                return const Center(child: CircularProgressIndicator());
               }
 
               if (petImagesSnapshot.hasError) {
@@ -216,7 +214,7 @@ class _PetDoctorListState extends State<PetDoctorList> {
                     child: DropdownButtonFormField<Pet?>(
                       decoration: InputDecoration(
                         filled: true,
-                        fillColor: Colors.white,
+                        fillColor: Theme.of(context).colorScheme.surface,
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(8),
                           borderSide: BorderSide.none,
@@ -224,7 +222,7 @@ class _PetDoctorListState extends State<PetDoctorList> {
                       ),
                       value: _selectedPet,
                       items: [
-                        DropdownMenuItem<Pet?>(
+                        const DropdownMenuItem<Pet?>(
                           value: null,
                           child: Text('전체 보기'),
                         ),
@@ -242,7 +240,6 @@ class _PetDoctorListState extends State<PetDoctorList> {
                       },
                     ),
                   ),
-                  // 이미지 목록
                   Expanded(
                     child: ToggleList(
                       divider: const SizedBox(height: 8),
@@ -270,14 +267,15 @@ class _PetDoctorListState extends State<PetDoctorList> {
                                       Text(
                                         DateFormat('yyyy-MM-dd HH:mm')
                                             .format(petImage.createdDate),
-                                        style: const TextStyle(
-                                            fontSize: 18,
-                                            fontWeight: FontWeight.bold),
+                                        style: Theme.of(context)
+                                            .textTheme
+                                            .titleMedium,
                                       ),
                                       Text(
                                         petImage.petName,
-                                        style:
-                                            TextStyle(color: Colors.grey[600]),
+                                        style: Theme.of(context)
+                                            .textTheme
+                                            .bodyMedium,
                                       ),
                                     ],
                                   ),
@@ -285,11 +283,13 @@ class _PetDoctorListState extends State<PetDoctorList> {
                               ],
                             ),
                           ),
-                          content: PetImageItem(petImage,
-                              onDelete: () => _deletePetImage(petImage),
-                              onView: () => _showDetailView(petImage)),
+                          content: PetImageItem(
+                            petImage: petImage,
+                            onDelete: () => _deletePetImage(petImage),
+                            onView: () => _showDetailView(petImage),
+                          ),
                           headerDecoration: BoxDecoration(
-                            color: Colors.white,
+                            color: Theme.of(context).colorScheme.surface,
                             borderRadius: BorderRadius.circular(8),
                             boxShadow: [
                               BoxShadow(
@@ -301,7 +301,7 @@ class _PetDoctorListState extends State<PetDoctorList> {
                             ],
                           ),
                           expandedHeaderDecoration: BoxDecoration(
-                            color: Colors.blue[50],
+                            color: Theme.of(context).colorScheme.surfaceVariant,
                             borderRadius: const BorderRadius.only(
                               topLeft: Radius.circular(8),
                               topRight: Radius.circular(8),
@@ -321,6 +321,7 @@ class _PetDoctorListState extends State<PetDoctorList> {
         width: 48,
         height: 48,
         child: FloatingActionButton(
+          heroTag: 'addPost1',
           onPressed: () async {
             await Navigator.of(context).push(
               MaterialPageRoute(
@@ -344,22 +345,25 @@ class _PetDoctorListState extends State<PetDoctorList> {
   }
 }
 
-// PetImageItem 클래스 (변경 없음)
 class PetImageItem extends StatelessWidget {
-  const PetImageItem(this.petImage,
-      {super.key, required this.onDelete, required this.onView});
-
   final PetImage petImage;
   final VoidCallback onDelete;
   final VoidCallback onView;
+
+  const PetImageItem({
+    Key? key,
+    required this.petImage,
+    required this.onDelete,
+    required this.onView,
+  }) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
     return Container(
       padding: const EdgeInsets.all(16),
-      decoration: const BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.only(
+      decoration: BoxDecoration(
+        color: Theme.of(context).colorScheme.surface,
+        borderRadius: const BorderRadius.only(
           bottomLeft: Radius.circular(8),
           bottomRight: Radius.circular(8),
         ),
@@ -379,7 +383,7 @@ class PetImageItem extends StatelessWidget {
                 return Container(
                   height: 200,
                   width: double.infinity,
-                  color: Colors.grey[200],
+                  color: Theme.of(context).colorScheme.surfaceVariant,
                   child: Center(
                     child: CircularProgressIndicator(
                       value: loadingProgress.expectedTotalBytes != null
@@ -424,23 +428,45 @@ class PetImageItem extends StatelessWidget {
   }
 }
 
-// PetImageDetailView 클래스 (변경 없음)
 class PetImageDetailView extends StatelessWidget {
   final PetImage petImage;
   final ScrollController scrollController;
 
-  const PetImageDetailView(
-      {Key? key, required this.petImage, required this.scrollController})
-      : super(key: key);
+  const PetImageDetailView({
+    Key? key,
+    required this.petImage,
+    required this.scrollController,
+  }) : super(key: key);
+
+  String _getSymptomName(int classNumber) {
+    switch (classNumber) {
+      case 1:
+        return '구진 플라크';
+      case 2:
+        return '비듬 각질 상피성잔고리';
+      case 3:
+        return '태선화 과다 색소 침착';
+      case 4:
+        return '농포 여드름';
+      case 5:
+        return '미란 궤양';
+      case 6:
+        return '결절 종괴';
+      case 7:
+        return '무증상';
+      default:
+        return '알 수 없음';
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     final DateFormat formatter = DateFormat('yyyy-MM-dd HH:mm');
 
     return Container(
-      decoration: const BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      decoration: BoxDecoration(
+        color: Theme.of(context).colorScheme.surface,
+        borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
       ),
       child: ListView(
         controller: scrollController,
@@ -448,7 +474,7 @@ class PetImageDetailView extends StatelessWidget {
         children: [
           Text(
             petImage.petName,
-            style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+            style: Theme.of(context).textTheme.headlineSmall,
           ),
           const SizedBox(height: 16),
           ClipRRect(
@@ -460,7 +486,7 @@ class PetImageDetailView extends StatelessWidget {
                 if (loadingProgress == null) return child;
                 return Container(
                   height: 300,
-                  color: Colors.grey[200],
+                  color: Theme.of(context).colorScheme.surfaceVariant,
                   child: Center(
                     child: CircularProgressIndicator(
                       value: loadingProgress.expectedTotalBytes != null
@@ -476,18 +502,28 @@ class PetImageDetailView extends StatelessWidget {
           const SizedBox(height: 16),
           Text(
             '날짜: ${formatter.format(petImage.createdDate)}',
-            style: TextStyle(fontSize: 16, color: Colors.grey[600]),
+            style: Theme.of(context).textTheme.bodyLarge,
           ),
+          const SizedBox(height: 16),
+          if (petImage.prediction != null) ...[
+            Text(
+              '예측 결과:',
+              style: Theme.of(context).textTheme.titleLarge,
+            ),
+            const SizedBox(height: 8),
+            Text(
+              '증상: ${_getSymptomName(petImage.prediction!['predicted_class'])}',
+              style: Theme.of(context).textTheme.bodyLarge,
+            ),
+            Text(
+              '신뢰도: ${(petImage.prediction!['confidence'] * 100).toStringAsFixed(2)}%',
+              style: Theme.of(context).textTheme.bodyLarge,
+            ),
+          ],
           const SizedBox(height: 24),
           ElevatedButton(
             onPressed: () => Navigator.of(context).pop(),
-            child: Text('닫기'),
-            style: ElevatedButton.styleFrom(
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(20),
-              ),
-              padding: const EdgeInsets.symmetric(vertical: 12),
-            ),
+            child: const Text('닫기'),
           ),
         ],
       ),

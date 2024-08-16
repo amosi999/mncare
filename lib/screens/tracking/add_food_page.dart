@@ -1,15 +1,45 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 
 class AddFoodPage extends StatefulWidget {
-  const AddFoodPage({super.key});
+  final DateTime date;
+  final String petId;
+  final int foodCount;
+  final int foodGoal;
+  final Map<String, dynamic>? existingRecord;
+
+  const AddFoodPage({
+    required this.date,
+    required this.petId,
+    required this.foodCount,
+    required this.foodGoal,
+    this.existingRecord,
+    Key? key,
+  }) : super(key: key);
 
   @override
   _AddFoodPageState createState() => _AddFoodPageState();
 }
 
 class _AddFoodPageState extends State<AddFoodPage> {
-  double _inputVolume = 0;
-  final TextEditingController _inputController = TextEditingController();
+  int _inputVolume = 0;
+  String? _recordId;
+  late TextEditingController _inputController;
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.existingRecord != null) {
+      _inputVolume = widget.existingRecord!['volume'] as int;
+      _recordId = widget.existingRecord!['id'] as String;
+    } else {
+      _inputVolume = (widget.foodGoal / widget.foodCount as num).toInt();
+    }
+    _inputController = TextEditingController(
+      text: '$_inputVolume', // 기본값 설정
+    );
+  }
 
   @override
   void dispose() {
@@ -19,8 +49,45 @@ class _AddFoodPageState extends State<AddFoodPage> {
 
   void _updateVolume(String value) {
     setState(() {
-      _inputVolume = double.tryParse(value) ?? 0;
+      _inputVolume = int.tryParse(value) ?? 0;
     });
+  }
+
+  Future<void> _saveFoodIntake() async {
+    if (_inputVolume <= 0) {
+      // 잘못된 값 입력 처리
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("올바른 사료량을 입력하세요.")),
+      );
+      return;
+    }
+
+    User? user = FirebaseAuth.instance.currentUser;
+    if (user == null) return;
+
+    String dateStr = widget.date.toIso8601String().split('T').first;
+
+    final docRef = FirebaseFirestore.instance
+        .collection('users')
+        .doc(user.uid)
+        .collection('pets')
+        .doc(widget.petId)
+        .collection('tracking')
+        .doc(dateStr)
+        .collection('food')
+        .doc(_recordId ??
+            FirebaseFirestore.instance
+                .collection('dummy')
+                .doc()
+                .id); // 고유 ID로 회차 생성하거나, 기존 로그 수정
+    await docRef.set({
+      'volume': _inputVolume,
+      'timestamp': _recordId == null
+          ? FieldValue.serverTimestamp()
+          : widget.existingRecord!['timestamp'],
+    });
+
+    Navigator.of(context).pop(true); // 기록 추가 후 이전 화면으로 돌아가기
   }
 
   @override
@@ -33,7 +100,7 @@ class _AddFoodPageState extends State<AddFoodPage> {
           onPressed: () => Navigator.of(context).pop(),
         ),
         title: const Text(
-          '식사량 기록',
+          '사료량 기록',
           style: TextStyle(
             fontSize: 20,
             fontWeight: FontWeight.bold,
@@ -49,7 +116,7 @@ class _AddFoodPageState extends State<AddFoodPage> {
             Row(
               children: [
                 const Text(
-                  '식사량',
+                  '사료량',
                   style: TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.w500,
@@ -64,11 +131,10 @@ class _AddFoodPageState extends State<AddFoodPage> {
                     keyboardType: TextInputType.number,
                     cursorColor: Colors.black,
                     decoration: const InputDecoration(
-                      hintText: '0',
                       border: InputBorder.none,
                     ),
                     style: const TextStyle(
-                      fontSize: 20,
+                      fontSize: 23,
                       fontWeight: FontWeight.bold,
                     ),
                     onChanged: _updateVolume,
@@ -91,19 +157,10 @@ class _AddFoodPageState extends State<AddFoodPage> {
     );
   }
 
-  //완료버튼에 대한 위젯
   Widget _buildCompleteButton() {
     bool hasInput = _inputController.text.isNotEmpty;
     return ElevatedButton(
-      onPressed: hasInput
-          ? () {
-              // 기록 추가 로직으로 변경
-              // _inputVolume으로 받은 값을 회차별 DB에 저장하고
-              // pop으로 이전 페이지로 넘어감. 
-              print(_inputVolume);
-              print(_inputController.text);
-            }
-          : null,
+      onPressed: hasInput ? _saveFoodIntake : null,
       style: ElevatedButton.styleFrom(
         foregroundColor: Colors.white,
         backgroundColor: hasInput

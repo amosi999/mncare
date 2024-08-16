@@ -1,7 +1,18 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 
 class AddPoopPage extends StatefulWidget {
-  const AddPoopPage({super.key});
+  final DateTime date;
+  final String petId;
+  final Map<String, dynamic>? existingRecord;
+
+  const AddPoopPage({
+    required this.date,
+    required this.petId,
+    this.existingRecord,
+    super.key,
+  });
 
   @override
   _AddPoopPageState createState() => _AddPoopPageState();
@@ -10,12 +21,72 @@ class AddPoopPage extends StatefulWidget {
 class _AddPoopPageState extends State<AddPoopPage> {
   String _selectedShape = '';
   String _selectedColor = '';
-  final TextEditingController _memoController = TextEditingController();
+  String? _memo;
+  String? _recordId;
+  // final TextEditingController _memoController = TextEditingController();
+  late TextEditingController _memoController;
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.existingRecord != null) {
+    
+      _selectedShape = widget.existingRecord!['shape'];
+      _selectedColor = widget.existingRecord!['color'];
+      _memo = widget.existingRecord!['memo'];
+      _recordId = widget.existingRecord!['id']; // 기존 기록의 ID를 추적합니다.
+      print('기존 기록 ID: $_recordId');
+    }
+    _memoController = TextEditingController(text: _memo);
+  }
 
   @override
   void dispose() {
     _memoController.dispose();
     super.dispose();
+  }
+
+  Future<void> _savePoopRecord() async {
+    if (_selectedShape.isEmpty || _selectedColor.isEmpty) {
+      // 선택되지 않은 항목이 있을 경우 처리
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("형태와 색을 모두 선택해주세요.")),
+      );
+      return;
+    }
+
+    User? user = FirebaseAuth.instance.currentUser;
+    if (user == null) return;
+
+    String dateStr = widget.date.toIso8601String().split('T').first;
+
+    final docRef = FirebaseFirestore.instance
+        .collection('users')
+        .doc(user.uid)
+        .collection('pets')
+        .doc(widget.petId)
+        .collection('tracking')
+        .doc(dateStr)
+        .collection('poop')
+        .doc(_recordId ??
+            FirebaseFirestore.instance
+                .collection('dummy')
+                .doc()
+                .id); // ID가 있으면 수정, 없으면 새로 생성
+
+    await docRef.set({
+      'shape': _selectedShape,
+      'color': _selectedColor,
+      'memo': _memoController.text,
+      'timestamp': _recordId == null
+          ? FieldValue.serverTimestamp() // 새 기록의 경우 타임스탬프 생성
+          : widget.existingRecord!['timestamp'], // 기존 기록 유지
+    });
+
+    print('저장성공');
+    print(docRef);
+
+    Navigator.of(context).pop(true); // 기록 추가 후 이전 화면으로 돌아가기
   }
 
   @override
@@ -118,6 +189,36 @@ class _AddPoopPageState extends State<AddPoopPage> {
 
   Widget _buildShapeSelection(String shape) {
     bool isSelected = _selectedShape == shape;
+
+    Image getImage() {
+      // _buildShapeSelection('적당한 단단함'),
+      // _buildShapeSelection('촉촉한 작은 통나무'),
+      // _buildShapeSelection('딱딱한 토끼'),
+      // _buildShapeSelection('질척거리는 통나무'),
+      // _buildShapeSelection('촉촉한 무더기'),
+      // _buildShapeSelection('질감 있는 흙'),
+      // _buildShapeSelection('질감 없는 물'),
+      // _buildShapeSelection('대변 안 봄'),
+      switch (shape) {
+        case '적당한 단단함':
+          return Image.asset('assets/images/poop1.png');
+        case '촉촉한 작은 통나무':
+          return Image.asset('assets/images/poop2.png');
+        case '딱딱한 토끼':
+          return Image.asset('assets/images/poop3.png');
+        case '질척거리는 통나무':
+          return Image.asset('assets/images/poop4.png');
+        case '촉촉한 무더기':
+          return Image.asset('assets/images/poop5.png');
+        case '질감 있는 흙':
+          return Image.asset('assets/images/poop6.png');
+        case '질감 없는 물':
+          return Image.asset('assets/images/poop7.png');
+        default:
+          return Image.asset('assets/images/poop8.png');
+      }
+    }
+
     return GestureDetector(
       onTap: () {
         setState(() {
@@ -141,13 +242,7 @@ class _AddPoopPageState extends State<AddPoopPage> {
               borderRadius: BorderRadius.circular(15),
             ),
             child: Center(
-              child: Text(
-                '그림으로 대체',
-                style: TextStyle(
-                  color: isSelected ? Colors.black : Colors.black,
-                  fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-                ),
-              ),
+              child: getImage(),
             ),
           ),
           Text(
@@ -234,16 +329,9 @@ class _AddPoopPageState extends State<AddPoopPage> {
   }
 
   Widget _buildCompleteButton() {
-    bool isEnabled = _selectedShape.isNotEmpty && _selectedColor.isEmpty;
+    bool isEnabled = _selectedShape.isNotEmpty && _selectedColor.isNotEmpty;
     return ElevatedButton(
-      onPressed: isEnabled
-          ? () {
-              // 데이터 추가 로직으로 수정
-              print(
-                  'Shape: $_selectedShape\nColor: $_selectedColor\nMemo: ${_memoController.text}');
-              Navigator.of(context).pop();
-            }
-          : null,
+      onPressed: isEnabled ? _savePoopRecord : null,
       style: ElevatedButton.styleFrom(
         foregroundColor: Colors.white,
         backgroundColor: isEnabled

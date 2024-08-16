@@ -62,11 +62,14 @@ class _TopAppBarState extends State<TopAppBar> {
               CommonPet(id: doc.id, name: doc.data()['petName'] as String))
           .toList();
       print('로드 _pets : ${_pets}');
-      // 트래킹 머지 전 펫
-//           .map((doc) => Pet(id: doc.id, name: doc.data()['petName'] as String))
-//           .toList();
+
       if (_pets.isNotEmpty) {
-        _selectedPet = null;
+        // 트래킹 페이지에서는 "전체" 선택지를 표시하지 않음
+        if (widget.selectedIndex != 1) {
+          _selectedPet = null;
+        } else {
+          _selectedPet = _pets.first;
+        }
         widget.onPetSelected(_selectedPet);
       }
     });
@@ -125,32 +128,28 @@ class _TopAppBarState extends State<TopAppBar> {
   }
 
   Widget _buildDropdownMenu(int selectedIndex) {
+    if (selectedIndex != 1 && _selectedPet == null && _pets.isNotEmpty) {
+      // selectedIndex가 1이 아닐 때 첫 번째 펫을 기본 선택으로 설정
+      _selectedPet = _pets.first;
+    }
+    print('빌드 드롭다운 _selectedPet : ${_selectedPet?.name}');
+
     return DropdownButton<CommonPet>(
       value: _selectedPet,
       onChanged: (CommonPet? newValue) {
-//   Widget _buildDropdownMenu() {
-//     return DropdownButton<Pet>(
-//       value: _selectedPet,
-//       onChanged: (Pet? newValue) {
         setState(() {
           _selectedPet = newValue;
         });
         widget.onPetSelected(newValue);
       },
       items: [
-        //if (widget.selectedIndex == 1)
-        const DropdownMenuItem<CommonPet>(
-          value: null,
-          child: Text('전체'),
-        ),
+        if (widget.selectedIndex == 1)
+          const DropdownMenuItem<CommonPet>(
+            value: null,
+            child: Text('전체'),
+          ),
         ..._pets.map<DropdownMenuItem<CommonPet>>((CommonPet pet) {
           return DropdownMenuItem<CommonPet>(
-//         const DropdownMenuItem<Pet>(
-//           value: null,
-//           child: Text('전체'),
-//         ),
-//         ..._pets.map<DropdownMenuItem<Pet>>((Pet pet) {
-//           return DropdownMenuItem<Pet>(
             value: pet,
             child: Text(pet.name),
           );
