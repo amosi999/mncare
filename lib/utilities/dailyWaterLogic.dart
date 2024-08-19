@@ -1,5 +1,7 @@
 //해당 펫의 종족, 나이, 몸무게의 정보를 받아 하루에 필요한 물의 양을 계산하는 함수
 
+import 'package:intl/intl.dart';
+
 double calculateDailyWater({
   required String petType,
   required int age, // in months
@@ -36,13 +38,17 @@ double calculateDailyWater({
 }
 
 int calculateAgeInMonths(String birthDate) {
-  final birth = DateTime.parse(birthDate);
+  print('birthDate: $birthDate');
+  final DateFormat formatter = DateFormat('yyyy-MM-dd');
+  final birth = formatter.parse(birthDate); // 날짜 문자열을 DateTime으로 변환
   final now = DateTime.now();
   final age = now.year * 12 + now.month - (birth.year * 12 + birth.month);
+  print('age: $age');
   return age;
 }
 
 String getRecommendedWaterIntakeText(String petType, int age, bool isNeutered) {
+  print('권장 음수량 petType: $petType, age: $age, isNeutered: $isNeutered');
   if (petType == "고양이") {
     // if (age < 12) {
     //   return '[12개월 이하의 하루 적정 음수량 = 몸무게(kg) X 60ml]';

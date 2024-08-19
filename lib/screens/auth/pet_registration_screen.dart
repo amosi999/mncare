@@ -394,7 +394,7 @@ class _PetRegistrationScreenState extends State<PetRegistrationScreen> {
         int defaultFoodKcal = 3500;// 예시로 3500 kcal/kg 사용 임시 값인거임.
         double dailyFoodAmount = dailyFoodLogic.calculateDailyFood(
           petType: _petType!,
-          age: dailyFoodLogic.calculateAgeInMonths(_birthController.text),
+          age: calculateAgeInMonths(_birthController.text),
           weight: double.parse(_weightController.text),
           defaultFoodKcal: defaultFoodKcal, 
           isNeutered: _isNeutered,

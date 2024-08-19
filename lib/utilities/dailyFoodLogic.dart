@@ -14,6 +14,9 @@ double calculateDailyFood({
   double DER; // Daily Energy Requirement (일일 에너지 요구량)
   double dailyFoodAmount = 0.0; // 하루 사료량(g)
 
+  print(
+      'petType: $petType, age: $age, weight: $weight, isNeutered: $isNeutered');
+
   if (petType == "고양이") {
     // 고양이의 경우
     if (weight < 2.0) {
@@ -60,14 +63,15 @@ double calculateDailyFood({
 
     dailyFoodAmount = (DER / defaultFoodKcal) * 1000;
   }
+  print('dailyFoodAmount: $dailyFoodAmount');
 
   return dailyFoodAmount; // 하루 사료량(g)
 }
 
-int calculateAgeInMonths(String birthDate) {
-  final birth = DateTime.parse(birthDate);
+int calculateAgeInMonths(DateTime birthDate) {
   final now = DateTime.now();
-  final age = now.year * 12 + now.month - (birth.year * 12 + birth.month);
+  final age =
+      now.year * 12 + now.month - (birthDate.year * 12 + birthDate.month);
   return age;
 }
 

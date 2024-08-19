@@ -20,6 +20,7 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
+      debugShowCheckedModeBanner: false,
       title: 'Pet Care App',
       theme: ThemeData().copyWith(
         colorScheme: ColorScheme.fromSeed(

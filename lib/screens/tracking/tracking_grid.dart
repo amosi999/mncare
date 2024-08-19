@@ -37,7 +37,7 @@ class _TrackingGridState extends State<TrackingGrid> {
   }
 
   void _onControllerChanged() {
-        _loadTrackingData();
+    _loadTrackingData();
   }
 
   Future<void> _loadTrackingData() async {
@@ -295,13 +295,13 @@ class _TrackingGridState extends State<TrackingGrid> {
           );
           //await _loadCurrentWater(); // 업데이트 후 데이터를 다시 로드
           await _loadTrackingData();
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('물 1회차가 추가되었습니다.'),
-              //duration: Duration(seconds: 1), // 알림이 2초 동안 표시됩니다.
-            ),
-          );
-          print('물 추가');
+          // ScaffoldMessenger.of(context).showSnackBar(
+          //   const SnackBar(
+          //     content: Text('물 1회차가 추가되었습니다.'),
+          //     //duration: Duration(seconds: 1), // 알림이 2초 동안 표시됩니다.
+          //   ),
+          // );
+          // print('물 추가');
         } else if (title == '사료') {
           await saveFoodIntake(
             date: widget.controller.selectedDate,
@@ -309,14 +309,13 @@ class _TrackingGridState extends State<TrackingGrid> {
           );
           //await _loadCurrentFood();
           await _loadTrackingData();
-
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('사료 1회차가 추가되었습니다.'),
-              //duration: Duration(seconds: 0.2), // 알림이 2초 동안 표시됩니다.
-            ),
-          );
-          print('사료 추가');
+          // ScaffoldMessenger.of(context).showSnackBar(
+          //   const SnackBar(
+          //     content: Text('사료 1회차가 추가되었습니다.'),
+          //     //duration: Duration(seconds: 0.2), // 알림이 2초 동안 표시됩니다.
+          //   ),
+          // );
+          // print('사료 추가');
         } else if (title == '대변') {
           Navigator.push(
             context,

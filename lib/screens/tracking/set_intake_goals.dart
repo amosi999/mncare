@@ -33,7 +33,7 @@ class _SetIntakeGoalsState extends State<SetIntakeGoals> {
   //petData
   bool isNeutered = false;
   double weight = 0.0;
-  String petType = "강아지";
+  String petType = "";
 
   int recommendedWaterIntake = 0;
   String recommendedWaterIntakeText = '';
@@ -104,8 +104,9 @@ class _SetIntakeGoalsState extends State<SetIntakeGoals> {
 
   Future<void> _loadpetData() async {
     final pet = widget.controller.selectedPet;
-    final date = widget.controller.selectedDate;
-
+    //final date = widget.controller.selectedDate;
+    DateTime? date;
+    //print('pet: $pet, date: $date');
     if (pet == null) return;
 
     User? user = FirebaseAuth.instance.currentUser;
@@ -124,6 +125,7 @@ class _SetIntakeGoalsState extends State<SetIntakeGoals> {
           isNeutered = docSnapshot.get('isNeutered') as bool;
           weight = (docSnapshot.get('petWeight') as num).toDouble();
           petType = docSnapshot.get('petType') as String;
+          date = DateTime.parse(docSnapshot.get('petBirthDate') as String);
         });
       } else {
         print('해당 펫에 대한 데이터가 없습니다.');
@@ -131,11 +133,11 @@ class _SetIntakeGoalsState extends State<SetIntakeGoals> {
     } catch (e) {
       print('펫 데이터를 로드하는 동안 오류가 발생했습니다: $e');
     }
+    print('펫 데이터를 로드 성공');
 
-    final dateFormat = DateFormat('yyyy-MM-dd');
-    final dateString = dateFormat.format(date); // selectedDate를 문자열로 변환
-    final ageInMonths = calculateAgeInMonths(dateString);
-    print('나이: $ageInMonths, 날짜: $dateString');
+    //final dateFormat = DateFormat('yyyy-MM-dd');
+    // final dateString = dateFormat.format(date); // selectedDate를 문자열로 변환
+    final ageInMonths = FoodLogic.calculateAgeInMonths(date!);
 
     // 하루 권장 음수량을 계산합니다.
     recommendedWaterIntake = calculateDailyWater(
@@ -144,13 +146,15 @@ class _SetIntakeGoalsState extends State<SetIntakeGoals> {
       weight: weight, // 펫의 몸무게
       isNeutered: isNeutered,
     ).toInt();
-
+    print('권장 음수량: $recommendedWaterIntake');
+    print(
+        'dateString:  ageInMonths: $ageInMonths, weight: $weight, petType: $petType, isNeutered: $isNeutered');
     recommendedFoodIntake = FoodLogic.calculateDailyFood(
       petType: petType, // 예: '고양이' 또는 '강아지'
       age: ageInMonths,
       weight: weight, // 펫의 몸무게
-      isNeutered: isNeutered,
       defaultFoodKcal: _foodKcal,
+      isNeutered: isNeutered,
     ).toInt();
 
     print(
@@ -505,16 +509,28 @@ class _SetIntakeGoalsState extends State<SetIntakeGoals> {
                           ),
                         ),
                         const SizedBox(height: 15),
-                        SizedBox(
-                          width: 220,
-                          child: Text(
-                            '1회 기본 양 : ${_dailyFrequency > 0 ? (_dailyIntake / _dailyFrequency).round() : 0}ml씩',
-                            style: const TextStyle(
-                              color: Colors.grey,
-                              fontSize: 14,
+                        if (widget.title == '물')
+                          SizedBox(
+                            width: 220,
+                            child: Text(
+                              '1회 기본 양 : ${_dailyFrequency > 0 ? (_dailyIntake / _dailyFrequency).round() : 0}ml씩',
+                              style: const TextStyle(
+                                color: Colors.grey,
+                                fontSize: 14,
+                              ),
                             ),
                           ),
-                        ),
+                        if (widget.title == '사료')
+                          SizedBox(
+                            width: 220,
+                            child: Text(
+                              '1회 기본 양 : ${_dailyFrequency > 0 ? (_dailyIntake / _dailyFrequency).round() : 0}g씩',
+                              style: const TextStyle(
+                                color: Colors.grey,
+                                fontSize: 14,
+                              ),
+                            ),
+                          ),
                       ],
                     ),
                     Expanded(
