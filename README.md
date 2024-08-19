@@ -1,6 +1,6 @@
-# mncare
+# 멍냥케어
 
-A new Flutter project.
+반려동물 관리앱 객체탐지를 이용해서 반려동물의 피부병을 탐지 및 반려동물 관리 시스템
 
 ## Getting Started
 
